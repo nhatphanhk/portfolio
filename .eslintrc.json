@@ -1,0 +1,15 @@
+{
+  "extends": ["next/core-web-vitals", "prettier"],
+  "rules": {
+    // React specific rules
+    "react/no-unescaped-entities": "off",
+    "react/display-name": "off",
+
+    // General rules for portfolio project
+    "no-console": "warn",
+    "no-debugger": "error",
+    "prefer-const": "error",
+    "no-var": "error",
+    "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }]
+  }
+}
