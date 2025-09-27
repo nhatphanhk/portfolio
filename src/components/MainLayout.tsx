@@ -14,7 +14,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />$
+      <Header />
       {pathname === '/' ? (
         <main className="h-screen flex-grow pt-16 flex items-center justify-center">
           {children}
