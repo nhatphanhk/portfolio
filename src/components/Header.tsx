@@ -18,8 +18,11 @@ const Header = () => {
   }, []);
 
   const navigationItems = [
+    { name: 'About', href: '/about' },
     { name: 'Blog', href: '/blog' },
     { name: 'Project', href: '/project' },
+    { name: 'Skills', href: '/skills' },
+    { name: 'Certification', href: '/certification' },
     { name: 'Contact', href: '/contact' },
   ];
 
@@ -48,7 +51,7 @@ const Header = () => {
             href="/"
             className="text-2xl font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
-            Portfolio
+            NHATPHANHK102
           </Link>
 
           {/* Desktop Navigation */}
