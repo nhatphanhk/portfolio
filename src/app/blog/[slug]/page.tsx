@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import MainLayout from '@/components/MainLayout';
-import { getBlogPostBySlug, getAllBlogPosts } from '@/types/blog-data';
+import { getBlogPostBySlug, getAllBlogPosts } from '@/types/BlogData';
 
 // Define the params type for TypeScript
 interface BlogPostPageProps {

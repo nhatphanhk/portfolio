@@ -16,21 +16,16 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     <div className="min-h-screen flex flex-col">
       <Header />
       {pathname === '/' ? (
-        <main className="h-screen flex-grow pt-16 flex items-center justify-center">
-          {children}
-        </main>
+        <main className="flex-grow pt-16">{children}</main>
       ) : (
         <main className="flex-grow pt-16">
-          <div
-            className={`mx-auto px-4 sm:px-6 lg:px-8 ${pathname === '/' ? 'h-100' : 'max-w-7xl '}`}
-          >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {children}
             </div>
           </div>
         </main>
       )}
-      {/* Main content with top padding to account for fixed header */}
       <Footer />
     </div>
   );
