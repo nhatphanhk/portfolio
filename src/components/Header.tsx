@@ -23,7 +23,6 @@ const Header = () => {
     { name: 'Project', href: '/project' },
     { name: 'Skills', href: '/skills' },
     { name: 'Certification', href: '/certification' },
-    { name: 'Contact', href: '/contact' },
   ];
 
   //   const scrollToSection = (sectionId: string) => {
