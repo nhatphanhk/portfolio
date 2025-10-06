@@ -2,22 +2,19 @@
 
 import * as React from 'react';
 import {
-  AudioWaveform,
+  Award,
   BookOpen,
-  Bot,
-  Command,
+  Code,
   Frame,
-  GalleryVerticalEnd,
+  Layers,
   Map,
   PieChart,
-  Settings2,
-  SquareTerminal,
+  Users,
 } from 'lucide-react';
 
 import { NavMain } from './NavMain';
 import { NavProjects } from './NavProjects';
 import { NavUser } from './NavUser';
-import { TeamSwitcher } from './TeamSwitcher';
 import {
   Sidebar,
   SidebarContent,
@@ -33,108 +30,52 @@ const data = {
     email: 'm@example.com',
     avatar: '/avatars/shadcn.jpg',
   },
-  teams: [
-    {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup',
-    },
-    {
-      name: 'Evil Corp.',
-      logo: Command,
-      plan: 'Free',
-    },
-  ],
   navMain: [
     {
-      title: 'Playground',
+      title: 'Blogs',
       url: '#',
-      icon: SquareTerminal,
+      icon: BookOpen,
       isActive: true,
       items: [
         {
-          title: 'History',
+          title: 'Dashboard',
           url: '#',
         },
         {
-          title: 'Starred',
-          url: '#',
-        },
-        {
-          title: 'Settings',
-          url: '#',
+          title: 'Lists',
+          url: '/admin/blogs',
         },
       ],
     },
     {
-      title: 'Models',
+      title: 'Projects',
       url: '#',
-      icon: Bot,
+      icon: Code,
       items: [
         {
-          title: 'Genesis',
+          title: 'Dashboard',
           url: '#',
         },
         {
-          title: 'Explorer',
-          url: '#',
-        },
-        {
-          title: 'Quantum',
-          url: '#',
+          title: 'Lists',
+          url: '/admin/projects',
         },
       ],
     },
     {
-      title: 'Documentation',
-      url: '#',
-      icon: BookOpen,
-      items: [
-        {
-          title: 'Introduction',
-          url: '#',
-        },
-        {
-          title: 'Get Started',
-          url: '#',
-        },
-        {
-          title: 'Tutorials',
-          url: '#',
-        },
-        {
-          title: 'Changelog',
-          url: '#',
-        },
-      ],
+      title: 'Skills',
+      url: '/admin/skills',
+      icon: Layers,
     },
     {
-      title: 'Settings',
-      url: '#',
-      icon: Settings2,
-      items: [
-        {
-          title: 'General',
-          url: '#',
-        },
-        {
-          title: 'Team',
-          url: '#',
-        },
-        {
-          title: 'Billing',
-          url: '#',
-        },
-        {
-          title: 'Limits',
-          url: '#',
-        },
-      ],
+      title: 'Certifications',
+      url: '/admin/certifications',
+      icon: Award,
+    },
+    {
+      title: 'Contacts',
+      url: '/admin/contacts',
+      icon: Users,
     },
   ],
   projects: [
@@ -160,15 +101,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <NavUser user={data.user} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
         <NavProjects projects={data.projects} />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
+      <SidebarFooter>Nhatphanhk102</SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
