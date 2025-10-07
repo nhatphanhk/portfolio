@@ -6,6 +6,7 @@ import {
   BookOpen,
   Code,
   Frame,
+  UserRound,
   Layers,
   Map,
   PieChart,
@@ -13,7 +14,6 @@ import {
 } from 'lucide-react';
 
 import { NavMain } from './NavMain';
-import { NavProjects } from './NavProjects';
 import { NavUser } from './NavUser';
 import {
   Sidebar,
@@ -31,6 +31,11 @@ const data = {
     avatar: '/avatars/shadcn.jpg',
   },
   navMain: [
+    {
+      title: 'About',
+      url: '/admin/about',
+      icon: UserRound,
+    },
     {
       title: 'Blogs',
       url: '#',
@@ -105,7 +110,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>Nhatphanhk102</SidebarFooter>
       <SidebarRail />
