@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import MainLayout from '@/components/MainLayout';
 import { getBlogPostBySlug, getAllBlogPosts } from '@/types/BlogData';
+import Link from 'next/link';
 
 // Define the params type for TypeScript
 interface BlogPostPageProps {
@@ -50,8 +51,28 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   return (
     <MainLayout>
-      <article className="max-w-4xl mx-auto px-6 py-8">
+      {/* Main Content */}
+      <article className=" max-w-7xl flex-1 col-span-9 min-w-0 py-6">
         <header className="mb-8">
+          <Link
+            href="/blog"
+            className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4 transition-colors"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back to Blog
+          </Link>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             {post.title}
           </h1>
@@ -87,6 +108,26 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
       </article>
+
+      {/* Navigation Sidebar - Right Side */}
+      <aside className="hidden col-span-3 lg:block w-64 shrink-0 py-4">
+        <nav className="sticky top-8 space-y-6">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+              Table of Contents
+            </h2>
+            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+              {/* Add dynamic TOC based on post headings */}
+            </ul>
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+              Related Posts
+            </h2>
+            <ul className="space-y-2 text-sm">{/* Add related posts */}</ul>
+          </div>
+        </nav>
+      </aside>
     </MainLayout>
   );
 }
