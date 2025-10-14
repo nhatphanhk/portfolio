@@ -1,0 +1,1298 @@
+openapi: 3.0.3
+info:
+  title: Portfolio Admin API
+  description: |
+    RESTful API for managing portfolio content including blogs, projects, skills, 
+    certifications, and contact submissions through an admin interface.
+  version: 1.0.0
+  contact:
+    name: Portfolio API Support
+    email: admin@yourportfolio.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://yourportfolio.com/api/v1
+    description: Production server
+  - url: http://localhost:3000/api/v1
+    description: Development server
+
+paths:
+  # Authentication endpoints
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Admin login
+      description: Authenticate admin user and receive access tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout
+      description: Invalidate current session tokens
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+    put:
+      tags:
+        - Authentication
+      summary: Update user profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+              required:
+                - refreshToken
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+
+  # Blog endpoints
+  /blogs:
+    get:
+      tags:
+        - Blogs
+      summary: List all blogs
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortParam'
+        - $ref: '#/components/parameters/OrderParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - name: status
+          in: query
+          description: Filter by blog status
+          schema:
+            type: string
+            enum: [draft, published]
+        - name: tags
+          in: query
+          description: Filter by tags (comma-separated)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Blogs retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Blog'
+                      pagination:
+                        $ref: '#/components/schemas/PaginationInfo'
+    post:
+      tags:
+        - Blogs
+      summary: Create new blog
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlogCreateRequest'
+      responses:
+        '201':
+          description: Blog created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Blog'
+
+  /blogs/{id}:
+    get:
+      tags:
+        - Blogs
+      summary: Get single blog
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Blog retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Blog'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      tags:
+        - Blogs
+      summary: Update blog
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlogUpdateRequest'
+      responses:
+        '200':
+          description: Blog updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Blog'
+    delete:
+      tags:
+        - Blogs
+      summary: Delete blog
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/SuccessMessage'
+
+  /blogs/bulk-delete:
+    post:
+      tags:
+        - Blogs
+      summary: Bulk delete blogs
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkDeleteRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/BulkOperationResponse'
+
+  /blogs/stats:
+    get:
+      tags:
+        - Blogs
+      summary: Get blog statistics
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Blog statistics retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/BlogStats'
+
+  # Project endpoints
+  /projects:
+    get:
+      tags:
+        - Projects
+      summary: List all projects
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortParam'
+        - $ref: '#/components/parameters/OrderParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - name: featured
+          in: query
+          description: Filter featured projects
+          schema:
+            type: boolean
+        - name: status
+          in: query
+          description: Filter by project status
+          schema:
+            type: string
+            enum: [active, archived]
+        - name: technology
+          in: query
+          description: Filter by technology
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Projects retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Project'
+                      pagination:
+                        $ref: '#/components/schemas/PaginationInfo'
+    post:
+      tags:
+        - Projects
+      summary: Create new project
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+      responses:
+        '201':
+          description: Project created successfully
+
+  /projects/{id}:
+    get:
+      tags:
+        - Projects
+      summary: Get single project
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Project retrieved successfully
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      tags:
+        - Projects
+      summary: Update project
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectUpdateRequest'
+      responses:
+        '200':
+          description: Project updated successfully
+    delete:
+      tags:
+        - Projects
+      summary: Delete project
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/SuccessMessage'
+
+  /projects/{id}/documents:
+    get:
+      tags:
+        - Projects
+      summary: Get project documents
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Documents retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Document'
+    post:
+      tags:
+        - Projects
+      summary: Upload document to project
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                title:
+                  type: string
+                description:
+                  type: string
+              required:
+                - file
+      responses:
+        '201':
+          description: Document uploaded successfully
+
+  # Contact endpoints
+  /contacts:
+    get:
+      tags:
+        - Contacts
+      summary: List contact submissions
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortParam'
+        - $ref: '#/components/parameters/OrderParam'
+        - name: status
+          in: query
+          description: Filter by contact status
+          schema:
+            type: string
+            enum: [unread, read, replied]
+      responses:
+        '200':
+          description: Contacts retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Contact'
+                      pagination:
+                        $ref: '#/components/schemas/PaginationInfo'
+    post:
+      tags:
+        - Contacts
+      summary: Submit contact form (Public endpoint)
+      description: Public endpoint for contact form submissions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactSubmissionRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/SuccessMessage'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  # File upload endpoints
+  /upload:
+    post:
+      tags:
+        - File Upload
+      summary: General file upload
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                type:
+                  type: string
+                  enum: [avatar, project, blog, document]
+                alt:
+                  type: string
+                  description: Alt text for images
+              required:
+                - file
+      responses:
+        '201':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/FileUploadResponse'
+
+  /upload/{id}:
+    delete:
+      tags:
+        - File Upload
+      summary: Delete uploaded file
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/SuccessMessage'
+
+  # Dashboard endpoints
+  /dashboard/stats:
+    get:
+      tags:
+        - Dashboard
+      summary: Get dashboard statistics
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard statistics retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/DashboardStats'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: Page number
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    LimitParam:
+      name: limit
+      in: query
+      description: Items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+    SortParam:
+      name: sort
+      in: query
+      description: Sort field
+      schema:
+        type: string
+        default: createdAt
+    OrderParam:
+      name: order
+      in: query
+      description: Sort order
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: desc
+    SearchParam:
+      name: search
+      in: query
+      description: Search keyword
+      schema:
+        type: string
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+      required:
+        - success
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: string
+          required:
+            - code
+            - message
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - success
+        - error
+
+    PaginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+        - hasNext
+        - hasPrev
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        avatar:
+          type: string
+          format: uri
+        role:
+          type: string
+          enum: [admin]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - email
+        - role
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+      required:
+        - email
+        - password
+
+    LoginResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                user:
+                  $ref: '#/components/schemas/User'
+                tokens:
+                  $ref: '#/components/schemas/TokenResponse'
+              required:
+                - user
+                - tokens
+
+    TokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+      required:
+        - accessToken
+        - refreshToken
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        avatar:
+          type: string
+          format: uri
+
+    Blog:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        slug:
+          type: string
+        content:
+          type: string
+        excerpt:
+          type: string
+        status:
+          type: string
+          enum: [draft, published]
+        tags:
+          type: array
+          items:
+            type: string
+        featuredImage:
+          type: string
+          format: uri
+        publishedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - slug
+        - content
+        - status
+
+    BlogCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        slug:
+          type: string
+        content:
+          type: string
+        excerpt:
+          type: string
+        status:
+          type: string
+          enum: [draft, published]
+          default: draft
+        tags:
+          type: array
+          items:
+            type: string
+        featuredImage:
+          type: string
+          format: uri
+        publishedAt:
+          type: string
+          format: date-time
+      required:
+        - title
+        - content
+
+    BlogUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        slug:
+          type: string
+        content:
+          type: string
+        excerpt:
+          type: string
+        status:
+          type: string
+          enum: [draft, published]
+        tags:
+          type: array
+          items:
+            type: string
+        featuredImage:
+          type: string
+          format: uri
+        publishedAt:
+          type: string
+          format: date-time
+
+    BlogStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        published:
+          type: integer
+        draft:
+          type: integer
+        thisMonth:
+          type: integer
+        totalViews:
+          type: integer
+      required:
+        - total
+        - published
+        - draft
+        - thisMonth
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        technologies:
+          type: array
+          items:
+            type: string
+        liveUrl:
+          type: string
+          format: uri
+        githubUrl:
+          type: string
+          format: uri
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+        featured:
+          type: boolean
+        status:
+          type: string
+          enum: [active, archived]
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - description
+        - technologies
+        - status
+
+    ProjectCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        technologies:
+          type: array
+          items:
+            type: string
+        liveUrl:
+          type: string
+          format: uri
+        githubUrl:
+          type: string
+          format: uri
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+        featured:
+          type: boolean
+          default: false
+        status:
+          type: string
+          enum: [active, archived]
+          default: active
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+      required:
+        - title
+        - description
+        - technologies
+
+    ProjectUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        technologies:
+          type: array
+          items:
+            type: string
+        liveUrl:
+          type: string
+          format: uri
+        githubUrl:
+          type: string
+          format: uri
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+        featured:
+          type: boolean
+        status:
+          type: string
+          enum: [active, archived]
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+
+    Contact:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        subject:
+          type: string
+        message:
+          type: string
+        company:
+          type: string
+        phone:
+          type: string
+        status:
+          type: string
+          enum: [unread, read, replied]
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - email
+        - subject
+        - message
+        - status
+
+    ContactSubmissionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        subject:
+          type: string
+        message:
+          type: string
+        company:
+          type: string
+        phone:
+          type: string
+      required:
+        - name
+        - email
+        - subject
+        - message
+
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        originalName:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        projectId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - filename
+        - originalName
+        - mimeType
+        - size
+        - url
+
+    FileUploadResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        originalName:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+          format: uri
+        thumbnailUrl:
+          type: string
+          format: uri
+      required:
+        - id
+        - filename
+        - originalName
+        - mimeType
+        - size
+        - url
+
+    DashboardStats:
+      type: object
+      properties:
+        blogs:
+          type: object
+          properties:
+            total:
+              type: integer
+            published:
+              type: integer
+            draft:
+              type: integer
+        projects:
+          type: object
+          properties:
+            total:
+              type: integer
+            active:
+              type: integer
+            featured:
+              type: integer
+        contacts:
+          type: object
+          properties:
+            total:
+              type: integer
+            unread:
+              type: integer
+            thisMonth:
+              type: integer
+        skills:
+          type: object
+          properties:
+            total:
+              type: integer
+        certifications:
+          type: object
+          properties:
+            total:
+              type: integer
+            active:
+              type: integer
+        storage:
+          type: object
+          properties:
+            used:
+              type: string
+            total:
+              type: string
+            percentage:
+              type: integer
+
+    BulkDeleteRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+          minItems: 1
+      required:
+        - ids
+
+  responses:
+    SuccessMessage:
+      description: Operation successful
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  message:
+                    type: string
+
+    BulkOperationResponse:
+      description: Bulk operation completed
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      deleted:
+                        type: integer
+                      failed:
+                        type: integer
+                      errors:
+                        type: array
+                        items:
+                          type: string
+
+    UnauthorizedError:
+      description: Unauthorized - Invalid or missing authentication
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    ValidationError:
+      description: Validation error in request data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    RateLimitError:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+      headers:
+        X-RateLimit-Limit:
+          description: The number of allowed requests in the current period
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          description: The number of remaining requests in the current period
+          schema:
+            type: integer
+        X-RateLimit-Reset:
+          description: The time at which the current rate limit window resets
+          schema:
+            type: integer
+
+tags:
+  - name: Authentication
+    description: User authentication and session management
+  - name: Blogs
+    description: Blog post management
+  - name: Projects
+    description: Project portfolio management
+  - name: Contacts
+    description: Contact form and message management
+  - name: File Upload
+    description: File and media upload management
+  - name: Dashboard
+    description: Dashboard statistics and analytics
