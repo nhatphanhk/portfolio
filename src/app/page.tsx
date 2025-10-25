@@ -45,33 +45,38 @@ export default function Home() {
 
   return (
     <MainLayout>
-      <div ref={containerRef} className="h-screen overflow-hidden">
-        <div className="flex h-full w-full">
-          <div className="h-full w-screen flex-shrink-0">
-            <HeroSection />
-          </div>
-          <div className="h-full w-screen flex-shrink-0">
-            <AboutSection />
-          </div>
-          <div className="h-full w-screen flex-shrink-0">
-            <div ref={sectionsRef} className="flex h-full">
-              <div className="section h-full w-screen flex-shrink-0">
-                <BlogSection />
-              </div>
-              <div className="section h-full w-screen flex-shrink-0">
-                <ProjectSection />
-              </div>
-              <div className="section h-full w-screen flex-shrink-0">
-                <SkillSection />
-              </div>
-              <div className="section h-full w-screen flex-shrink-0">
-                <CertificationSection />
-              </div>
+      <div>
+        {/* Hero Section - Normal Scroll */}
+        <div className="h-screen w-full">
+          <HeroSection />
+        </div>
+
+        {/* About Section - Normal Scroll */}
+        <div className="h-screen w-full">
+          <AboutSection />
+        </div>
+
+        {/* Horizontal Scroll Container */}
+        <div ref={containerRef} className="h-screen overflow-hidden">
+          <div ref={sectionsRef} className="flex h-full w-full">
+            <div className="section h-full w-screen flex-shrink-0">
+              <BlogSection />
+            </div>
+            <div className="section h-full w-screen flex-shrink-0">
+              <ProjectSection />
+            </div>
+            <div className="section h-full w-screen flex-shrink-0">
+              <SkillSection />
+            </div>
+            <div className="section h-full w-screen flex-shrink-0">
+              <CertificationSection />
             </div>
           </div>
-          <div className="h-full w-screen flex-shrink-0">
-            <ContactSection />
-          </div>
+        </div>
+
+        {/* Contact Section - Normal Scroll */}
+        <div className="h-screen w-full">
+          <ContactSection />
         </div>
       </div>
     </MainLayout>
