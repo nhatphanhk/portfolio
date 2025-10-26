@@ -75,7 +75,7 @@ export default function Home() {
         </div>
 
         {/* Contact Section - Normal Scroll */}
-        <div className="h-screen w-full">
+        <div className="h-full w-full">
           <ContactSection />
         </div>
       </div>

@@ -1,3 +1,5 @@
+import { Button } from '../ui/button';
+
 export function AboutSection() {
   return (
     <section className="h-full flex items-center justify-center py-20 text-center">
@@ -14,9 +16,7 @@ export function AboutSection() {
           solving complex problems.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-            View My Work
-          </button>
+          <Button variant="default">View My Work</Button>
           <button className="border border-gray-300 text-gray-700 px-8 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
             Contact Me
           </button>
