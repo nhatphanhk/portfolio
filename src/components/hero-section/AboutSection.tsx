@@ -2,8 +2,8 @@ import { Button } from '../ui/button';
 
 export function AboutSection() {
   return (
-    <section className="h-full flex items-center justify-center py-20 text-center">
-      <div className="max-w-4xl mx-auto px-4">
+    <section className="h-full py-20 text-center grid-cols-1 md:grid-cols-2 gap-8 grid">
+      <div className="mx-auto px-4 flex flex-col items-center justify-center">
         <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
           Hi, I'm [Your Name]
         </h1>
@@ -24,6 +24,7 @@ export function AboutSection() {
           </Button>
         </div>
       </div>
+      <div className="mx-auto px-4 flex flex-col items-center"></div>
     </section>
   );
 }

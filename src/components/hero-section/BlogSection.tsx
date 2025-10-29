@@ -1,6 +1,15 @@
-import React, { useState } from 'react';
+'use client';
+
 import type { CarouselProps } from '@/types/HomePage';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
+import { Button } from '../ui/button';
 
 // Sample data for testing
 const sampleBlogData: CarouselProps = {
@@ -35,98 +44,80 @@ export default function BlogSection({
   buttonText = sampleBlogData.buttonText,
   buttonHref = sampleBlogData.buttonHref,
 }: Partial<CarouselProps> = {}) {
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  const nextSlide = () => {
-    setCurrentSlide(prev => (prev + 1) % items.length);
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide(prev => (prev - 1 + items.length) % items.length);
-  };
-
-  const goToSlide = (index: number) => {
-    setCurrentSlide(index);
-  };
-
   return (
-    <div className="carousel bg-gray-800/60 p-6 rounded-lg text-left relative">
-      <h3 className="text-xl font-semibold mb-2">{title}</h3>
-      <p className="text-sm text-gray-300 mb-4">{description}</p>
-
-      {/* Carousel Container */}
-      <div className="relative mb-4">
-        {items.length > 1 && (
-          <>
-            <button
-              onClick={prevSlide}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-10 p-1 rounded-full bg-gray-700/80 hover:bg-gray-600/80 transition-colors"
-              aria-label="Previous item"
-            >
-              <ChevronLeft className="w-4 h-4 text-white" />
-            </button>
-
-            <button
-              onClick={nextSlide}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-10 p-1 rounded-full bg-gray-700/80 hover:bg-gray-600/80 transition-colors"
-              aria-label="Next item"
-            >
-              <ChevronRight className="w-4 h-4 text-white" />
-            </button>
-          </>
-        )}
-
-        <div className="overflow-hidden">
-          <div
-            className="flex transition-transform duration-300 ease-in-out"
-            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-          >
-            {items.map((item, index) => (
-              <div key={index} className="w-full flex-shrink-0 px-4">
-                <div className="text-center py-4">
-                  {item.href ? (
-                    <a
-                      className="text-blue-400 hover:underline text-sm"
-                      href={item.href}
-                    >
-                      {item.text}
-                    </a>
-                  ) : (
-                    <span className="text-gray-300 text-sm">{item.text}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+    <section className="w-full md:px-6 lg:px-8 bg-background rounded-2xl">
+      <div className="max-w-6xl grid grid-cols-2 mx-auto mb-6">
+        <div>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3 text-balance">
+            {title}
+          </h2>
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl">
+            {description}
+          </p>
         </div>
-
-        {/* Dots Indicator */}
-        {items.length > 1 && (
-          <div className="flex justify-center mt-2 space-x-1">
-            {items.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => goToSlide(index)}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  index === currentSlide
-                    ? 'bg-blue-500'
-                    : 'bg-gray-600 hover:bg-gray-500'
-                }`}
-                aria-label={`Go to item ${index + 1}`}
-              />
-            ))}
-          </div>
-        )}
+        <div className="flex justify-end items-center">
+          <Button variant="link" size="sm">
+            {buttonText}
+          </Button>
+        </div>
       </div>
 
-      <div className="text-center">
-        <a
-          className="inline-block text-sm px-3 py-1 bg-blue-600 rounded text-white hover:bg-blue-500 transition-colors"
-          href={buttonHref}
+      <div className="max-w-6xl mx-auto">
+        <Carousel
+          opts={{
+            align: 'start',
+            loop: true,
+          }}
+          className="w-full"
         >
-          {buttonText}
-        </a>
+          <CarouselContent>
+            {items.map((item, index) => (
+              <CarouselItem key={index}>
+                <div className="p-1">
+                  <div className="bg-card border border-border rounded-lg p-6 md:p-8 h-full hover:shadow-lg hover:border-primary/50 transition-all duration-300 group">
+                    <div className="flex flex-col h-full justify-between">
+                      <div>
+                        <div className="inline-block mb-4 px-3 py-1 bg-primary/10 rounded-full">
+                          <span className="text-xs font-semibold text-primary uppercase tracking-wide">
+                            Article
+                          </span>
+                        </div>
+                        {item.href ? (
+                          <a
+                            href={item.href}
+                            className="block text-xl md:text-2xl font-bold text-foreground mb-4 hover:text-primary transition-colors duration-200 line-clamp-3"
+                          >
+                            {item.text}
+                          </a>
+                        ) : (
+                          <h3 className="text-xl md:text-2xl font-bold text-foreground mb-4 line-clamp-3">
+                            {item.text}
+                          </h3>
+                        )}
+                        <p className="text-sm text-muted-foreground mb-6">
+                          Explore insights and best practices in web development
+                        </p>
+                      </div>
+
+                      {item.href && (
+                        <a
+                          href={item.href}
+                          className="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all duration-200 group/link"
+                        >
+                          Read More
+                          <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious />
+          <CarouselNext />
+        </Carousel>
       </div>
-    </div>
+    </section>
   );
 }

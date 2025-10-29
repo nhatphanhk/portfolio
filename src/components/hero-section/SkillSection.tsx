@@ -1,129 +1,123 @@
-import React, { useState } from 'react';
-import type { SkillsCarouselProps, SkillIcon } from '@/types/HomePage';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+'use client';
+
+import type { CarouselProps } from '@/types/HomePage';
+import { ArrowRight } from 'lucide-react';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
+import { Button } from '../ui/button';
+
+// Sample data for testing
+const sampleBlogData: CarouselProps = {
+  title: 'Latest Blog Posts',
+  description: 'Check out my recent articles and tutorials',
+  buttonText: 'View All Posts',
+  buttonHref: '/blog',
+  items: [
+    {
+      text: 'Getting Started with React and TypeScript',
+      href: '/blog/react-typescript',
+    },
+    {
+      text: '10 Tips for Better Code Organization',
+      href: '/blog/code-organization',
+    },
+    {
+      text: 'Building Responsive Layouts with Tailwind CSS',
+      href: '/blog/tailwind-layouts',
+    },
+    {
+      text: 'Understanding React Hooks in Depth',
+      href: '/blog/react-hooks',
+    },
+  ],
+};
 
 export default function SkillSection({
-    skills = [],
-    title = "Skills",
-    description = "Technologies I work with",
-    buttonText = "View All",
-    buttonHref = "#",
-}: Partial<SkillsCarouselProps> = {}) {
-    const [currentSlide, setCurrentSlide] = useState(0);
-    const skillsPerSlide = 4;
-
-    // Map skills to icons
-    const skillIcons: SkillIcon[] = skills.map(skill => {
-        const iconMap: Record<string, string> = {
-            TypeScript: '⚡',
-            React: '⚛️',
-            'Next.js': '▲',
-            'Tailwind CSS': '🎨',
-            'Node.js': '🟢',
-            GraphQL: '◉',
-            Testing: '🧪',
-            Docker: '🐳',
-            AWS: '☁️',
-            MongoDB: '🍃',
-        };
-        return {
-            name: skill,
-            icon: iconMap[skill] || '💻',
-        };
-    });
-
-    const totalSlides = Math.ceil(skillIcons.length / skillsPerSlide);
-
-    const nextSlide = () => {
-        setCurrentSlide(prev => (prev + 1) % totalSlides);
-    };
-
-    const prevSlide = () => {
-        setCurrentSlide(prev => (prev - 1 + totalSlides) % totalSlides);
-    };
-
-    const goToSlide = (index: number) => {
-        setCurrentSlide(index);
-    };
-
-    const getCurrentSlideSkills = () => {
-        const startIndex = currentSlide * skillsPerSlide;
-        return skillIcons.slice(startIndex, startIndex + skillsPerSlide);
-    };
-
-    return (
-        <div className="carousel bg-gray-800/60 p-6 rounded-lg text-left relative">
-            <h3 className="text-xl font-semibold mb-2">{title}</h3>
-            <p className="text-sm text-gray-300 mb-4">{description}</p>
-
-            {/* Carousel Container */}
-            <div className="relative mb-4">
-                {totalSlides > 1 && (
-                    <>
-                        <button
-                            onClick={prevSlide}
-                            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-10 p-1 rounded-full bg-gray-700/80 hover:bg-gray-600/80 transition-colors"
-                            aria-label="Previous skills"
-                        >
-                            <ChevronLeft className="w-4 h-4 text-white" />
-                        </button>
-
-                        <button
-                            onClick={nextSlide}
-                            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-10 p-1 rounded-full bg-gray-700/80 hover:bg-gray-600/80 transition-colors"
-                            aria-label="Next skills"
-                        >
-                            <ChevronRight className="w-4 h-4 text-white" />
-                        </button>
-                    </>
-                )}
-
-                <div className="overflow-hidden min-h-[80px] flex items-center">
-                    <div className="flex gap-4 justify-center w-full">
-                        {getCurrentSlideSkills().map(skill => (
-                            <div
-                                key={skill.name}
-                                className="flex flex-col items-center group cursor-pointer"
-                                title={skill.name}
-                            >
-                                <div className="text-3xl mb-1 transform group-hover:scale-110 transition-transform">
-                                    {skill.icon}
-                                </div>
-                                <span className="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {skill.name}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Dots Indicator */}
-                {totalSlides > 1 && (
-                    <div className="flex justify-center mt-2 space-x-1">
-                        {Array.from({ length: totalSlides }).map((_, index) => (
-                            <button
-                                key={index}
-                                onClick={() => goToSlide(index)}
-                                className={`w-2 h-2 rounded-full transition-colors ${
-                                    index === currentSlide
-                                        ? 'bg-blue-500'
-                                        : 'bg-gray-600 hover:bg-gray-500'
-                                }`}
-                                aria-label={`Go to skills group ${index + 1}`}
-                            />
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            <div className="text-center">
-                <a
-                    className="inline-block text-sm px-3 py-1 bg-blue-600 rounded text-white hover:bg-blue-500 transition-colors"
-                    href={buttonHref}
-                >
-                    {buttonText}
-                </a>
-            </div>
+  items = sampleBlogData.items,
+  title = sampleBlogData.title,
+  description = sampleBlogData.description,
+  buttonText = sampleBlogData.buttonText,
+  buttonHref = sampleBlogData.buttonHref,
+}: Partial<CarouselProps> = {}) {
+  return (
+    <section className="w-full md:px-6 lg:px-8 bg-background rounded-2xl">
+      <div className="max-w-6xl grid grid-cols-2 mx-auto mb-6">
+        <div>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3 text-balance">
+            {title}
+          </h2>
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl">
+            {description}
+          </p>
         </div>
-    );
+        <div className="flex justify-end items-center">
+          <Button variant="link" size="sm">
+            {buttonText}
+          </Button>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto">
+        <Carousel
+          opts={{
+            align: 'start',
+            loop: true,
+          }}
+          className="w-full"
+        >
+          <CarouselContent>
+            {items.map((item, index) => (
+              <CarouselItem key={index}>
+                <div className="p-1">
+                  <div className="bg-card border border-border rounded-lg p-6 md:p-8 h-full hover:shadow-lg hover:border-primary/50 transition-all duration-300 group">
+                    <div className="flex flex-col h-full justify-between">
+                      <div>
+                        <div className="inline-block mb-4 px-3 py-1 bg-primary/10 rounded-full">
+                          <span className="text-xs font-semibold text-primary uppercase tracking-wide">
+                            Article
+                          </span>
+                        </div>
+                        {item.href ? (
+                          <a
+                            href={item.href}
+                            className="block text-xl md:text-2xl font-bold text-foreground mb-4 hover:text-primary transition-colors duration-200 line-clamp-3"
+                          >
+                            {item.text}
+                          </a>
+                        ) : (
+                          <h3 className="text-xl md:text-2xl font-bold text-foreground mb-4 line-clamp-3">
+                            {item.text}
+                          </h3>
+                        )}
+                        <p className="text-sm text-muted-foreground mb-6">
+                          Explore insights and best practices in web development
+                        </p>
+                      </div>
+
+                      {item.href && (
+                        <a
+                          href={item.href}
+                          className="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all duration-200 group/link"
+                        >
+                          Read More
+                          <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious />
+          <CarouselNext />
+        </Carousel>
+      </div>
+    </section>
+  );
 }
