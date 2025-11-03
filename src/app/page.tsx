@@ -1,13 +1,13 @@
 ﻿'use client';
 
-import { MainLayout } from '@/components';
-import { AboutSection } from '@/components/hero-section/AboutSection';
-import ContactSection from '@/components/hero-section/ContactSection';
-import { HeroSection } from '@/components/hero-section/HeroSection';
-import BlogSection from '@/components/hero-section/BlogSection';
-import ProjectSection from '@/components/hero-section/ProjectSection';
-import SkillSection from '@/components/hero-section/SkillSection';
-import CertificationSection from '@/components/hero-section/CertificationSection';
+import { MainLayout } from '@/components/shared';
+import { AboutSection } from '@/components/sections/AboutSection';
+import ContactSection from '@/components/sections/ContactSection';
+import { HeroSection } from '@/components/sections/HeroSection';
+import BlogSection from '@/components/sections/BlogSection';
+import ProjectSection from '@/components/sections/ProjectSection';
+import SkillSection from '@/components/sections/SkillSection';
+import CertificationSection from '@/components/sections/CertificationSection';
 
 export default function Home() {
   return (
