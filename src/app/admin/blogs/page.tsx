@@ -1,8 +1,8 @@
 import React from 'react';
-import { columns, Payment } from '@/components/admin/table/blog/column';
+import { columns, Blog } from '@/components/admin/table/blog/column';
 import { DataTable } from '@/components/admin/table/DataTable';
 
-async function getData(): Promise<Payment[]> {
+async function getData(): Promise<Blog[]> {
   // Fetch data from your API here.
   return [
     {

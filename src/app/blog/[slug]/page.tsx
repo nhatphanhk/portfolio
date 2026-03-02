@@ -1,14 +1,10 @@
 import { notFound } from 'next/navigation';
 import MainLayout from '@/components/MainLayout';
-import { getBlogPostBySlug, getAllBlogPosts } from '@/types/BlogData';
+import { getBlogPostBySlug, getAllBlogPosts } from '@/types/Blog';
 import Link from 'next/link';
+import { BlogPostPageProps } from '@/types/Blog';
 
 // Define the params type for TypeScript
-interface BlogPostPageProps {
-  params: Promise<{
-    slug: string;
-  }>;
-}
 
 // Generate static paths for all blog posts
 export async function generateStaticParams() {

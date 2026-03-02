@@ -7,6 +7,11 @@ export interface BlogPost {
   readTime: string;
   tags: string[];
 }
+export interface BlogPostPageProps {
+  params: Promise<{
+    slug: string;
+  }>;
+}
 
 // Sample blog posts data
 const blogPosts: BlogPost[] = [

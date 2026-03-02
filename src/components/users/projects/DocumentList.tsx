@@ -1,23 +1,7 @@
 import { Download, Trash2, FileText, File } from 'lucide-react';
 // import { ProjectDocument, supabase } from '@/lib/supabase';
-
+import { DocumentListProps } from '@/types/Project';
 // Temporary type definition
-interface ProjectDocument {
-  id: string;
-  project_id: string;
-  title: string;
-  description?: string;
-  file_url: string;
-  file_type: string;
-  file_size: number;
-  created_at: string;
-  updated_at: string;
-}
-
-interface DocumentListProps {
-  documents: ProjectDocument[];
-  onDelete: () => void;
-}
 
 export function DocumentList({ documents, onDelete }: DocumentListProps) {
   const formatFileSize = (bytes: number) => {

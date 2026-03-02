@@ -1,13 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Upload, X, FileText } from 'lucide-react';
 // import { supabase } from '@/lib/supabase';
-
-interface DocumentUploadProps {
-  projectId: string;
-  isOpen: boolean;
-  onUploadComplete: () => void;
-  onCancel: () => void;
-}
+import { DocumentUploadProps } from '@/types/Project';
 
 export function DocumentUpload({
   isOpen,
