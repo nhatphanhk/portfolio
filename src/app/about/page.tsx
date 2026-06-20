@@ -1,250 +1,184 @@
-'use client';
+import { MainLayout } from '@/components';
+import { PROFILE, EXPERIENCES, EDUCATION } from '@/data/content';
+import { getSkillsByCategory, SKILL_CATEGORY_LABELS } from '@/data/skills';
+import { Download, MapPin, Mail, Github, Linkedin, Twitter } from 'lucide-react';
+import type { Metadata } from 'next';
 
-import React, { useEffect, useState } from 'react';
-import {
-  Download,
-  Calendar,
-  Briefcase,
-  GraduationCap,
-  Award,
-} from 'lucide-react';
-import MainLayout from '@/components/MainLayout';
+export const metadata: Metadata = {
+  title: 'About',
+  description: `Learn more about ${PROFILE.name} — ${PROFILE.title} based in ${PROFILE.location}.`,
+};
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  Github,
+  Linkedin,
+  Twitter,
+};
+
+const LEVEL_LABEL: Record<number, string> = {
+  1: 'Beginner',
+  2: 'Elementary',
+  3: 'Intermediate',
+  4: 'Advanced',
+  5: 'Expert',
+};
 
 export default function AboutPage() {
-  const [isVisible, setIsVisible] = useState(false);
+  const skillsByCategory = getSkillsByCategory();
 
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
-
-  const experiences = [
-    {
-      title: 'Full Stack Developer',
-      company: 'Fpt Software',
-      period: '2023 - Present',
-      description:
-        'Develop full-stack web applications using modern technologies including React, Next.js, Node.js, and various databases. Focus on creating scalable and user-friendly solutions.',
-      achievements: [
-        'Built multiple responsive web applications',
-        'Implemented secure authentication systems',
-        'Optimized database performance and queries',
-      ],
-    },
-    {
-      title: 'Web Developer',
-      company: 'Fpt Software',
-      period: '2022 - 2023',
-      description:
-        'Worked on diverse web development projects, gaining experience in both frontend and backend technologies.',
-      achievements: [
-        'Developed e-commerce platforms',
-        'Created RESTful APIs',
-        'Implemented responsive designs',
-      ],
-    },
-    {
-      title: 'Web Developer',
-      company: 'Fpt Software',
-      period: '2022 - 2023',
-      description:
-        'Worked on diverse web development projects, gaining experience in both frontend and backend technologies.',
-      achievements: [
-        'Developed e-commerce platforms',
-        'Created RESTful APIs',
-        'Implemented responsive designs',
-      ],
-    },
-  ];
-
-  const education = [
-    {
-      degree: 'Bachelor of Engineering (BEng)',
-      school: 'University of Technology',
-      period: '2020 - 2024',
-      achievements: [
-        'Software Engineering Focus',
-        'Web Development Specialization',
-        'Database Management Systems',
-      ],
-    },
-  ];
   return (
     <MainLayout>
-      <div className="lg:col-span-12 py-8 grid gap-8">
-        {/* Hero Section */}
-        <div className="">
-          <header
-            className={`bg-white shadow-lg rounded-2xl transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}
-          >
-            <div className="px-6 py-8">
-              <div className="flex flex-col md:flex-row items-center gap-8">
-                <div className="w-32 h-32 bg-gradient-to-br from-blue-600 to-blue-800 rounded-full flex items-center justify-center text-white text-4xl font-bold shadow-xl">
-                  PN
-                </div>
-                <div className="text-center md:text-left flex-1">
-                  <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
-                    Phan Hoang Nhat
-                  </h1>
-                  <h2 className="text-xl md:text-2xl text-blue-600 mb-4">
-                    Full Stack Developer
-                  </h2>
-                </div>
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors duration-300 shadow-lg hover:shadow-xl">
-                  <Download size={20} />
-                  Download Resume
-                </button>
-              </div>
+      <div className="max-w-4xl mx-auto px-6 py-24 pt-32">
+        {/* Profile Header */}
+        <div className="mb-16">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">{PROFILE.name}</h1>
+          <p className="text-xl text-muted-foreground mb-6">{PROFILE.title}</p>
+
+          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-6">
+            <div className="flex items-center gap-1.5">
+              <MapPin className="h-4 w-4" />
+              {PROFILE.location}
             </div>
-          </header>
+            <div className="flex items-center gap-1.5">
+              <Mail className="h-4 w-4" />
+              <a href={`mailto:${PROFILE.email}`} className="hover:text-foreground transition-colors">
+                {PROFILE.email}
+              </a>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            {PROFILE.socialLinks.map(social => {
+              const Icon = ICON_MAP[social.iconName];
+              return (
+                <a
+                  key={social.platform}
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                >
+                  {Icon && <Icon className="h-4 w-4" />}
+                  {social.platform}
+                </a>
+              );
+            })}
+            <a
+              href={PROFILE.resumeUrl}
+              download
+              className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/90 transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              Download Resume
+            </a>
+          </div>
         </div>
 
-        {/* Content Grid */}
-        <div className=" space-y-8 bg-white rounded-2xl shadow-lg p-8">
-          {/* About Section */}
-          <section
-            className={`transition-all duration-1000 delay-200 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
-          >
-            <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-              <Award className="text-blue-600" />
-              Summary
-            </h2>
-            <p className="text-gray-700 text-lg leading-relaxed mb-6">
-              Web Developer with more than 1 years of experience building
-              modern, responsive, and user friendly web applications. Skilled in
-              React.js, Vue.js, and Next.js, with expertise in UI/UX
-              implementation, animations (GSAP, Three.js), and component-based
-              design using Tailwind CSS and Shadcn. applications and designing
-              efficient database systems.
-            </p>
-          </section>
+        {/* Bio */}
+        <section aria-labelledby="bio-heading" className="mb-16">
+          <h2 id="bio-heading" className="text-sm font-semibold uppercase tracking-widest text-primary mb-4">
+            About
+          </h2>
+          <div className="space-y-4 text-muted-foreground leading-relaxed">
+            <p>{PROFILE.bio}</p>
+            <p>{PROFILE.bio2}</p>
+          </div>
+        </section>
 
-          {/* Education Section */}
-          <section
-            className={`transition-all duration-1000 delay-500 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
-          >
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-              <GraduationCap className="text-blue-600" />
-              Education
-            </h2>
-            {education.map((edu, index) => (
-              <div key={index} className="bg-gray-50 rounded-lg p-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-3">
-                  <h3 className="text-xl font-bold text-gray-900">
-                    {edu.degree}
-                  </h3>
-                  <div className="flex items-center gap-2 text-blue-600 font-medium">
-                    <Calendar size={16} />
-                    {edu.period}
-                  </div>
-                </div>
-                <h4 className="text-lg font-semibold text-blue-600 mb-4">
-                  {edu.school}
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {edu.achievements.map((achievement, i) => (
-                    <span
-                      key={i}
-                      className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
-                    >
-                      {achievement}
-                    </span>
+        {/* Skills */}
+        <section aria-labelledby="skills-heading" className="mb-16">
+          <h2 id="skills-heading" className="text-sm font-semibold uppercase tracking-widest text-primary mb-8">
+            Skills & Technologies
+          </h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            {(Object.keys(skillsByCategory) as Array<keyof typeof skillsByCategory>).map(cat => (
+              <div key={cat}>
+                <h3 className="text-base font-semibold text-foreground mb-4">
+                  {SKILL_CATEGORY_LABELS[cat]}
+                </h3>
+                <div className="space-y-3">
+                  {skillsByCategory[cat].map(skill => (
+                    <div key={skill.id} className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">{skill.name}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-0.5">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <div
+                              key={i}
+                              className={`w-2 h-2 rounded-full ${
+                                i < (skill.level ?? 0)
+                                  ? 'bg-foreground'
+                                  : 'bg-border'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-muted-foreground w-20 text-right">
+                          {LEVEL_LABEL[skill.level ?? 0]}
+                        </span>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
             ))}
-          </section>
+          </div>
+        </section>
 
-          {/* Experience Section */}
-          <section
-            className={`transition-all duration-1000 delay-400 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
-          >
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-              <Briefcase className="text-blue-600" />
-              Work Experience
-            </h2>
-            <div className="space-y-8">
-              {experiences
-                .reduce((acc: any[], exp) => {
-                  const existingCompanyIndex = acc.findIndex(
-                    item => item.company === exp.company
-                  );
-
-                  if (existingCompanyIndex !== -1) {
-                    acc[existingCompanyIndex].positions.push({
-                      title: exp.title,
-                      period: exp.period,
-                      description: exp.description,
-                      achievements: exp.achievements,
-                    });
-                  } else {
-                    acc.push({
-                      company: exp.company,
-                      positions: [
-                        {
-                          title: exp.title,
-                          period: exp.period,
-                          description: exp.description,
-                          achievements: exp.achievements,
-                        },
-                      ],
-                    });
-                  }
-                  return acc;
-                }, [])
-                .map((companyGroup, index) => (
-                  <div
-                    key={index}
-                    className="bg-gray-50 rounded-lg p-6 hover:bg-gray-100 transition-colors duration-300"
-                  >
-                    <h4 className="text-xl font-bold text-blue-600 mb-6">
-                      {companyGroup.company}
-                    </h4>
-                    <div className="space-y-6">
-                      {companyGroup.positions.map(
-                        (position: any, posIndex: number) => (
-                          <div key={posIndex} className="relative">
-                            {posIndex > 0 && (
-                              <div className="border-t border-gray-300 mb-6"></div>
-                            )}
-                            <div className="flex flex-col md:flex-row md:items-center justify-between mb-3">
-                              <h3 className="text-lg font-bold text-gray-900">
-                                {position.title}
-                              </h3>
-                              <div className="flex items-center gap-2 text-blue-600 font-medium">
-                                <Calendar size={16} />
-                                {position.period}
-                              </div>
-                            </div>
-                            <p className="text-gray-700 mb-4">
-                              {position.description}
-                            </p>
-                            <div className="space-y-1">
-                              <h5 className="font-semibold text-gray-800 mb-2">
-                                Key Achievements:
-                              </h5>
-                              {position.achievements.map(
-                                (achievement: string, i: number) => (
-                                  <div
-                                    key={i}
-                                    className="flex items-start gap-2"
-                                  >
-                                    <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                                    <span className="text-gray-700">
-                                      {achievement}
-                                    </span>
-                                  </div>
-                                )
-                              )}
-                            </div>
-                          </div>
-                        )
-                      )}
-                    </div>
+        {/* Experience */}
+        <section aria-labelledby="experience-heading" className="mb-16">
+          <h2 id="experience-heading" className="text-sm font-semibold uppercase tracking-widest text-primary mb-8">
+            Experience
+          </h2>
+          <div className="space-y-8">
+            {EXPERIENCES.map(exp => (
+              <div key={exp.id} className="relative pl-6 before:absolute before:left-0 before:top-2 before:h-full before:w-px before:bg-border">
+                <div className="absolute left-0 top-2 -translate-x-1/2 w-2 h-2 rounded-full bg-foreground ring-2 ring-background" />
+                <div className="flex items-start justify-between gap-4 mb-2">
+                  <div>
+                    <h3 className="font-semibold text-foreground">{exp.position}</h3>
+                    <p className="text-sm text-muted-foreground">{exp.company}</p>
                   </div>
-                ))}
-            </div>
-          </section>
-        </div>
+                  <div className="text-right text-xs text-muted-foreground shrink-0">
+                    <p>
+                      {new Date(exp.startDate).getFullYear()} —{' '}
+                      {exp.isCurrent ? 'Present' : exp.endDate ? new Date(exp.endDate).getFullYear() : ''}
+                    </p>
+                    {exp.isCurrent && (
+                      <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 text-xs">
+                        Current
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {exp.description && (
+                  <p className="text-sm text-muted-foreground leading-relaxed">{exp.description}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Education */}
+        <section aria-labelledby="education-heading">
+          <h2 id="education-heading" className="text-sm font-semibold uppercase tracking-widest text-primary mb-8">
+            Education
+          </h2>
+          <div className="space-y-6">
+            {EDUCATION.map(edu => (
+              <div key={edu.id} className="p-5 rounded-xl border border-border bg-card">
+                <h3 className="font-semibold text-foreground mb-1">{edu.degree}</h3>
+                <p className="text-sm text-muted-foreground mb-1">{edu.institution}</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(edu.startDate).getFullYear()} — {new Date(edu.endDate).getFullYear()}
+                </p>
+                {edu.description && (
+                  <p className="text-sm text-muted-foreground mt-3">{edu.description}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     </MainLayout>
   );

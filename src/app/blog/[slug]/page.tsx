@@ -1,29 +1,24 @@
 import { notFound } from 'next/navigation';
-import MainLayout from '@/components/MainLayout';
-import { getBlogPostBySlug, getAllBlogPosts } from '@/types/Blog';
+import { MainLayout } from '@/components';
+import { getBlogPostBySlug, getAllBlogPosts } from '@/data/blogs';
 import Link from 'next/link';
-import { BlogPostPageProps } from '@/types/Blog';
+import { ArrowLeft, Clock } from 'lucide-react';
+import type { Metadata } from 'next';
 
-// Define the params type for TypeScript
-
-// Generate static paths for all blog posts
-export async function generateStaticParams() {
-  const posts = getAllBlogPosts();
-  return posts.map(post => ({
-    slug: post.slug,
-  }));
+interface BlogPostPageProps {
+  params: Promise<{ slug: string }>;
 }
 
-// Generate metadata for SEO
-export async function generateMetadata({ params }: BlogPostPageProps) {
-  const resolvedParams = await params;
-  const post = getBlogPostBySlug(resolvedParams.slug);
+export async function generateStaticParams() {
+  const posts = getAllBlogPosts();
+  return posts.map(post => ({ slug: post.slug }));
+}
 
-  if (!post) {
-    return {
-      title: 'Post Not Found',
-    };
-  }
+export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const post = getBlogPostBySlug(slug);
+
+  if (!post) return { title: 'Post Not Found' };
 
   return {
     title: post.title,
@@ -32,98 +27,94 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
       title: post.title,
       description: post.excerpt,
       type: 'article',
-      publishedTime: post.date,
+      publishedTime: post.publishedAt,
     },
   };
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const resolvedParams = await params;
-  const post = getBlogPostBySlug(resolvedParams.slug);
+  const { slug } = await params;
+  const post = getBlogPostBySlug(slug);
 
-  if (!post) {
-    notFound();
-  }
+  if (!post) notFound();
 
   return (
     <MainLayout>
-      {/* Main Content */}
-      <article className=" max-w-7xl flex-1 col-span-9 min-w-0 py-6">
-        <header className="mb-8">
-          <Link
-            href="/blog"
-            className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4 transition-colors"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            Back to Blog
-          </Link>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            {post.title}
-          </h1>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-6">
-            <time dateTime={post.date}>
-              {new Date(post.date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </time>
-            <span>•</span>
-            <span>{post.readTime}</span>
-            <span>•</span>
-            <div className="flex gap-2">
+      <div className="max-w-3xl mx-auto px-6 py-24 pt-32">
+        {/* Back link */}
+        <Link
+          href="/blog"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-10 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Blog
+        </Link>
+
+        {/* Article header */}
+        <article>
+          <header className="mb-10">
+            <div className="flex flex-wrap gap-2 mb-4">
               {post.tags.map(tag => (
                 <span
                   key={tag}
-                  className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-xs"
+                  className="px-2.5 py-0.5 text-xs bg-primary/10 text-primary rounded-full"
                 >
                   {tag}
                 </span>
               ))}
             </div>
-          </div>
-          <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-            {post.excerpt}
-          </p>
-        </header>
 
-        <div
-          className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-code:text-sm prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800"
-          dangerouslySetInnerHTML={{ __html: post.content }}
-        />
-      </article>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 leading-tight">
+              {post.title}
+            </h1>
 
-      {/* Navigation Sidebar - Right Side */}
-      <aside className="hidden col-span-3 lg:block w-64 shrink-0 py-4">
-        <nav className="sticky top-8 space-y-6">
-          <div>
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-              Table of Contents
-            </h2>
-            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-              {/* Add dynamic TOC based on post headings */}
-            </ul>
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-              Related Posts
-            </h2>
-            <ul className="space-y-2 text-sm">{/* Add related posts */}</ul>
-          </div>
-        </nav>
-      </aside>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <time dateTime={post.publishedAt}>
+                {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </time>
+              <span>·</span>
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                {post.readTime}
+              </span>
+            </div>
+
+            <p className="mt-6 text-lg text-muted-foreground leading-relaxed">{post.excerpt}</p>
+          </header>
+
+          {/* Divider */}
+          <hr className="border-border mb-10" />
+
+          {/* Content */}
+          <div
+            className="prose prose-neutral dark:prose-invert max-w-none
+              prose-headings:font-bold prose-headings:tracking-tight
+              prose-h2:text-2xl prose-h3:text-xl
+              prose-p:text-muted-foreground prose-p:leading-relaxed
+              prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+              prose-code:text-sm prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
+              prose-pre:bg-muted prose-pre:border prose-pre:border-border
+              prose-blockquote:border-primary
+              prose-strong:text-foreground"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+        </article>
+
+        {/* Footer nav */}
+        <div className="mt-16 pt-8 border-t border-border">
+          <Link
+            href="/blog"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            All Posts
+          </Link>
+        </div>
+      </div>
     </MainLayout>
   );
 }
