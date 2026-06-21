@@ -158,8 +158,12 @@ Each section should be wrapped in `h-screen flex flex-col` (see [src/app/page.ts
 - ✅ Use `cn()` utility for conditional class merging
 - ✅ Check [docs/development_rules.md](docs/development_rules.md) for detailed standards
 
-## Documentation
+## AI Development Rules
 
-- **Project plan**: [docs/project_proposal.mdx](docs/project_proposal.mdx)
-- **Development rules**: [docs/development_rules.md](docs/development_rules.md)
-- **API docs**: [docs/api-documentation.md](docs/api-documentation.md) (future implementation)
+AI assistants must read:
+
+/docs/AI_CONTEXT.md
+/docs/AI_ARCHITECTURE.md
+/docs/AI_RULES.md
+
+before modifying code.
