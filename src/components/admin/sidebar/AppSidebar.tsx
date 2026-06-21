@@ -24,12 +24,8 @@ import {
 } from '@/components/ui/sidebar';
 
 // This is sample data.
+// Remove static user data, we'll pass it from layout
 const data = {
-  user: {
-    name: 'shadcn',
-    email: 'm@example.com',
-    avatar: '/avatars/shadcn.jpg',
-  },
   navMain: [
     {
       title: 'About',
@@ -102,11 +98,11 @@ const data = {
   ],
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ userEmail, ...props }: React.ComponentProps<typeof Sidebar> & { userEmail: string }) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <NavUser user={data.user} />
+        <NavUser user={{ name: 'Admin', email: userEmail, avatar: '' }} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

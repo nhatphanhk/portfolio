@@ -1,4 +1,6 @@
 import React from 'react';
+import { redirect } from 'next/navigation';
+import { auth } from '@/auth';
 import { AppSidebar } from '@/components/admin/sidebar/AppSidebar';
 import {
   Breadcrumb,
@@ -15,17 +17,23 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
+  // Middleware ensures we only reach here if session exists and is valid
+  // But we still need session for the AppSidebar
+  const userEmail = session?.user?.email ?? 'admin@example.com';
+
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar userEmail={userEmail} />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b">
+          <div className="flex items-center gap-2 px-4 w-full">
             <SidebarTrigger className="-ml-1" />
             <Separator
               orientation="vertical"
@@ -34,13 +42,11 @@ export default function AdminLayout({
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">
-                    Building Your Application
-                  </BreadcrumbLink>
+                  <BreadcrumbLink href="/admin">Dashboard</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
+                  <BreadcrumbPage>Admin</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
