@@ -25,7 +25,10 @@ export async function changePassword(prevState: any, formData: FormData) {
     const currentPassword = formData.get('currentPassword') as string;
     const newPassword = formData.get('newPassword') as string;
 
-    const parsed = changePasswordSchema.safeParse({ currentPassword, newPassword });
+    const parsed = changePasswordSchema.safeParse({
+      currentPassword,
+      newPassword,
+    });
     if (!parsed.success) {
       return { error: parsed.error.issues[0]?.message || 'Validation failed' };
     }

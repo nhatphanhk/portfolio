@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
+import { ensureAdmin } from '@/lib/auth-utils';
 
 const skillSchema = z.object({
   name: z.string().min(1).max(100),
@@ -15,8 +16,10 @@ const skillSchema = z.object({
 export type SkillFormData = z.infer<typeof skillSchema>;
 
 export async function createSkill(formData: SkillFormData) {
+  await ensureAdmin();
   const parsed = skillSchema.safeParse(formData);
-  if (!parsed.success) return { ok: false, error: parsed.error.flatten().fieldErrors };
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.flatten().fieldErrors };
 
   const { iconUrl, ...rest } = parsed.data;
   await prisma.skill.create({
@@ -29,8 +32,10 @@ export async function createSkill(formData: SkillFormData) {
 }
 
 export async function updateSkill(id: string, formData: SkillFormData) {
+  await ensureAdmin();
   const parsed = skillSchema.safeParse(formData);
-  if (!parsed.success) return { ok: false, error: parsed.error.flatten().fieldErrors };
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.flatten().fieldErrors };
 
   const { iconUrl, ...rest } = parsed.data;
   await prisma.skill.update({
@@ -44,6 +49,7 @@ export async function updateSkill(id: string, formData: SkillFormData) {
 }
 
 export async function deleteSkill(id: string) {
+  await ensureAdmin();
   await prisma.skill.delete({ where: { id } });
   revalidatePath('/admin/skills');
   revalidatePath('/skills');
@@ -51,5 +57,7 @@ export async function deleteSkill(id: string) {
 }
 
 export async function getAllSkillsFromDb() {
-  return prisma.skill.findMany({ orderBy: [{ category: 'asc' }, { order: 'asc' }] });
+  return prisma.skill.findMany({
+    orderBy: [{ category: 'asc' }, { order: 'asc' }],
+  });
 }

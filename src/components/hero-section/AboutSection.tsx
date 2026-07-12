@@ -39,7 +39,7 @@ export function AboutSection() {
             </div>
 
             <Link
-              href="/about"
+              href="/resume"
               className="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:gap-3 transition-all duration-200"
             >
               Read full bio

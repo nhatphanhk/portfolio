@@ -167,17 +167,19 @@ model SocialLink {
 }
 
 model Experience {
-  id          String    @id @default(uuid())
-  company     String
-  position    String
-  description String?
-  logoUrl     String?
-  startDate   DateTime
-  endDate     DateTime?
-  isCurrent   Boolean   @default(false)
-  order       Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id           String    @id @default(uuid())
+  company      String
+  position     String
+  description  String?
+  achievements String?   // newline-separated bullet points
+  techStack    String?   // comma-separated
+  logoUrl      String?
+  startDate    DateTime
+  endDate      DateTime?
+  isCurrent    Boolean   @default(false)
+  order        Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@map("experiences")
 }
@@ -216,6 +218,83 @@ model Media {
   @@map("media")
 }
 
+model Profile {
+  id              String   @id @default(uuid())
+  name            String
+  handle          String?
+  title           String
+  tagline         String?
+  bio             String?
+  bio2            String?
+  location        String?
+  email           String?
+  phone           String?
+  resumeUrl       String?
+  avatarUrl       String?
+  careerObjective String?
+  softSkills      String?  // comma-separated
+  interests       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+model Education {
+  id           String    @id @default(uuid())
+  institution  String
+  degree       String
+  fieldOfStudy String?
+  startDate    DateTime
+  endDate      DateTime?
+  isCurrent    Boolean   @default(false)
+  gpa          String?
+  description  String?
+  order        Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("education")
+}
+
+model Achievement {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  date        DateTime?
+  category    String?   // "award", "hackathon", "academic", "work"
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("achievements")
+}
+
+model SpokenLanguage {
+  id        String   @id @default(uuid())
+  language  String
+  level     String   // "Native", "Fluent", "Professional", "Intermediate", "Basic"
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("spoken_languages")
+}
+
+model Activity {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  type        String?   // "club", "volunteer", "mentoring", "opensource"
+  startDate   DateTime?
+  endDate     DateTime?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("activities")
+}
+
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
 enum Role {
@@ -235,6 +314,13 @@ enum SkillCategory {
   DEVOPS
   TOOLS
   OTHER
+  LANGUAGE        // Programming Languages
+  FRAMEWORK       // Frameworks/Libraries
+  DATABASE        // Databases
+  CLOUD           // Cloud Platforms
+  IAC             // Infrastructure as Code
+  MONITORING      // Monitoring & Logging
+  VERSION_CONTROL // Version Control
 }
 
 enum CertStatus {

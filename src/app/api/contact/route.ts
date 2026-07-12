@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const contactSchema = z.object({
   name: z.string().min(2).max(255),
@@ -37,11 +38,25 @@ export async function POST(req: NextRequest) {
 
     const { name, email, subject, message } = parsed.data;
 
-    // Get client IP for logging
+    // Get client IP for logging and rate limiting
     const ip =
       req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
       req.headers.get('x-real-ip') ??
       'unknown';
+
+    // Rate limit: 5 requests per 10 minutes per IP
+    if (!checkRateLimit(ip, 5, 10 * 60 * 1000)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'RATE_LIMIT_EXCEEDED',
+            message: 'Too many requests. Please try again later.',
+          },
+        },
+        { status: 429 }
+      );
+    }
 
     // In MVP: log the message
     // In production: store in DB + send email notification

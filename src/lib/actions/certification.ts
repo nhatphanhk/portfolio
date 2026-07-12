@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
+import { ensureAdmin } from '@/lib/auth-utils';
 
 const certSchema = z.object({
   name: z.string().min(3).max(255),
@@ -18,10 +19,13 @@ const certSchema = z.object({
 export type CertificationFormData = z.infer<typeof certSchema>;
 
 export async function createCertification(formData: CertificationFormData) {
+  await ensureAdmin();
   const parsed = certSchema.safeParse(formData);
-  if (!parsed.success) return { ok: false, error: parsed.error.flatten().fieldErrors };
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.flatten().fieldErrors };
 
-  const { expiryDate, credentialId, credentialUrl, description, ...rest } = parsed.data;
+  const { expiryDate, credentialId, credentialUrl, description, ...rest } =
+    parsed.data;
   await prisma.certification.create({
     data: {
       ...rest,
@@ -38,11 +42,17 @@ export async function createCertification(formData: CertificationFormData) {
   return { ok: true };
 }
 
-export async function updateCertification(id: string, formData: CertificationFormData) {
+export async function updateCertification(
+  id: string,
+  formData: CertificationFormData
+) {
+  await ensureAdmin();
   const parsed = certSchema.safeParse(formData);
-  if (!parsed.success) return { ok: false, error: parsed.error.flatten().fieldErrors };
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.flatten().fieldErrors };
 
-  const { expiryDate, credentialId, credentialUrl, description, ...rest } = parsed.data;
+  const { expiryDate, credentialId, credentialUrl, description, ...rest } =
+    parsed.data;
   await prisma.certification.update({
     where: { id },
     data: {
@@ -61,6 +71,7 @@ export async function updateCertification(id: string, formData: CertificationFor
 }
 
 export async function deleteCertification(id: string) {
+  await ensureAdmin();
   await prisma.certification.delete({ where: { id } });
   revalidatePath('/admin/certifications');
   revalidatePath('/certifications');
@@ -68,5 +79,7 @@ export async function deleteCertification(id: string) {
 }
 
 export async function getAllCertificationsFromDb() {
-  return prisma.certification.findMany({ orderBy: [{ status: 'asc' }, { issueDate: 'desc' }] });
+  return prisma.certification.findMany({
+    orderBy: [{ status: 'asc' }, { issueDate: 'desc' }],
+  });
 }

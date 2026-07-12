@@ -5,13 +5,12 @@ import {
   Award,
   BookOpen,
   Code,
-  Frame,
   UserRound,
   Layers,
   Map,
-  PieChart,
   Users,
 } from 'lucide-react';
+
 
 import { NavMain } from './NavMain';
 import { NavUser } from './NavUser';
@@ -28,8 +27,8 @@ import {
 const data = {
   navMain: [
     {
-      title: 'About',
-      url: '/admin/about',
+      title: 'Resume',
+      url: '/admin/resume',
       icon: UserRound,
     },
     {
@@ -40,10 +39,10 @@ const data = {
       items: [
         {
           title: 'Dashboard',
-          url: '#',
+          url: '/admin/blogs/dashboard',
         },
         {
-          title: 'Lists',
+          title: 'All Posts',
           url: '/admin/blogs',
         },
       ],
@@ -55,10 +54,10 @@ const data = {
       items: [
         {
           title: 'Dashboard',
-          url: '#',
+          url: '/admin/projects/dashboard',
         },
         {
-          title: 'Lists',
+          title: 'All Projects',
           url: '/admin/projects',
         },
       ],
@@ -78,25 +77,14 @@ const data = {
       url: '/admin/contacts',
       icon: Users,
     },
-  ],
-  projects: [
     {
-      name: 'Design Engineering',
-      url: '#',
-      icon: Frame,
-    },
-    {
-      name: 'Sales & Marketing',
-      url: '#',
-      icon: PieChart,
-    },
-    {
-      name: 'Travel',
-      url: '#',
+      title: 'Visitor Logs',
+      url: '/admin/visitors',
       icon: Map,
     },
   ],
 };
+
 
 export function AppSidebar({ userEmail, ...props }: React.ComponentProps<typeof Sidebar> & { userEmail: string }) {
   return (

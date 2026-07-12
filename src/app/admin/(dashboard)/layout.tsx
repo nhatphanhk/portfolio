@@ -24,9 +24,11 @@ export default async function AdminLayout({
 }>) {
   const session = await auth();
 
-  // Middleware ensures we only reach here if session exists and is valid
-  // But we still need session for the AppSidebar
-  const userEmail = session?.user?.email ?? 'admin@example.com';
+  if (!session?.user?.email) {
+    redirect('/admin/login');
+  }
+
+  const userEmail = session.user.email;
 
   return (
     <SidebarProvider>

@@ -3,10 +3,18 @@
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
+import { ensureAdmin } from '@/lib/auth-utils';
 
 const blogSchema = z.object({
   title: z.string().min(3).max(255),
-  slug: z.string().min(3).max(255).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase letters, numbers, and hyphens only'),
+  slug: z
+    .string()
+    .min(3)
+    .max(255)
+    .regex(
+      /^[a-z0-9-]+$/,
+      'Slug must be lowercase letters, numbers, and hyphens only'
+    ),
   excerpt: z.string().max(500).optional(),
   content: z.string().min(1),
   thumbnailUrl: z.string().url().optional().or(z.literal('')),
@@ -57,6 +65,7 @@ async function syncTags(tagNames: string[]): Promise<string[]> {
 }
 
 export async function createBlog(formData: BlogFormData) {
+  await ensureAdmin();
   const parsed = blogSchema.safeParse(formData);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.flatten().fieldErrors };
@@ -64,7 +73,12 @@ export async function createBlog(formData: BlogFormData) {
 
   const { tags, thumbnailUrl, ...rest } = parsed.data;
   const authorId = await ensureAdminUser();
-  const tagNames = tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const tagNames = tags
+    ? tags
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean)
+    : [];
   const tagIds = await syncTags(tagNames);
 
   await prisma.blog.create({
@@ -85,13 +99,19 @@ export async function createBlog(formData: BlogFormData) {
 }
 
 export async function updateBlog(id: string, formData: BlogFormData) {
+  await ensureAdmin();
   const parsed = blogSchema.safeParse(formData);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.flatten().fieldErrors };
   }
 
   const { tags, thumbnailUrl, ...rest } = parsed.data;
-  const tagNames = tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const tagNames = tags
+    ? tags
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean)
+    : [];
   const tagIds = await syncTags(tagNames);
 
   await prisma.blog.update({
@@ -101,7 +121,12 @@ export async function updateBlog(id: string, formData: BlogFormData) {
       thumbnailUrl: thumbnailUrl || undefined,
       publishedAt:
         rest.status === 'PUBLISHED'
-          ? (await prisma.blog.findUnique({ where: { id }, select: { publishedAt: true } }))?.publishedAt ?? new Date()
+          ? ((
+              await prisma.blog.findUnique({
+                where: { id },
+                select: { publishedAt: true },
+              })
+            )?.publishedAt ?? new Date())
           : undefined,
       tags: {
         deleteMany: {},
@@ -117,6 +142,7 @@ export async function updateBlog(id: string, formData: BlogFormData) {
 }
 
 export async function deleteBlog(id: string) {
+  await ensureAdmin();
   const blog = await prisma.blog.delete({ where: { id } });
   revalidatePath('/admin/blogs');
   revalidatePath('/blog');

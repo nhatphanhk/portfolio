@@ -6,7 +6,7 @@ export const SITE_DESCRIPTION =
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
 export const NAV_LINKS = [
-  { name: 'About', href: '/about' },
+  { name: 'Resume', href: '/resume' },
   { name: 'Blog', href: '/blog' },
   { name: 'Projects', href: '/project' },
   { name: 'Skills', href: '/skills' },

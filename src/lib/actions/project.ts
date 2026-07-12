@@ -3,10 +3,18 @@
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
+import { ensureAdmin } from '@/lib/auth-utils';
 
 const projectSchema = z.object({
   title: z.string().min(3).max(255),
-  slug: z.string().min(3).max(255).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase letters, numbers, and hyphens only'),
+  slug: z
+    .string()
+    .min(3)
+    .max(255)
+    .regex(
+      /^[a-z0-9-]+$/,
+      'Slug must be lowercase letters, numbers, and hyphens only'
+    ),
   description: z.string().max(1000).optional(),
   content: z.string().optional(),
   thumbnailUrl: z.string().url().optional().or(z.literal('')),
@@ -55,8 +63,10 @@ async function syncTags(tagNames: string[]): Promise<string[]> {
 }
 
 export async function createProject(formData: ProjectFormData) {
+  await ensureAdmin();
   const parsed = projectSchema.safeParse(formData);
-  if (!parsed.success) return { ok: false, error: parsed.error.flatten().fieldErrors };
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.flatten().fieldErrors };
 
   const { tags, thumbnailUrl, demoUrl, repoUrl, ...rest } = parsed.data;
   const authorId = await ensureAdminUser();
@@ -80,8 +90,10 @@ export async function createProject(formData: ProjectFormData) {
 }
 
 export async function updateProject(id: string, formData: ProjectFormData) {
+  await ensureAdmin();
   const parsed = projectSchema.safeParse(formData);
-  if (!parsed.success) return { ok: false, error: parsed.error.flatten().fieldErrors };
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.flatten().fieldErrors };
 
   const { tags, thumbnailUrl, demoUrl, repoUrl, ...rest } = parsed.data;
   const tagIds = await syncTags(tags ? tags.split(',') : []);
@@ -104,6 +116,7 @@ export async function updateProject(id: string, formData: ProjectFormData) {
 }
 
 export async function deleteProject(id: string) {
+  await ensureAdmin();
   const project = await prisma.project.delete({ where: { id } });
   revalidatePath('/admin/projects');
   revalidatePath('/project');
