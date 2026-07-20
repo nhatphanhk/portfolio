@@ -10,7 +10,11 @@ import { createSkill, updateSkill, type SkillFormData } from '@/lib/actions/skil
 
 const schema = z.object({
   name: z.string().min(1).max(100),
-  category: z.enum(['FRONTEND', 'BACKEND', 'DEVOPS', 'TOOLS', 'OTHER']),
+  category: z.enum([
+    'FRONTEND', 'BACKEND', 'DEVOPS', 'TOOLS', 'OTHER', 
+    'LANGUAGE', 'FRAMEWORK', 'DATABASE', 'CLOUD', 'IAC', 
+    'MONITORING', 'VERSION_CONTROL'
+  ]),
   level: z.number().int().min(1).max(5),
   iconUrl: z.string().url().optional().or(z.literal('')),
   order: z.number().int().min(0),
@@ -19,9 +23,16 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 const CATEGORY_LABELS: Record<string, string> = {
+  LANGUAGE: 'Language',
+  FRAMEWORK: 'Framework',
   FRONTEND: 'Frontend',
   BACKEND: 'Backend',
+  DATABASE: 'Database',
+  CLOUD: 'Cloud',
   DEVOPS: 'DevOps',
+  IAC: 'IaC',
+  MONITORING: 'Monitoring',
+  VERSION_CONTROL: 'Version Control',
   TOOLS: 'Tools',
   OTHER: 'Other',
 };
