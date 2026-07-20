@@ -61,6 +61,7 @@ export function AdminSkillsClient({ skills }: { skills: Skill[] }) {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       {skill.iconUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img src={skill.iconUrl} alt={skill.name} className="h-5 w-5 object-contain" />
                       ) : (
                         <div className="h-5 w-5 rounded bg-muted flex items-center justify-center">

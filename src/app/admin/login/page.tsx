@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -146,9 +147,9 @@ export default function AdminLoginPage() {
 
         {/* Back to site */}
         <div className="text-center mt-4">
-          <a href="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
             ← Back to site
-          </a>
+          </Link>
         </div>
       </div>
     </div>

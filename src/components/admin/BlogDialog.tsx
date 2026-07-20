@@ -7,7 +7,7 @@ import { z } from 'zod';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
-import { X, Eye, EyeOff, Bold, Italic, Hash, List } from 'lucide-react';
+import { Eye, EyeOff, Bold, Italic, Hash, List } from 'lucide-react';
 import { toast } from 'sonner';
 import { createBlog, updateBlog, type BlogFormData } from '@/lib/actions/blog';
 

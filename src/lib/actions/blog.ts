@@ -127,7 +127,7 @@ export async function updateBlog(id: string, formData: BlogFormData) {
                 select: { publishedAt: true },
               })
             )?.publishedAt ?? new Date())
-          : undefined,
+          : null,
       tags: {
         deleteMany: {},
         create: tagIds.map(tagId => ({ tagId })),

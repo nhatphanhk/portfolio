@@ -52,7 +52,7 @@ export function VisitorModal() {
       } else {
         toast.error("Something went wrong. You can skip for now.");
       }
-    } catch (e) {
+    } catch (_e) {
       toast.error("Network error. You can skip for now.");
     }
   };

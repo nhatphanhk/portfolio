@@ -34,8 +34,8 @@ export async function changePassword(prevState: any, formData: FormData) {
     }
 
     // Determine current valid hash
-    let dbUser = await prisma.user.findUnique({ where: { email: adminEmail } });
-    let currentHash = dbUser?.password || process.env.ADMIN_PASSWORD_HASH;
+    const dbUser = await prisma.user.findUnique({ where: { email: adminEmail } });
+    const currentHash = dbUser?.password || process.env.ADMIN_PASSWORD_HASH;
 
     if (!currentHash) {
       return { error: 'Server configuration error: No password hash found' };

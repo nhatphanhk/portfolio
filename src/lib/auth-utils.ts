@@ -8,7 +8,6 @@ export async function ensureAdmin() {
   }
 
   const user = session.user as { email: string; role?: string };
-  console.log('ensureAdmin check - user object:', user);
 
   // Accept if:
   // 1. Session role is 'admin' or 'ADMIN' (set by jwt callback for DB users with role=admin)

@@ -7,7 +7,20 @@ import { ensureAdmin } from '@/lib/auth-utils';
 
 const skillSchema = z.object({
   name: z.string().min(1).max(100),
-  category: z.enum(['FRONTEND', 'BACKEND', 'DEVOPS', 'TOOLS', 'OTHER']),
+  category: z.enum([
+    'FRONTEND',
+    'BACKEND',
+    'DEVOPS',
+    'TOOLS',
+    'OTHER',
+    'LANGUAGE',
+    'FRAMEWORK',
+    'DATABASE',
+    'CLOUD',
+    'IAC',
+    'MONITORING',
+    'VERSION_CONTROL',
+  ]),
   level: z.number().int().min(1).max(5),
   iconUrl: z.string().url().optional().or(z.literal('')),
   order: z.number().int().min(0).default(0),

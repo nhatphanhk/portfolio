@@ -19,6 +19,7 @@ export async function updateContactStatus(
   id: string,
   status: 'UNREAD' | 'READ' | 'REPLIED'
 ) {
+  await ensureAdmin();
   const parsed = contactStatusSchema.safeParse(status);
   if (!parsed.success) return { ok: false };
 
@@ -32,6 +33,7 @@ export async function updateContactStatus(
 }
 
 export async function deleteContact(id: string) {
+  await ensureAdmin();
   await prisma.contact.delete({ where: { id } });
   revalidatePath('/admin/contacts');
   return { ok: true };

@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import {
   UserRound, Briefcase, GraduationCap, Trophy, Globe2,
   Activity, Info, Cpu, FileText, Plus, Pencil, Trash2,
-  Save, X, Loader2, CheckCircle2, ChevronDown, ChevronUp,
+  Save, X, Loader2, CheckCircle2,
   MapPin, Mail, Phone, Link as LinkIcon, Github, Linkedin, Eye,
   GripVertical, LayoutGrid, ArrowUp, ArrowDown,
 } from 'lucide-react';
@@ -895,6 +895,7 @@ export function AdminResumeClient({ profile, experiences: initialExp, socialLink
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for future "preview" tab
   function TabPreview() {
     const skillCats = Object.keys(skillsByCategory);
     return (
