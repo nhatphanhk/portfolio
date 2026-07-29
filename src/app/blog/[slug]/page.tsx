@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { MainLayout } from '@/components';
-import { getBlogPostBySlug, getAllBlogPosts } from '@/data/blogs';
+import { getPublicBlogBySlug, getPublicBlogs } from '@/lib/actions/blog';
 import Link from 'next/link';
 import { ArrowLeft, Clock } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -9,14 +9,18 @@ interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
 }
 
+// Force per-request rendering: with static params, Next.js caches unmatched
+// slugs from notFound() with a 200 status instead of 404.
+export const dynamic = 'force-dynamic';
+
 export async function generateStaticParams() {
-  const posts = getAllBlogPosts();
+  const posts = await getPublicBlogs();
   return posts.map(post => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = getBlogPostBySlug(slug);
+  const post = await getPublicBlogBySlug(slug);
 
   if (!post) return { title: 'Post Not Found' };
 
@@ -34,7 +38,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
-  const post = getBlogPostBySlug(slug);
+  const post = await getPublicBlogBySlug(slug);
 
   if (!post) notFound();
 

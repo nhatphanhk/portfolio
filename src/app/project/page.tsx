@@ -1,6 +1,6 @@
 import { MainLayout } from '@/components';
 import Link from 'next/link';
-import { getAllProjects } from '@/data/projects';
+import { getPublicProjects } from '@/lib/actions/project';
 import { ArrowRight, ExternalLink, Github } from 'lucide-react';
 import type { Metadata } from 'next';
 
@@ -10,8 +10,8 @@ export const metadata: Metadata = {
     'A showcase of my full-stack projects — from web applications to developer tools, built with modern technologies.',
 };
 
-export default function ProjectPage() {
-  const projects = getAllProjects();
+export default async function ProjectPage() {
+  const projects = await getPublicProjects();
   const featured = projects.filter(p => p.featured);
   const others = projects.filter(p => !p.featured);
 

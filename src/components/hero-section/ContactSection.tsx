@@ -5,8 +5,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Send, Mail, MapPin, Github, Linkedin, Twitter } from 'lucide-react';
-import { PROFILE } from '@/data/content';
+import { Send, Mail, MapPin } from 'lucide-react';
+import * as Icons from 'lucide-react';
+import type { getProfile } from '@/lib/actions/about';
 
 const contactSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -17,17 +18,18 @@ const contactSchema = z.object({
 
 type ContactFormData = z.infer<typeof contactSchema>;
 
-const SOCIAL_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  Github,
-  Linkedin,
-  Twitter,
-};
+const SOCIAL_ICON_MAP = Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
+
+interface ContactSectionProps {
+  profile: Awaited<ReturnType<typeof getProfile>>;
+  socialLinks: Array<{ platform: string; url: string; iconName?: string | null }>;
+}
 
 /**
  * ContactSection with validated form that submits to the /api/contact endpoint.
  * Uses react-hook-form + zod for validation, sonner for toast notifications.
  */
-export default function ContactSection() {
+export default function ContactSection({ profile, socialLinks }: ContactSectionProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -186,24 +188,28 @@ export default function ContactSection() {
             <div>
               <h3 className="font-semibold text-foreground mb-4">Contact Info</h3>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <Mail className="h-4 w-4 shrink-0" />
-                  <a href={`mailto:${PROFILE.email}`} className="hover:text-foreground transition-colors">
-                    {PROFILE.email}
-                  </a>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4 shrink-0" />
-                  {PROFILE.location}
-                </div>
+                {profile.email && (
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <Mail className="h-4 w-4 shrink-0" />
+                    <a href={`mailto:${profile.email}`} className="hover:text-foreground transition-colors">
+                      {profile.email}
+                    </a>
+                  </div>
+                )}
+                {profile.location && (
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4 shrink-0" />
+                    {profile.location}
+                  </div>
+                )}
               </div>
             </div>
 
             <div>
               <h3 className="font-semibold text-foreground mb-4">Follow Me</h3>
               <div className="flex flex-wrap gap-3">
-                {PROFILE.socialLinks.map(social => {
-                  const Icon = SOCIAL_ICON_MAP[social.iconName];
+                {socialLinks.map(social => {
+                  const Icon = social.iconName ? SOCIAL_ICON_MAP[social.iconName] || Icons.Link : Icons.Link;
                   return (
                     <a
                       key={social.platform}
@@ -213,7 +219,7 @@ export default function ContactSection() {
                       aria-label={social.platform}
                       className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
                     >
-                      {Icon && <Icon className="h-4 w-4" />}
+                      <Icon className="h-4 w-4" />
                       {social.platform}
                     </a>
                   );

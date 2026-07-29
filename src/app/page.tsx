@@ -5,19 +5,31 @@ import { BPSCSection } from '@/components/hero-section/BPSCSection';
 import ContactSection from '@/components/hero-section/ContactSection';
 import type { Metadata } from 'next';
 import { SITE_DESCRIPTION } from '@/lib/constants';
+import { getProfile, getSocialLinks } from '@/lib/actions/about';
+import { getPublicProjects } from '@/lib/actions/project';
+import { getPublicBlogs } from '@/lib/actions/blog';
+import { getPublicCertifications } from '@/lib/actions/certification';
+import { getPublicSkillsByCategory } from '@/lib/actions/skill';
 
 export const metadata: Metadata = {
   title: 'Nhat Phan — Full-Stack Developer',
   description: SITE_DESCRIPTION,
 };
 
-export default function Home() {
+export default async function Home() {
+  const profile = await getProfile();
+  const socialLinks = await getSocialLinks();
+  const projects = await getPublicProjects();
+  const blogs = await getPublicBlogs();
+  const certs = await getPublicCertifications();
+  const skillsByCategory = await getPublicSkillsByCategory();
+
   return (
     <MainLayout>
-      <HeroSection />
-      <AboutSection />
-      <BPSCSection />
-      <ContactSection />
+      <HeroSection profile={profile} socialLinks={socialLinks} />
+      <AboutSection profile={profile} skillsByCategory={skillsByCategory} />
+      <BPSCSection projects={projects} blogs={blogs} certs={certs} />
+      <ContactSection profile={profile} socialLinks={socialLinks} />
     </MainLayout>
   );
 }

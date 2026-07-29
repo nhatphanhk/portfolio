@@ -1,6 +1,6 @@
 import { MainLayout } from '@/components';
 import Link from 'next/link';
-import { getAllBlogPosts, getAllTags } from '@/data/blogs';
+import { getPublicBlogs } from '@/lib/actions/blog';
 import type { Metadata } from 'next';
 import { ArrowRight, Clock } from 'lucide-react';
 
@@ -10,9 +10,9 @@ export const metadata: Metadata = {
     'Articles on web development, TypeScript, React, Next.js, system design, and engineering best practices.',
 };
 
-export default function BlogPage() {
-  const posts = getAllBlogPosts();
-  const tags = getAllTags();
+export default async function BlogPage() {
+  const posts = await getPublicBlogs();
+  const tags = Array.from(new Set(posts.flatMap(p => p.tags)));
   const featured = posts[0];
   const rest = posts.slice(1);
 

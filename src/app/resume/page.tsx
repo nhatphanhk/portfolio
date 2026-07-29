@@ -7,7 +7,8 @@ import {
   getEducation,
   getSkillsByCategory,
 } from '@/lib/actions/about';
-import { Github, Linkedin, Twitter, MapPin, Mail, Download } from 'lucide-react';
+import { MapPin, Mail, Download } from 'lucide-react';
+import * as Icons from 'lucide-react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -15,11 +16,7 @@ export const metadata: Metadata = {
   description: 'Interactive 3D Resume',
 };
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  Github,
-  Linkedin,
-  Twitter,
-};
+const ICON_MAP = Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
 
 const LEVEL_LABELS = ['', 'Beginner', 'Elementary', 'Intermediate', 'Advanced', 'Expert'];
 const CATEGORY_LABELS: Record<string, string> = {
@@ -63,14 +60,16 @@ export default async function ResumePage() {
             <h1 className="text-3xl font-bold text-foreground mb-1">Resume</h1>
             <p className="text-muted-foreground text-sm">Hover the card for an interactive 3D preview</p>
           </div>
-          <a
-            href={profile.resumeUrl}
-            download
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
-          >
-            <Download className="w-4 h-4" />
-            Download PDF
-          </a>
+          {profile.resumeUrl && (
+            <a
+              href={profile.resumeUrl}
+              download
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
+            >
+              <Download className="w-4 h-4" />
+              Download PDF
+            </a>
+          )}
         </div>
 
         {/* 3D Resume Card */}
@@ -98,10 +97,10 @@ export default async function ResumePage() {
                     </a>
                   </div>
                   {socialLinks.map(social => {
-                    const Icon = ICON_MAP[social.iconName ?? ''];
+                    const Icon = social.iconName ? ICON_MAP[social.iconName] || Icons.Link : Icons.Link;
                     return (
                       <div key={social.platform} className="flex sm:justify-end items-center gap-1.5">
-                        {Icon && <Icon className="w-3.5 h-3.5 shrink-0" />}
+                        <Icon className="w-3.5 h-3.5 shrink-0" />
                         <a href={social.url} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">
                           {social.platform}
                         </a>

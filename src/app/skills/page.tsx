@@ -1,5 +1,6 @@
 import { MainLayout } from '@/components';
-import { getSkillsByCategory, SKILL_CATEGORY_LABELS } from '@/data/skills';
+import { SKILL_CATEGORY_LABELS } from '@/data/skills';
+import { getPublicSkillsByCategory } from '@/lib/actions/skill';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -16,8 +17,8 @@ const LEVEL_LABEL: Record<number, string> = {
   5: 'Expert',
 };
 
-export default function SkillsPage() {
-  const skillsByCategory = getSkillsByCategory();
+export default async function SkillsPage() {
+  const skillsByCategory = await getPublicSkillsByCategory();
 
   return (
     <MainLayout>
@@ -39,7 +40,7 @@ export default function SkillsPage() {
                 id={`${cat}-heading`}
                 className="text-sm font-semibold uppercase tracking-widest text-primary mb-6"
               >
-                {SKILL_CATEGORY_LABELS[cat]}
+                {SKILL_CATEGORY_LABELS[cat as keyof typeof SKILL_CATEGORY_LABELS] ?? cat}
               </h2>
 
               <div className="space-y-4">

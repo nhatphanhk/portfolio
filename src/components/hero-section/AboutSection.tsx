@@ -1,14 +1,19 @@
 import Link from 'next/link';
 import { ArrowRight, MapPin, Mail } from 'lucide-react';
-import { PROFILE } from '@/data/content';
-import { SKILLS } from '@/data/skills';
+import type { getProfile } from '@/lib/actions/about';
+import type { getPublicSkillsByCategory } from '@/lib/actions/skill';
 
 /**
- * About snapshot section on the homepage — a teaser that drives visitors
- * to the full /about page.
+ * About snapshot section on the homepage — a teaser to the full resume page.
  */
-export function AboutSection() {
-  const topSkills = SKILLS.filter(s => s.level >= 4).slice(0, 8);
+interface AboutSectionProps {
+  profile: Awaited<ReturnType<typeof getProfile>>;
+  skillsByCategory: Awaited<ReturnType<typeof getPublicSkillsByCategory>>;
+}
+
+export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
+  const allSkills = Object.values(skillsByCategory).flat();
+  const topSkills = allSkills.filter(s => s.level >= 4).slice(0, 8);
 
   return (
     <section id="about" className="py-24 bg-muted/30">
@@ -23,19 +28,23 @@ export function AboutSection() {
               Building the web,{' '}
               <span className="text-muted-foreground font-light">one project at a time.</span>
             </h2>
-            <p className="text-muted-foreground leading-relaxed mb-6">{PROFILE.bio}</p>
+            <p className="text-muted-foreground leading-relaxed mb-6">{profile.bio}</p>
 
             <div className="flex flex-col gap-2 text-sm text-muted-foreground mb-8">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                {PROFILE.location}
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                <a href={`mailto:${PROFILE.email}`} className="hover:text-foreground transition-colors">
-                  {PROFILE.email}
-                </a>
-              </div>
+              {profile.location && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  {profile.location}
+                </div>
+              )}
+              {profile.email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  <a href={`mailto:${profile.email}`} className="hover:text-foreground transition-colors">
+                    {profile.email}
+                  </a>
+                </div>
+              )}
             </div>
 
             <Link

@@ -1,5 +1,5 @@
 import { MainLayout } from '@/components';
-import { getAllCertifications } from '@/data/certifications';
+import { getPublicCertifications } from '@/lib/actions/certification';
 import { ExternalLink, Calendar, CheckCircle, XCircle } from 'lucide-react';
 import type { Metadata } from 'next';
 
@@ -9,8 +9,8 @@ export const metadata: Metadata = {
     'Professional certifications and credentials from AWS, Google Cloud, Meta, and other platforms.',
 };
 
-export default function CertificationsPage() {
-  const certifications = getAllCertifications();
+export default async function CertificationsPage() {
+  const certifications = await getPublicCertifications();
   const active = certifications.filter(c => c.status === 'ACTIVE');
   const expired = certifications.filter(c => c.status === 'EXPIRED');
 

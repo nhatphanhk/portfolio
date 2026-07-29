@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { prisma } from '@/lib/db';
 
 const contactSchema = z.object({
   name: z.string().min(2).max(255),
@@ -69,8 +70,18 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     });
 
+    await prisma.contact.create({
+      data: {
+        name,
+        email,
+        subject,
+        message,
+        ipAddress: ip !== 'unknown' ? ip : null,
+        userAgent: req.headers.get('user-agent') || null,
+      },
+    });
+
     // TODO (Phase 2): Send email via Nodemailer/Resend
-    // TODO (Phase 2): Save to database via Prisma
 
     return NextResponse.json(
       {

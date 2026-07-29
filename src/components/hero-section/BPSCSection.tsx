@@ -1,17 +1,23 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { getFeaturedProjects } from '@/data/projects';
-import { getFeaturedBlogPosts } from '@/data/blogs';
-import { getActiveCertifications } from '@/data/certifications';
+import type { getPublicProjects } from '@/lib/actions/project';
+import type { getPublicBlogs } from '@/lib/actions/blog';
+import type { getPublicCertifications } from '@/lib/actions/certification';
 
 /**
  * Blog / Projects / Skills / Certifications preview section on the homepage.
  * Displays recent work with links to full list pages.
  */
-export function BPSCSection() {
-  const featuredProjects = getFeaturedProjects();
-  const recentPosts = getFeaturedBlogPosts();
-  const certifications = getActiveCertifications().slice(0, 3);
+interface BPSCSectionProps {
+  projects: Awaited<ReturnType<typeof getPublicProjects>>;
+  blogs: Awaited<ReturnType<typeof getPublicBlogs>>;
+  certs: Awaited<ReturnType<typeof getPublicCertifications>>;
+}
+
+export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
+  const featuredProjects = projects.filter(p => p.featured);
+  const recentPosts = blogs.slice(0, 3);
+  const certifications = certs.filter(c => c.status === 'ACTIVE').slice(0, 3);
 
   return (
     <section id="highlights" className="py-24">
@@ -50,7 +56,7 @@ export function BPSCSection() {
                   {project.description}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {project.technologies.slice(0, 4).map(tech => (
+                  {project.technologies?.slice(0, 4).map((tech: string) => (
                     <span
                       key={tech}
                       className="px-2 py-0.5 text-xs bg-muted rounded text-muted-foreground"

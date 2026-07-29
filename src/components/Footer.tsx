@@ -1,16 +1,14 @@
 import Link from 'next/link';
-import { Github, Linkedin, Twitter } from 'lucide-react';
 import { NAV_LINKS } from '@/lib/constants';
-import { PROFILE } from '@/data/content';
+import { getProfile, getSocialLinks } from '@/lib/actions/about';
+import * as Icons from 'lucide-react';
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  Github,
-  Linkedin,
-  Twitter,
-};
+const ICON_MAP = Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
 
-const Footer = () => {
+const Footer = async () => {
   const year = new Date().getFullYear();
+  const profile = await getProfile();
+  const socialLinks = await getSocialLinks();
 
   return (
     <footer className="border-t border-border bg-background">
@@ -19,10 +17,10 @@ const Footer = () => {
           {/* Brand */}
           <div>
             <Link href="/" className="text-lg font-bold text-foreground hover:text-primary transition-colors">
-              {PROFILE.name}
+              {profile.name}
             </Link>
             <p className="text-sm text-muted-foreground mt-2 leading-relaxed max-w-xs">
-              {PROFILE.tagline}
+              {profile.tagline}
             </p>
           </div>
 
@@ -47,8 +45,8 @@ const Footer = () => {
           <div>
             <h4 className="text-sm font-semibold text-foreground mb-4">Connect</h4>
             <div className="flex flex-col gap-2">
-              {PROFILE.socialLinks.map(social => {
-                const Icon = ICON_MAP[social.iconName];
+              {socialLinks.map(social => {
+                const Icon = social.iconName ? ICON_MAP[social.iconName] || Icons.Link : Icons.Link;
                 return (
                   <a
                     key={social.platform}
@@ -57,7 +55,7 @@ const Footer = () => {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    {Icon && <Icon className="h-4 w-4" />}
+                    <Icon className="h-4 w-4" />
                     {social.platform}
                   </a>
                 );
@@ -67,7 +65,7 @@ const Footer = () => {
         </div>
 
         <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-muted-foreground">
-          <p>© {year} {PROFILE.name}. All rights reserved.</p>
+          <p>© {year} {profile.name}. All rights reserved.</p>
           <p>Built with Next.js & Tailwind CSS</p>
         </div>
       </div>

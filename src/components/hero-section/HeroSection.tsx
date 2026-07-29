@@ -1,20 +1,27 @@
 'use client';
 
 import Link from 'next/link';
-import { Github, Linkedin, Twitter, ArrowRight, Download } from 'lucide-react';
-import { PROFILE } from '@/data/content';
+import { Download, ArrowRight } from 'lucide-react';
+import * as Icons from 'lucide-react';
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  Github,
-  Linkedin,
-  Twitter,
-};
+const ICON_MAP = Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
+
+interface HeroSectionProps {
+  profile: {
+    name: string;
+    title: string;
+    tagline?: string;
+    resumeUrl?: string;
+    avatarUrl?: string;
+  };
+  socialLinks: Array<{ platform: string; url: string; iconName?: string | null }>;
+}
 
 /**
  * Hero section — the first thing visitors see on the homepage.
  * Introduces the portfolio owner with CTA buttons and social links.
  */
-export function HeroSection() {
+export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Gradient background */}
@@ -33,20 +40,14 @@ export function HeroSection() {
 
         {/* Name */}
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-foreground mb-6">
-          Hi, I&apos;m{' '}
-          <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            {PROFILE.name}
+          Hi, I&apos;m <span className="text-primary">{profile.name.split(' ')[0]}</span>
+          <br />
+          <span className="text-4xl md:text-5xl text-muted-foreground mt-2 inline-block">
+            {profile.title}
           </span>
         </h1>
-
-        {/* Title */}
-        <p className="text-2xl md:text-3xl text-muted-foreground font-light mb-6">
-          {PROFILE.title}
-        </p>
-
-        {/* Tagline */}
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed">
-          {PROFILE.tagline}
+        <p className="text-lg md:text-xl text-muted-foreground max-w-lg mx-auto mb-10 leading-relaxed">
+          {profile.tagline}
         </p>
 
         {/* CTA Buttons */}
@@ -59,31 +60,33 @@ export function HeroSection() {
             View Projects
             <ArrowRight className="h-4 w-4" />
           </Link>
-          <a
-            id="hero-download-resume"
-            href={PROFILE.resumeUrl}
-            download
-            className="inline-flex items-center gap-2 px-6 py-3 border border-border rounded-lg font-medium text-foreground hover:bg-accent transition-all duration-200"
-          >
-            <Download className="h-4 w-4" />
-            Download Resume
-          </a>
+          {profile.resumeUrl && (
+            <a
+              href={profile.resumeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 border-2 border-border text-foreground font-medium rounded-full hover:bg-muted transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              Resume
+            </a>
+          )}
         </div>
 
-        {/* Social Links */}
-        <div className="flex items-center justify-center gap-4">
-          {PROFILE.socialLinks.map(social => {
-            const Icon = ICON_MAP[social.iconName];
+        {/* Socials */}
+        <div className="flex items-center justify-center gap-4 pt-4">
+          {socialLinks.map(link => {
+            const Icon = link.iconName ? ICON_MAP[link.iconName] || Icons.Link : Icons.Link;
             return (
               <a
-                key={social.platform}
-                href={social.url}
+                key={link.platform}
+                href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={social.platform}
-                className="p-3 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-foreground hover:bg-accent transition-all duration-200"
+                aria-label={link.platform}
+                className="p-2.5 text-muted-foreground bg-muted/50 rounded-full hover:bg-foreground hover:text-background transition-colors"
               >
-                {Icon ? <Icon className="h-5 w-5" /> : null}
+                <Icon className="h-5 w-5" />
               </a>
             );
           })}

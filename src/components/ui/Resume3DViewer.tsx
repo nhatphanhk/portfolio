@@ -2,13 +2,13 @@
 
 import React, { useRef, useState } from 'react';
 import { ZoomIn, ZoomOut, Download, Printer, RotateCcw } from 'lucide-react';
-import { PROFILE } from '@/data/content';
 
 interface Resume3DViewerProps {
   children: React.ReactNode;
+  resumeUrl?: string;
 }
 
-export function Resume3DViewer({ children }: Resume3DViewerProps) {
+export function Resume3DViewer({ children, resumeUrl }: Resume3DViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
@@ -56,7 +56,7 @@ export function Resume3DViewer({ children }: Resume3DViewerProps) {
       <div className="h-14 bg-[#323639] border-b border-white/10 flex items-center justify-between px-4 sticky top-0 z-50 print:hidden shadow-md">
         <div className="flex items-center gap-4">
           <div className="text-white/90 font-medium text-sm hidden sm:block">
-            {PROFILE.name.replace(/\s+/g, '_')}_Resume.pdf
+            Resume.pdf
           </div>
         </div>
         
@@ -80,14 +80,16 @@ export function Resume3DViewer({ children }: Resume3DViewerProps) {
           <button onClick={handlePrint} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors" title="Print">
             <Printer className="w-5 h-5" />
           </button>
-          <a 
-            href={PROFILE.resumeUrl} 
-            download 
-            className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors" 
-            title="Download PDF"
-          >
-            <Download className="w-5 h-5" />
-          </a>
+          {resumeUrl && (
+            <a 
+              href={resumeUrl} 
+              download 
+              className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors" 
+              title="Download PDF"
+            >
+              <Download className="w-5 h-5" />
+            </a>
+          )}
         </div>
       </div>
 

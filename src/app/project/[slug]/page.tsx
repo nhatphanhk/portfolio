@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { MainLayout } from '@/components';
-import { getProjectBySlug, getAllProjects } from '@/data/projects';
+import { getPublicProjectBySlug, getPublicProjects } from '@/lib/actions/project';
 import Link from 'next/link';
 import { ArrowLeft, ExternalLink, Github, Calendar } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -9,14 +9,18 @@ interface ProjectDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
+// Force per-request rendering: with static params, Next.js caches unmatched
+// slugs from notFound() with a 200 status instead of 404.
+export const dynamic = 'force-dynamic';
+
 export async function generateStaticParams() {
-  const projects = getAllProjects();
+  const projects = await getPublicProjects();
   return projects.map(p => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: ProjectDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const project = getProjectBySlug(slug);
+  const project = await getPublicProjectBySlug(slug);
 
   if (!project) return { title: 'Project Not Found' };
 
@@ -33,7 +37,7 @@ export async function generateMetadata({ params }: ProjectDetailPageProps): Prom
 
 export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   const { slug } = await params;
-  const project = getProjectBySlug(slug);
+  const project = await getPublicProjectBySlug(slug);
 
   if (!project) notFound();
 
@@ -101,19 +105,17 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 
         {/* Meta */}
         <div className="grid sm:grid-cols-2 gap-6 mb-10">
-          {project.startDate && (
+          {project.publishedAt && (
             <div className="flex items-center gap-3 text-sm">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <div>
-                <p className="text-muted-foreground">Timeline</p>
+                <p className="text-muted-foreground">Published</p>
                 <p className="text-foreground font-medium">
-                  {new Date(project.startDate).toLocaleDateString('en-US', {
+                  {new Date(project.publishedAt).toLocaleDateString('en-US', {
                     month: 'short',
+                    day: 'numeric',
                     year: 'numeric',
                   })}
-                  {project.endDate
-                    ? ` — ${new Date(project.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
-                    : ' — Present'}
                 </p>
               </div>
             </div>

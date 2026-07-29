@@ -83,3 +83,22 @@ export async function getAllCertificationsFromDb() {
     orderBy: [{ status: 'asc' }, { issueDate: 'desc' }],
   });
 }
+
+export async function getPublicCertifications() {
+  const certs = await prisma.certification.findMany({
+    orderBy: [{ status: 'asc' }, { issueDate: 'desc' }],
+  });
+  return certs.map(c => ({
+    id: c.id,
+    name: c.name,
+    issuer: c.issuer,
+    issueDate: c.issueDate.toISOString(),
+    expiryDate: c.expiryDate?.toISOString() || undefined,
+    credentialId: c.credentialId || undefined,
+    credentialUrl: c.credentialUrl || undefined,
+    description: c.description || undefined,
+    logoUrl: c.logoUrl || undefined,
+    status: c.status,
+  }));
+}
+

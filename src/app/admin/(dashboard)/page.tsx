@@ -1,9 +1,10 @@
 import React from 'react';
 import { FileText, Code, Users, Layers, Award, BarChart3, TrendingUp, Mail } from 'lucide-react';
-import { getAllBlogPosts } from '@/data/blogs';
-import { getAllProjects } from '@/data/projects';
-import { SKILLS } from '@/data/skills';
-import { getAllCertifications } from '@/data/certifications';
+import { getAllBlogsFromDb } from '@/lib/actions/blog';
+import { getAllProjectsFromDb } from '@/lib/actions/project';
+import { getAllSkillsFromDb } from '@/lib/actions/skill';
+import { getAllCertificationsFromDb } from '@/lib/actions/certification';
+import { getAllContactsFromDb } from '@/lib/actions/contact';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Dashboard — Admin' };
@@ -30,17 +31,19 @@ function StatCard({ title, value, icon: Icon, description }: StatCardProps) {
   );
 }
 
-export default function DashboardPage() {
-  const blogs = getAllBlogPosts();
-  const projects = getAllProjects();
-  const certifications = getAllCertifications();
+export default async function DashboardPage() {
+  const blogs = await getAllBlogsFromDb();
+  const projects = await getAllProjectsFromDb();
+  const certifications = await getAllCertificationsFromDb();
+  const skills = await getAllSkillsFromDb();
+  const contacts = await getAllContactsFromDb();
 
   const stats = [
-    { title: 'Blog Posts', value: blogs.length, icon: FileText, description: 'Published articles' },
-    { title: 'Projects', value: projects.length, icon: Code, description: 'Active projects' },
-    { title: 'Skills', value: SKILLS.length, icon: Layers, description: 'Tracked technologies' },
+    { title: 'Blog Posts', value: blogs.length, icon: FileText, description: 'Total articles' },
+    { title: 'Projects', value: projects.length, icon: Code, description: 'Total projects' },
+    { title: 'Skills', value: skills.length, icon: Layers, description: 'Tracked technologies' },
     { title: 'Certifications', value: certifications.length, icon: Award, description: 'Credentials earned' },
-    { title: 'Messages', value: 0, icon: Mail, description: 'Unread contact messages' },
+    { title: 'Messages', value: contacts.filter(c => c.status === 'UNREAD').length, icon: Mail, description: 'Unread contact messages' },
     { title: 'Page Views', value: 0, icon: BarChart3, description: 'All time (analytics pending)' },
   ] as const;
 
@@ -75,14 +78,14 @@ export default function DashboardPage() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground truncate">{post.title}</p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                    {new Date(post.createdAt).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric',
                     })}
                   </p>
                 </div>
-                <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/10 text-green-600 dark:text-green-400 shrink-0">
+                <span className={`px-2 py-0.5 text-xs rounded-full shrink-0 ${post.status === 'PUBLISHED' ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-muted text-muted-foreground'}`}>
                   {post.status}
                 </span>
               </div>
@@ -103,8 +106,8 @@ export default function DashboardPage() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground truncate">{project.title}</p>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {project.technologies.slice(0, 2).map(tech => (
-                      <span key={tech} className="text-xs text-muted-foreground">{tech}</span>
+                    {project.tags.slice(0, 2).map(pt => (
+                      <span key={pt.tag.name} className="text-xs text-muted-foreground">{pt.tag.name}</span>
                     ))}
                   </div>
                 </div>

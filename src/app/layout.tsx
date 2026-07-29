@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
+import { CommandPalette } from '@/components/ui/CommandPalette';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL, OG_IMAGE } from '@/lib/constants';
 
@@ -58,6 +61,9 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
           <Toaster position="bottom-right" />
+          <CommandPalette />
+          <Analytics />
+          <SpeedInsights />
         </ThemeProvider>
       </body>
     </html>

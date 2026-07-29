@@ -61,7 +61,7 @@ function Input({ value, onChange, placeholder, type = 'text', disabled }: {
   return (
     <input
       type={type}
-      value={value}
+      value={value ?? ''}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
       disabled={disabled}
@@ -76,7 +76,7 @@ function Textarea({ value, onChange, placeholder, rows = 3 }: {
   return (
     <textarea
       rows={rows}
-      value={value}
+      value={value ?? ''}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
       className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y transition"
@@ -1241,7 +1241,6 @@ export function AdminResumeClient({ profile, experiences: initialExp, socialLink
                     onDragEnd={() => { setDragId(null); setDragOverId(null); }}
                     onDragEnter={() => setDragOverId(id)}
                     onDragLeave={e => {
-                      // Only clear if leaving to outside this element
                       if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) {
                         setDragOverId(null);
                       }
@@ -1285,16 +1284,16 @@ export function AdminResumeClient({ profile, experiences: initialExp, socialLink
 
   // ── Render ─────────────────────────────────────────────────────────────────
   const activeContent = {
-    personal: <TabPersonal />,
-    summary: <TabSummary />,
-    skills: <TabSkills />,
-    experience: <TabExperience />,
-    education: <TabEducation />,
-    achievements: <TabAchievements />,
-    languages: <TabLanguages />,
-    activities: <TabActivities />,
-    additional: <TabAdditional />,
-    layout: <TabLayout />,
+    personal: TabPersonal(),
+    summary: TabSummary(),
+    skills: TabSkills(),
+    experience: TabExperience(),
+    education: TabEducation(),
+    achievements: TabAchievements(),
+    languages: TabLanguages(),
+    activities: TabActivities(),
+    additional: TabAdditional(),
+    layout: TabLayout(),
   }[activeTab];
 
   return (
@@ -1348,7 +1347,7 @@ export function AdminResumeClient({ profile, experiences: initialExp, socialLink
 
         {/* RIGHT: Sticky 3D Preview panel */}
         <div className="hidden xl:block w-[420px] shrink-0 border-l border-border bg-muted/20 overflow-y-auto p-4">
-          <ResumePreviewPanel />
+          {ResumePreviewPanel()}
         </div>
       </div>
     </main>
