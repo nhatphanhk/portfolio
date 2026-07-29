@@ -1,6 +1,6 @@
 # AI_RULES.md
 
-> Mandatory rules for AI (Copilot/Claude/...) when generating code or proposing changes for the Portfolio project. Read alongside `AI_CONTEXT.md` (goals/scope) and `AI_ARCHITECTURE.md` (technical architecture).
+> Mandatory rules for AI (Copilot/Claude/...) when generating code or proposing changes for the Portfolio project. Read alongside `AI_CONTEXT.md` (goals/scope) and `AI_ARCHITECTURE.md` (technical architecture). For a condensed quick-reference (and the definitive source for patterns specific to this codebase), see `.github/copilot-instructions.md`.
 
 ---
 
@@ -11,7 +11,7 @@
 * Do not create unnecessary files.
 * Reuse existing components/services instead of writing them from scratch.
 * Before generating new code: understand the current architecture → follow current naming conventions → reuse existing patterns → avoid unnecessary complexity.
-* Do not arbitrarily add features outside the MVP scope defined in `AI_CONTEXT.md` (full blog CMS, GitHub/LinkedIn API integration, multi-language support, newsletter, PDF resume, analytics, testimonials) unless explicitly requested.
+* Do not arbitrarily add features beyond what's asked — this is a finished, live system (see `AI_CONTEXT.md` §2 for what's built and what's explicitly out of scope), not a scaffold to keep expanding speculatively.
 
 ---
 
@@ -45,31 +45,31 @@ components/
 * **Props interfaces:** suffixed with `Props`, e.g. `ContactFormProps`.
 * **CSS:** prefer Tailwind utility classes; custom classes use kebab-case (`.hero-gradient`); component-specific classes use BEM-style (`.contact-form__input`).
 
-### Reference Frontend Directory Structure
+### Actual Directory Structure
+
+This is the real, current layout — see `docs/PROJECT_STRUCTURE.md` for the full breakdown
+of what lives where and why.
 
 ```
 src/
+├── app/                  # Routes (App Router) — public pages, admin/, api/*, api-doc/
 ├── components/
-│   ├── ui/           # Shared UI components
-│   ├── layout/       # Header, Footer, overall layout
-│   ├── sections/     # Hero, About, Projects...
-│   └── forms/        # Form components
-├── app/
-│   ├── (pages)/      # Route groups
-│   ├── globals.css
-│   └── layout.tsx
+│   ├── ui/               # shadcn/ui primitives (regenerate via CLI, don't hand-edit internals)
+│   ├── admin/             # Dialogs, sidebar nav — admin-only components
+│   ├── hero-section/      # Homepage sections (Hero/About/Highlights/Contact)
+│   └── Header.tsx, Footer.tsx, MainLayout.tsx  # top-level, barrel-exported via index.ts
 ├── lib/
-│   ├── utils.ts
-│   ├── constants.ts
-│   └── types.ts
-├── data/
-│   ├── projects.ts
-│   ├── skills.ts
-│   └── content.ts
-└── styles/
-    ├── components.css
-    └── utilities.css
+│   ├── actions/            # 'use server' Server Actions — one file per Prisma model (the real "backend", see AI_ARCHITECTURE.md)
+│   ├── auth-utils.ts, db.ts, rate-limit.ts, swagger.ts, utils.ts
+├── data/                  # DB-fallback seed data ONLY — not the source of truth, see AI_ARCHITECTURE.md §2
+├── hooks/                 # Custom React hooks
+├── auth.ts, auth.config.ts, proxy.ts   # NextAuth v5 config + middleware
 ```
+
+There is no `src/components/layout/`, `sections/`, or `forms/` folder, no `src/lib/types.ts`,
+and no `src/styles/` folder — don't recreate these; the structure above is what's actually
+used. There is also no `src/types/` folder — types are colocated or derived from action
+return values (see below).
 
 ### TypeScript Standards
 
@@ -125,26 +125,25 @@ export default function Component({ prop1, prop2 }: ComponentProps) {
 
 ---
 
-## 3. Backend Rules
+## 3. Backend Rules (Server Actions)
 
-* **Controller** only handles request/response; contains no business logic.
-* **Service** contains all business logic.
-* **Repository** handles database operations.
-* **DTO** must be used for data transfer between layers.
+There is no Express-style controller/service/repository backend in this project — see
+`AI_ARCHITECTURE.md` §1–§3 for the full explanation. The equivalent layering is:
 
-### Reference Backend Structure
+* **Page (Server Component)** — calls an action, renders the typed result. No business logic.
+* **Server Action** (`src/lib/actions/{resource}.ts`, `'use server'`) — contains all
+  business logic: validation, authorization (`ensureAdmin()` for every mutation),
+  `revalidatePath()` after writes.
+* **Prisma** — the only thing that talks to the database directly; queries live inside the
+  action functions (no separate repository layer — keep it that way, don't introduce one).
+* One action file per Prisma model, with the single documented exception of
+  `about.ts` (covers Profile/SocialLink/Experience/Education/Achievement/SpokenLanguage/
+  Activity — all edited on one admin page). Follow this file-per-resource convention for
+  any new resource rather than adding a generic "backend" folder.
 
-```
-backend/
-├── controllers/   # Route handlers
-├── middleware/    # auth, validation, rateLimit, upload, errorHandler
-├── models/        # Database models / entities
-├── routes/        # API routes
-├── services/       # Business logic
-├── utils/         # database, jwt, validation, fileUtils, helpers
-├── config/        # database, jwt, upload, cors
-└── tests/
-```
+Route Handlers (`src/app/api/*/route.ts`) are the exception, not the default — use them
+only for what a Server Action genuinely can't do (see `AI_ARCHITECTURE.md` §5: NextAuth's
+own routes, a public POST that isn't a form action, serving raw JSON).
 
 ### Database Rules
 
@@ -193,7 +192,7 @@ For modules with larger datasets (Blog, Project, Skill, Certification), also sup
 * Validate all user input (both frontend and backend).
 * Protect all admin APIs with authentication middleware — no admin endpoint should be left without token verification.
 * Never expose sensitive data (password hashes, secret tokens, internal information) in responses.
-* Use authentication middleware (JWT) consistently for every admin route.
+* Every mutating Server Action must call `ensureAdmin()` (`src/lib/auth-utils.ts`) first — this is the real authorization boundary, not just the `src/proxy.ts` route matcher (which is UX-layer only).
 * Sanitize input against XSS; use parameterized queries against SQL injection.
 * Apply rate limiting to endpoints prone to abuse (login, contact form, upload).
 * Hash passwords with bcrypt, minimum 12 rounds.
@@ -202,7 +201,7 @@ For modules with larger datasets (Blog, Project, Skill, Certification), also sup
 * Use `dangerouslySetInnerHTML` sparingly; sanitize content beforehand if it must be used.
 * Comply with OWASP and GDPR requirements when handling contact data (cookie consent, right to data deletion).
 
-(For technical details on JWT, rate limiting, upload validation: see `AI_ARCHITECTURE.md`.)
+(For technical details on auth and rate limiting, see `AI_ARCHITECTURE.md` §4–§5.)
 
 ---
 
@@ -276,35 +275,28 @@ style(components): format button component
 * Create feature branches from `main` with descriptive names: `feature/contact-form`, `fix/mobile-responsive`.
 * Delete branches after merging.
 
-### Daily Workflow
+### Typical Workflow
 
 ```bash
-# Start of day
 git pull origin main
-git checkout -b feature/day-[X]-[description]
+git checkout -b feature/short-description
 
-# During development — commit frequently
+# commit frequently with clear messages
 git add .
 git commit -m "type(scope): description"
-git push origin feature/day-[X]-[description]
-
-# End of day
-git add .
-git commit -m "chore(daily): complete day [X] development tasks"
-git push origin feature/day-[X]-[description]
-# Create a PR, review, then merge into main
+git push origin feature/short-description
+# open a PR, get a review, merge into main
 ```
 
 ---
 
-## 9. Daily Development Workflow
+## 9. Development Workflow
 
 ### Before Starting Work
 
 * Pull the latest changes from `main`.
-* Create a feature branch for the day's work.
-* Review the project board/priorities.
-* Check for any urgent issues or feedback.
+* Create a feature branch with a descriptive name.
+* Check for any related open issues.
 
 ### During Development
 
@@ -313,21 +305,13 @@ git push origin feature/day-[X]-[description]
 * Check the console for errors/warnings.
 * Validate accessibility.
 * Monitor performance impact.
+* Run `npm run type-check` and `npm run lint` before opening a PR; run `npm run build` too if the change touches routing/rendering (see `docs/KNOWN_ISSUES.md` for bugs that only show up in a production build).
 
-### End of Day
+### Before Merging
 
 * Push the feature branch to remote.
-* Create a Pull Request if the feature is complete.
-* Update project documentation if needed.
-* Plan the next day's priorities.
-
-### Daily Success Criteria
-
-* All features planned for the day are functional.
-* Code has been committed with proper messages.
-* No console errors in the browser.
-* Responsive design works correctly on mobile.
-* Performance remains at an acceptable level.
+* Open a Pull Request; get at least one review.
+* Update `README.md`/`docs/` if the change affects setup, structure, or a documented convention.
 
 ---
 
@@ -343,17 +327,10 @@ git push origin feature/day-[X]-[description]
 
 ### Data Loss Prevention
 
-* Daily automated backups.
-* Test restore procedures monthly.
+* Automated backups of the production database.
+* Test restore procedures periodically.
 * Keep multiple backup versions.
 * Document recovery procedures.
-
-### If Behind Schedule (relative to the MVP plan)
-
-1. Prioritize MVP features only.
-2. Cut non-essential animations.
-3. Use placeholder content if needed.
-4. Focus on core functionality.
 
 ---
 
@@ -375,18 +352,17 @@ Before generating code:
 3. Reuse existing patterns.
 4. Avoid unnecessary complexity.
 
-### When Developing a New Feature
+### When Developing a New Content Resource
 
-For each new feature (following the 3-layer backend architecture), create the full set:
+Follow the existing per-resource pattern (see `AI_ARCHITECTURE.md` §2–§3) rather than
+inventing a new one:
 
 ```
-Model/Entity
-DTO
-Repository
-Service
-Controller
-Frontend UI
-API Integration
+Prisma model + migration (prisma/schema.prisma, npx prisma migrate dev)
+Server Action file (src/lib/actions/{resource}.ts — public get*, admin CRUD, ensureAdmin() on writes)
+Admin UI (page.tsx + client.tsx under src/app/admin/(dashboard)/{resource}/, dialogs in src/components/admin/ if needed)
+Public UI (page.tsx under src/app/{resource}/ if the resource has a public-facing view)
+Wire into sitemap.ts/robots.ts if it's publicly indexable content
 ```
 
 ### Response Style When Explaining Code
@@ -399,6 +375,10 @@ When explaining code, the AI should:
 
 ---
 
-## 12. Source References
+## 12. Related Documents
 
-This file synthesizes: `development_rules.md`, `daily_checklist.md`, the "Coding Rules" and "Copilot Instructions" sections from the original documents, plus the API rules in `api-documentation.md` / `api-implementation-guide.md` (technical details in `AI_ARCHITECTURE.md`).
+* `docs/AI_CONTEXT.md` — product goals, scope, feature list.
+* `docs/AI_ARCHITECTURE.md` — technical architecture, data model, API surface, auth, deployment.
+* `docs/KNOWN_ISSUES.md` — framework quirks that are easy to reintroduce.
+* `docs/PROJECT_STRUCTURE.md` — map of `src/` and what lives where.
+* `.github/copilot-instructions.md` — condensed quick-reference; the definitive source when it and this file disagree on a codebase-specific detail.

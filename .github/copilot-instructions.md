@@ -67,7 +67,7 @@ Page (Server Component, async)
 
 - `src/components/ui/` — shadcn/ui primitives (regenerate via `npx shadcn@latest add <name>`, don't hand-edit generated internals beyond small fixes).
 - `src/components/hero-section/` — homepage sections (Hero/About/BPSC/Contact), all accept server-fetched data as props (see Data flow above) rather than fetching themselves, except `ContactSection` which is a client component receiving `profile`/`socialLinks` as props.
-- `src/components/admin/` — sidebar nav + `DataTable` (TanStack Table) with per-resource column defs in `src/components/admin/table/{resource}/column.tsx`.
+- `src/components/admin/` — sidebar nav (`sidebar/`) + per-resource `*Dialog.tsx` create/edit modals. Admin list pages render plain `<table>` markup directly in each resource's `client.tsx` (no TanStack Table / generic `DataTable` component — an earlier, unused TanStack scaffold under `table/` was removed as dead code; don't reintroduce that pattern unless a resource actually needs client-side sorting/filtering it can't get from the existing search/pagination server actions).
 - Barrel export: `src/components/index.ts` (Header/Footer/MainLayout only — not everything).
 
 ### Routing
@@ -111,10 +111,11 @@ Don't go back to a hand-maintained `{ Github, Linkedin, Twitter }` map — it si
 
 ### Admin Data Tables
 
-```typescript
-const columns: ColumnDef<Type>[] = [...];
-<DataTable columns={columns} data={data} />
-```
+Each admin resource's `client.tsx` renders its list with plain `<table>` markup (styled via
+Tailwind, not the shadcn `ui/table.tsx` primitive or a generic table component) and opens
+its `*Dialog.tsx` for create/edit. Follow the existing pattern in e.g.
+`src/app/admin/(dashboard)/certifications/client.tsx` for a new resource rather than adding
+a TanStack Table dependency.
 
 ### Avoid re-defining components inside a render function and using them as JSX
 

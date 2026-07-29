@@ -1,5 +1,7 @@
 // src/data/content.ts
-// Profile/About static content — update with real info before production
+// DB-fallback seed data only (see src/lib/actions/about.ts) — used when the
+// Profile/Experience tables are empty (fresh install, no admin data entered yet).
+// Not the source of truth once the admin has saved real content in the database.
 
 export const PROFILE = {
   name: 'Nhat Phan',
@@ -56,16 +58,5 @@ export const EXPERIENCES = [
     endDate: '2021-05-31',
     isCurrent: false,
     logoUrl: null,
-  },
-] as const;
-
-export const EDUCATION = [
-  {
-    id: '1',
-    institution: 'University of Technology',
-    degree: 'Bachelor of Science in Computer Science',
-    startDate: '2016-09-01',
-    endDate: '2020-06-01',
-    description: 'Focus on Software Engineering and Web Technologies.',
   },
 ] as const;
