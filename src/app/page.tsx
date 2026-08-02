@@ -1,26 +1,35 @@
-﻿import { MainLayout } from '@/components';
+import { MainLayout } from '@/components';
+import { HeroSection } from '@/components/hero-section/HeroSection';
 import { AboutSection } from '@/components/hero-section/AboutSection';
 import { BPSCSection } from '@/components/hero-section/BPSCSection';
 import ContactSection from '@/components/hero-section/ContactSection';
-import { HeroSection } from '@/components/hero-section/HeroSection';
+import type { Metadata } from 'next';
+import { SITE_DESCRIPTION } from '@/lib/constants';
+import { getProfile, getSocialLinks } from '@/lib/actions/about';
+import { getPublicProjects } from '@/lib/actions/project';
+import { getPublicBlogs } from '@/lib/actions/blog';
+import { getPublicCertifications } from '@/lib/actions/certification';
+import { getPublicSkillsByCategory } from '@/lib/actions/skill';
 
-export default function Home() {
+export const metadata: Metadata = {
+  title: 'Nhat Phan — Full-Stack Developer',
+  description: SITE_DESCRIPTION,
+};
+
+export default async function Home() {
+  const profile = await getProfile();
+  const socialLinks = await getSocialLinks();
+  const projects = await getPublicProjects();
+  const blogs = await getPublicBlogs();
+  const certs = await getPublicCertifications();
+  const skillsByCategory = await getPublicSkillsByCategory();
+
   return (
     <MainLayout>
-      <div className="h-full flex flex-col">
-        <div className="h-screen flex flex-col">
-          <HeroSection />
-        </div>
-        <div className="h-screen flex flex-col">
-          <AboutSection />
-        </div>
-        <div className="h-screen flex flex-col">
-          <BPSCSection />
-        </div>
-        <div className="h-screen flex flex-col">
-          <ContactSection />
-        </div>
-      </div>
+      <HeroSection profile={profile} socialLinks={socialLinks} />
+      <AboutSection profile={profile} skillsByCategory={skillsByCategory} />
+      <BPSCSection projects={projects} blogs={blogs} certs={certs} />
+      <ContactSection profile={profile} socialLinks={socialLinks} />
     </MainLayout>
   );
 }

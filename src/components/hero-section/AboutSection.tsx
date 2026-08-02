@@ -1,25 +1,90 @@
-export function AboutSection() {
+import Link from 'next/link';
+import { ArrowRight, MapPin, Mail } from 'lucide-react';
+import type { getProfile } from '@/lib/actions/about';
+import type { getPublicSkillsByCategory } from '@/lib/actions/skill';
+
+/**
+ * About snapshot section on the homepage — a teaser to the full resume page.
+ */
+interface AboutSectionProps {
+  profile: Awaited<ReturnType<typeof getProfile>>;
+  skillsByCategory: Awaited<ReturnType<typeof getPublicSkillsByCategory>>;
+}
+
+export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
+  const allSkills = Object.values(skillsByCategory).flat();
+  const topSkills = allSkills.filter(s => s.level >= 4).slice(0, 8);
+
   return (
-    <section className="h-full flex items-center justify-center py-20 text-center">
-      <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-          Hi, I'm [Your Name]
-        </h1>
-        <p className="text-xl md:text-2xl text-gray-600 mb-8">
-          Full Stack Developer & Designer
-        </p>
-        <p className="text-lg text-gray-700 mb-8 max-w-2xl mx-auto">
-          I create beautiful, functional web applications using modern
-          technologies. Passionate about clean code, user experience, and
-          solving complex problems.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-            View My Work
-          </button>
-          <button className="border border-gray-300 text-gray-700 px-8 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-            Contact Me
-          </button>
+    <section id="about" className="py-24 bg-muted/30">
+      <div className="max-w-5xl mx-auto px-6">
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          {/* Text */}
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-widest text-primary mb-3">
+              About Me
+            </p>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
+              Building the web,{' '}
+              <span className="text-muted-foreground font-light">one project at a time.</span>
+            </h2>
+            <p className="text-muted-foreground leading-relaxed mb-6">{profile.bio}</p>
+
+            <div className="flex flex-col gap-2 text-sm text-muted-foreground mb-8">
+              {profile.location && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  {profile.location}
+                </div>
+              )}
+              {profile.email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  <a href={`mailto:${profile.email}`} className="hover:text-foreground transition-colors">
+                    {profile.email}
+                  </a>
+                </div>
+              )}
+            </div>
+
+            <Link
+              href="/resume"
+              className="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:gap-3 transition-all duration-200"
+            >
+              Read full bio
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {/* Skills preview */}
+          <div>
+            <p className="text-sm font-semibold text-muted-foreground mb-4">Core Technologies</p>
+            <div className="flex flex-wrap gap-2">
+              {topSkills.map(skill => (
+                <span
+                  key={skill.id}
+                  className="px-3 py-1.5 text-sm bg-background border border-border rounded-md text-foreground hover:border-foreground transition-colors"
+                >
+                  {skill.name}
+                </span>
+              ))}
+            </div>
+
+            <div className="mt-8 pt-8 border-t border-border grid grid-cols-3 gap-6">
+              <div>
+                <p className="text-3xl font-bold text-foreground">5+</p>
+                <p className="text-xs text-muted-foreground mt-1">Years Experience</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-foreground">20+</p>
+                <p className="text-xs text-muted-foreground mt-1">Projects Delivered</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-foreground">15+</p>
+                <p className="text-xs text-muted-foreground mt-1">Happy Clients</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

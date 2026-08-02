@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client"
@@ -11,42 +8,47 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-model User {
-  id         String    @id @default(uuid())
-  email      String    @unique
-  password   String
-  name       String
-  avatarUrl  String?
-  role       Role      @default(ADMIN)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+// ─── Models ───────────────────────────────────────────────────────────────────
 
-  blogs      Blog[]
-  projects   Project[]
-  media      Media[]
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  avatarUrl String?
+  role      Role     @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  blogs    Blog[]
+  projects Project[]
+  media    Media[]
 
   @@map("users")
 }
 
 model Blog {
-  id           String      @id @default(uuid())
+  id           String     @id @default(uuid())
   title        String
-  slug         String      @unique
+  slug         String     @unique
   content      String
   excerpt      String?
   thumbnailUrl String?
-  status       PostStatus  @default(DRAFT)
+  status       PostStatus @default(DRAFT)
+  viewCount    Int        @default(0)
   publishedAt  DateTime?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  authorId     String
-  author       User        @relation(fields: [authorId], references: [id])
-  tags         BlogTag[]
+  authorId String
+  author   User     @relation(fields: [authorId], references: [id])
+  tags     BlogTag[]
 
+  @@index([status])
+  @@index([publishedAt])
+  @@index([slug])
   @@map("blogs")
 }
 
@@ -54,45 +56,47 @@ model BlogTag {
   blogId String
   tagId  String
 
-  blog   Blog @relation(fields: [blogId], references: [id], onDelete: Cascade)
-  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  blog Blog @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([blogId, tagId])
   @@map("blog_tags")
 }
 
 model Tag {
-  id        String     @id @default(uuid())
-  name      String     @unique
-  slug      String     @unique
-  createdAt DateTime   @default(now())
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
 
-  blogs     BlogTag[]
-  projects  ProjectTag[]
+  blogs    BlogTag[]
+  projects ProjectTag[]
 
   @@map("tags")
 }
 
 model Project {
-  id           String      @id @default(uuid())
+  id           String     @id @default(uuid())
   title        String
-  slug         String      @unique
+  slug         String     @unique
   description  String?
   content      String?
   thumbnailUrl String?
   demoUrl      String?
   repoUrl      String?
-  status       PostStatus  @default(DRAFT)
-  featured     Boolean     @default(false)
+  status       PostStatus @default(DRAFT)
+  featured     Boolean    @default(false)
   publishedAt  DateTime?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  authorId     String
-  author       User           @relation(fields: [authorId], references: [id])
-  tags         ProjectTag[]
-  images       ProjectImage[]
+  authorId String
+  author   User           @relation(fields: [authorId], references: [id])
+  tags     ProjectTag[]
+  images   ProjectImage[]
 
+  @@index([status])
+  @@index([featured])
   @@map("projects")
 }
 
@@ -100,8 +104,8 @@ model ProjectTag {
   projectId String
   tagId     String
 
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([projectId, tagId])
   @@map("project_tags")
@@ -124,7 +128,7 @@ model Skill {
   id        String        @id @default(uuid())
   name      String
   iconUrl   String?
-  level     Int?
+  level     Int? // 1-5
   category  SkillCategory
   order     Int           @default(0)
   createdAt DateTime      @default(now())
@@ -133,41 +137,80 @@ model Skill {
   @@map("skills")
 }
 
+model Certification {
+  id            String    @id @default(uuid())
+  name          String
+  issuer        String
+  issueDate     DateTime
+  expiryDate    DateTime?
+  credentialId  String?
+  credentialUrl String?
+  description   String?
+  logoUrl       String?
+  status        CertStatus @default(ACTIVE)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("certifications")
+}
+
+model SocialLink {
+  id        String   @id @default(uuid())
+  platform  String   // e.g. "GitHub", "LinkedIn", "Twitter"
+  url       String
+  iconName  String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("social_links")
+}
+
 model Experience {
-  id          String    @id @default(uuid())
-  company     String
-  position    String
-  description String?
-  logoUrl     String?
-  startDate   DateTime
-  endDate     DateTime?
-  isCurrent   Boolean   @default(false)
-  order       Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id           String    @id @default(uuid())
+  company      String
+  position     String
+  description  String?
+  achievements String?   // newline-separated bullet points
+  techStack    String?   // comma-separated
+  logoUrl      String?
+  startDate    DateTime
+  endDate      DateTime?
+  isCurrent    Boolean   @default(false)
+  order        Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@map("experiences")
 }
 
 model Contact {
-  id        String   @id @default(uuid())
+  id        String        @id @default(uuid())
   name      String
   email     String
   subject   String?
   message   String
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
+  status    ContactStatus @default(UNREAD)
+  notes     String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
+  @@index([status])
+  @@index([createdAt])
   @@map("contacts")
 }
 
 model Media {
-  id         String   @id @default(uuid())
-  url        String
-  filename   String
-  mimetype   String?
-  size       Int?
-  createdAt  DateTime @default(now())
+  id           String   @id @default(uuid())
+  url          String
+  filename     String
+  mimetype     String?
+  size         Int?
+  fileType     String?  // 'avatar', 'project', 'blog', 'document'
+  altText      String?
+  createdAt    DateTime @default(now())
 
   uploadedById String
   uploadedBy   User   @relation(fields: [uploadedById], references: [id])
@@ -175,7 +218,85 @@ model Media {
   @@map("media")
 }
 
-// Enums
+model Profile {
+  id              String   @id @default(uuid())
+  name            String
+  handle          String?
+  title           String
+  tagline         String?
+  bio             String?
+  bio2            String?
+  location        String?
+  email           String?
+  phone           String?
+  resumeUrl       String?
+  avatarUrl       String?
+  careerObjective String?
+  softSkills      String?  // comma-separated
+  interests       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+model Education {
+  id           String    @id @default(uuid())
+  institution  String
+  degree       String
+  fieldOfStudy String?
+  startDate    DateTime
+  endDate      DateTime?
+  isCurrent    Boolean   @default(false)
+  gpa          String?
+  description  String?
+  order        Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("education")
+}
+
+model Achievement {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  date        DateTime?
+  category    String?   // "award", "hackathon", "academic", "work"
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("achievements")
+}
+
+model SpokenLanguage {
+  id        String   @id @default(uuid())
+  language  String
+  level     String   // "Native", "Fluent", "Professional", "Intermediate", "Basic"
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("spoken_languages")
+}
+
+model Activity {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  type        String?   // "club", "volunteer", "mentoring", "opensource"
+  startDate   DateTime?
+  endDate     DateTime?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("activities")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
 enum Role {
   ADMIN
   SUPER_ADMIN
@@ -192,4 +313,23 @@ enum SkillCategory {
   BACKEND
   DEVOPS
   TOOLS
+  OTHER
+  LANGUAGE        // Programming Languages
+  FRAMEWORK       // Frameworks/Libraries
+  DATABASE        // Databases
+  CLOUD           // Cloud Platforms
+  IAC             // Infrastructure as Code
+  MONITORING      // Monitoring & Logging
+  VERSION_CONTROL // Version Control
+}
+
+enum CertStatus {
+  ACTIVE
+  EXPIRED
+}
+
+enum ContactStatus {
+  UNREAD
+  READ
+  REPLIED
 }

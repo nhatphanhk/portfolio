@@ -3,7 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { NAV_LINKS } from '@/lib/constants';
 
+/**
+ * Site-wide navigation header with scroll-aware transparency,
+ * mobile menu, and dark/light mode toggle.
+ */
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -12,34 +18,15 @@ const Header = () => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const navigationItems = [
-    { name: 'About', href: '/about' },
-    { name: 'Blog', href: '/blog' },
-    { name: 'Project', href: '/project' },
-    { name: 'Skills', href: '/skills' },
-    { name: 'Certifications', href: '/certifications' },
-  ];
-
-  //   const scrollToSection = (sectionId: string) => {
-  //     const element = document.getElementById(sectionId);
-  //     if (element) {
-  //       element.scrollIntoView({
-  //         behavior: 'smooth',
-  //         block: 'start',
-  //       });
-  //     }
-  //   };
 
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
         isScrolled
-          ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-lg'
+          ? 'bg-background/80 backdrop-blur-md shadow-sm border-b border-border'
           : 'bg-transparent'
       }`}
     >
@@ -48,50 +35,60 @@ const Header = () => {
           {/* Logo */}
           <Link
             href="/"
-            className="text-2xl font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            className="text-xl font-bold text-foreground hover:text-primary transition-colors"
           >
-            NHATPHANHK102
+            Nhat Phan
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navigationItems.map(item => (
+          <div className="hidden md:flex items-center space-x-1">
+            {NAV_LINKS.map(item => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
               >
                 {item.name}
               </Link>
             ))}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 rounded-md text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            aria-label="Toggle mobile menu"
-          >
-            {isMobileMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </button>
+          {/* Desktop Right Actions */}
+          <div className="hidden md:flex items-center gap-2">
+            <ThemeToggle />
+          </div>
+
+          {/* Mobile Actions */}
+          <div className="flex md:hidden items-center gap-2">
+            <ThemeToggle />
+            <button
+              id="mobile-menu-toggle"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              aria-label="Toggle mobile menu"
+              aria-expanded={isMobileMenuOpen}
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation Menu */}
         <div
           className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${
-            isMobileMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
+            isMobileMenuOpen ? 'max-h-96 opacity-100 pb-4' : 'max-h-0 opacity-0'
           }`}
         >
-          <div className="px-2 pt-2 pb-3 space-y-1 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-lg mt-2 shadow-lg">
-            {navigationItems.map(item => (
+          <div className="flex flex-col gap-1 pt-2 border-t border-border">
+            {NAV_LINKS.map(item => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+                className="px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {item.name}

@@ -6,13 +6,16 @@ import {
   ChevronsUpDown,
   LogOut,
   Sparkles,
+  KeyRound,
 } from 'lucide-react';
+import { signOut } from 'next-auth/react';
+import { useState } from 'react';
+import { ChangePasswordDialog } from '@/components/admin/ChangePasswordDialog';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -36,9 +39,15 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+
+  const handleLogout = () => {
+    signOut({ callbackUrl: '/admin/login' });
+  };
 
   return (
-    <SidebarMenu>
+    <>
+      <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -76,29 +85,34 @@ export function NavUser({
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Sparkles />
-                Theme
-                <Switch />
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Language
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <LogOut />
+              <Bell />
+              Notifications
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Sparkles />
+              Theme
+              <Switch />
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <BadgeCheck />
+              Language
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setPasswordDialogOpen(true)} className="cursor-pointer">
+              <KeyRound className="mr-2 h-4 w-4" />
+              Change Password
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive">
+              <LogOut className="mr-2" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
+      <ChangePasswordDialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen} />
+    </>
   );
 }

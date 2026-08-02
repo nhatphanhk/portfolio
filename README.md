@@ -1,36 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Portfolio
+
+A personal portfolio website built with Next.js — a public site (home, blog, projects,
+skills, certifications, resume, contact) backed by a database-driven admin CMS at `/admin`
+for managing all of that content without touching code.
+
+This is a real, deployed application, not a static template: every content type (profile,
+experience, education, skills, blog posts, projects, certifications, social links, contact
+messages, visitor logs) lives in PostgreSQL via Prisma and is edited through the admin
+dashboard.
+
+## Tech Stack
+
+| Layer | Choice |
+|---|---|
+| Framework | Next.js 16 (App Router, Turbopack), React 19, TypeScript |
+| Styling | Tailwind CSS v4 (CSS-first, no `tailwind.config.ts`) |
+| UI components | shadcn/ui (New York style), Radix primitives, `lucide-react` icons |
+| Data / ORM | Prisma 7 + PostgreSQL (client output to `generated/prisma`) |
+| Auth | NextAuth v5 (beta) — credentials provider, JWT session |
+| Forms | React Hook Form + Zod validation |
+| Animation | Framer Motion, GSAP |
+| 3D | React Three Fiber / Three.js (resume viewer) |
+| Analytics | Vercel Analytics + Speed Insights |
+| API docs | `swagger-ui-react` + `next-swagger-doc`, served at `/api-doc` |
+| Hosting | Vercel |
+
+There is no separate REST/Express backend — reads and writes go through Next.js **Server
+Actions** in `src/lib/actions/*.ts`, which call Prisma directly. See
+[`docs/AI_ARCHITECTURE.md`](docs/AI_ARCHITECTURE.md) for the full data-flow diagram.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+
+- A PostgreSQL database (e.g. [Neon](https://neon.tech) or Prisma Postgres)
+
+### Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Fill in `.env` (see [`.env.example`](.env.example) for the full list and generation
+commands for secrets):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `AUTH_SECRET` | NextAuth session secret (`openssl rand -hex 32`) |
+| `AUTH_URL` | Production URL, no trailing slash |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD_HASH` | Env-defined admin fallback login, used if the DB is unreachable or has no `User` row yet (`node -e "require('bcryptjs').hash('yourpassword',12).then(console.log)"`) |
+| `ADMIN_SETUP_KEY` | Key required to call the one-time admin-creation endpoint |
+| `NEXT_PUBLIC_SITE_URL` | Public site URL, used for OpenGraph/canonical tags |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Then set up the database and run the app:
 
-## Learn More
+```bash
+npx prisma migrate dev   # create the schema in your database
+npm run dev              # start the dev server (Turbopack) at http://localhost:3000
+```
 
-To learn more about Next.js, take a look at the following resources:
+Log in to the admin dashboard at `/admin/login` with your `ADMIN_EMAIL` /
+matching password, or create a DB-backed admin user via the `/api/admin/create` endpoint
+(protected by `ADMIN_SETUP_KEY`).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Command | Description |
+|---|---|
+| `npm run dev` | Dev server with Turbopack |
+| `npm run build` | `prisma generate && next build --turbopack` |
+| `npm run start` | Serve the production build |
+| `npm run lint` / `npm run lint:fix` | ESLint |
+| `npm run type-check` | `tsc --noEmit` |
+| `npm run format` / `npm run format:check` | Prettier |
+| `npx prisma studio` | Browse the database |
+| `npx prisma migrate dev` | Create/apply a migration after editing `prisma/schema.prisma` |
 
-## Deploy on Vercel
+There is no automated test suite yet (`npm test` is a no-op placeholder).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) for a full map of `src/` and
+the reasoning behind how it's organized.
+
+## Documentation
+
+| Doc | Purpose |
+|---|---|
+| [`docs/AI_CONTEXT.md`](docs/AI_CONTEXT.md) | Product goals, scope, feature list |
+| [`docs/AI_ARCHITECTURE.md`](docs/AI_ARCHITECTURE.md) | Technical architecture, data model, API surface, auth, deployment |
+| [`docs/AI_RULES.md`](docs/AI_RULES.md) | Coding conventions and rules for this codebase |
+| [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) | Framework quirks/bugs that are easy to reintroduce |
+| [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) | Map of `src/` and what lives where |
+| [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | Condensed quick-reference for AI coding assistants |
+
+## Deployment
+
+Deployed on [Vercel](https://vercel.com). `npm run build` runs `prisma generate`
+automatically, so no extra build step is needed beyond setting the environment variables
+above in the Vercel project settings.

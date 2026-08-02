@@ -1,6 +1,8 @@
 # AI_ARCHITECTURE.md
 
-> Technical architecture of the Portfolio system. Read alongside `AI_CONTEXT.md` (goals/scope) and `AI_RULES.md` (coding rules) before generating code.
+> Technical architecture of the Portfolio system. Read alongside `AI_CONTEXT.md`
+> (goals/scope) and `AI_RULES.md` (coding rules). For a condensed quick-reference, see
+> `.github/copilot-instructions.md`.
 
 ---
 
@@ -9,785 +11,206 @@
 ```
 Client (Browser)
        |
-Frontend Application (Next.js / React / TypeScript / Tailwind)
+Next.js App Router (Server Components + Server Actions + Route Handlers)
        |
-Backend API (REST, JWT auth)
+Prisma ORM
        |
-Database (PostgreSQL recommended)
+PostgreSQL
 ```
 
-### Recommended Tech Stack
+There is **no separate REST/Express backend**. Server Actions in `src/lib/actions/*.ts` are
+the "backend" — they run on the server, call Prisma directly, and are called from Server
+Components like a normal async function. Route Handlers under `src/app/api/*/route.ts`
+exist only for the handful of things Server Actions can't do (see §5).
 
-| Component | Primary Choice | Alternatives |
-|---|---|---|
-| Frontend | Next.js + React + TypeScript + Tailwind CSS | — |
-| Backend framework | Node.js + Express.js | Next.js API Routes (if integrated with the frontend) / NestJS (for larger systems needing more structure) |
-| Database | PostgreSQL (recommended for production — ACID, JSON support) | MongoDB (document-based) / SQLite (dev/test) |
-| Authentication | JWT (access + refresh token) | — |
-| Password hashing | bcrypt (minimum 12 rounds) | — |
-| Rate limiting | express-rate-limit | — |
-| File storage | AWS S3 / Cloudflare R2 (production) | Local disk (dev) |
-| Upload middleware | Multer | — |
-| Image processing | Sharp | — |
-| Validation | Joi / Yup / express-validator | — |
-| Security headers | helmet, cors | — |
-| Cache / rate-limit store | Redis | — |
-| Logging | winston | — |
-| Deployment | Vercel (frontend), Docker + PM2 (backend) | — |
+### Tech Stack
 
----
-
-## 2. Application Layers
-
-### Frontend Layer
-
-**Responsibilities:**
-
-* Render UI.
-* Handle user interaction.
-* Call backend APIs.
-* Manage application state.
-* **Does not** contain business logic.
-
-**Suggested directory structure:**
-
-```
-src/
- ├── components/   # Shared UI components
- ├── pages/        # or app/ with App Router
- ├── features/     # feature-specific logic
- ├── services/     # API calls
- ├── hooks/        # custom hooks
- └── utils/
-```
-
-(See the full structure in `AI_RULES.md` section 2.)
-
-### Backend Layer
-
-**Responsibilities:**
-
-* Business logic.
-* Authentication / Authorization.
-* Data validation.
-* CRUD operations.
-* Database access **only** through the repository/data access layer.
-
-**Suggested directory structure:**
-
-```
-src/
-├── controllers/   # Route handlers (request/response only)
-│   ├── authController.js
-│   ├── blogController.js
-│   ├── projectController.js
-│   ├── skillController.js
-│   ├── certificationController.js
-│   ├── contactController.js
-│   ├── uploadController.js
-│   └── dashboardController.js
-├── middleware/
-│   ├── auth.js          # JWT authentication
-│   ├── validation.js    # Request validation
-│   ├── rateLimit.js     # Rate limiting
-│   ├── upload.js        # File upload handling
-│   └── errorHandler.js  # Centralized error handling
-├── models/               # Database models/entities
-│   ├── User.js
-│   ├── Blog.js
-│   ├── Project.js
-│   ├── Skill.js
-│   ├── Certification.js
-│   ├── Contact.js
-│   └── Document.js
-├── routes/
-│   ├── auth.js
-│   ├── blogs.js
-│   ├── projects.js
-│   ├── skills.js
-│   ├── certifications.js
-│   ├── contacts.js
-│   ├── upload.js
-│   └── dashboard.js
-├── services/             # Business logic
-│   ├── authService.js
-│   ├── emailService.js
-│   ├── fileService.js
-│   └── notificationService.js
-├── utils/
-│   ├── database.js
-│   ├── jwt.js
-│   ├── validation.js
-│   ├── fileUtils.js
-│   └── helpers.js
-├── config/
-│   ├── database.js
-│   ├── jwt.js
-│   ├── upload.js
-│   └── cors.js
-└── tests/
-    ├── auth.test.js
-    ├── blogs.test.js
-    └── projects.test.js
-```
-
-**Backend layering principle (3-layer):**
-
-```
-Controller  → only receives requests, calls the service, returns the response
-Service     → contains all business logic
-Repository  → interacts directly with the database
-```
-
-DTOs are used to transfer data between layers and between client–server.
-
----
-
-## 3. Domain Modules & Data Flow
-
-### Profile Module
-
-```
-Admin → Profile API → Profile Service → Database
-```
-
-### Blog Module (standard CRUD pattern, applied to all modules)
-
-```
-Admin Create Blog
-        |
-        v
-Blog Controller
-        |
-        v
-Blog Service
-        |
-        v
-Blog Repository
-        |
-        v
-Database
-```
-
-The same CRUD pattern applies to: **Projects, Skills, Certificates, Social Media, Certifications, Contacts** (Contact is Read/Update/Delete only from the admin side).
-
-### Public Data Flow (e.g. Projects page)
-
-```
-Visitor
- |
-Open Projects Page
- |
-Call Project API
- |
-Get Project Data
- |
-Render UI
-```
-
-### Admin Data Flow (e.g. generic CRUD)
-
-```
-Admin
- |
-Dashboard
- |
-CRUD API
- |
-Business Service
- |
-Database Update
-```
-
-### Mandatory Architecture Rules
-
-* Frontend should not contain business logic.
-* Backend handles validation.
-* Database access only through the repository/data layer.
-* Keep modules independent (loose coupling).
-* Avoid duplicated code across modules.
-
----
-
-## 4. Database Schema (PostgreSQL)
-
-```sql
--- Users (admin)
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    avatar TEXT,
-    role VARCHAR(50) DEFAULT 'admin',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Blogs
-CREATE TABLE blogs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) UNIQUE NOT NULL,
-    content TEXT NOT NULL,
-    excerpt TEXT,
-    status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
-    tags JSONB DEFAULT '[]',
-    featured_image TEXT,
-    published_at TIMESTAMP,
-    view_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    author_id UUID REFERENCES users(id) ON DELETE SET NULL
-);
-
--- Projects
-CREATE TABLE projects (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title VARCHAR(255) NOT NULL,
-    description TEXT NOT NULL,
-    technologies JSONB DEFAULT '[]',
-    live_url TEXT,
-    github_url TEXT,
-    images JSONB DEFAULT '[]',
-    featured BOOLEAN DEFAULT FALSE,
-    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'archived')),
-    start_date DATE,
-    end_date DATE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Skills
-CREATE TABLE skills (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
-    category VARCHAR(100),
-    level VARCHAR(50) CHECK (level IN ('beginner', 'intermediate', 'advanced', 'expert')),
-    years_of_experience INTEGER,
-    description TEXT,
-    icon TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Certifications
-CREATE TABLE certifications (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
-    issuer VARCHAR(255) NOT NULL,
-    issue_date DATE NOT NULL,
-    expiry_date DATE,
-    credential_id VARCHAR(255),
-    credential_url TEXT,
-    description TEXT,
-    logo TEXT,
-    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'expired')),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Contacts
-CREATE TABLE contacts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    subject VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
-    company VARCHAR(255),
-    phone VARCHAR(50),
-    status VARCHAR(20) DEFAULT 'unread' CHECK (status IN ('unread', 'read', 'replied')),
-    notes TEXT,
-    ip_address INET,
-    user_agent TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Documents (attachments for a Project)
-CREATE TABLE documents (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
-    filename VARCHAR(255) NOT NULL,
-    original_name VARCHAR(255) NOT NULL,
-    mime_type VARCHAR(100) NOT NULL,
-    size_bytes INTEGER NOT NULL,
-    file_path TEXT NOT NULL,
-    url TEXT NOT NULL,
-    title VARCHAR(255),
-    description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- About page content
-CREATE TABLE about_content (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    bio TEXT,
-    skills JSONB DEFAULT '[]',
-    experience TEXT,
-    education TEXT,
-    profile_image TEXT,
-    resume_url TEXT,
-    social_links JSONB DEFAULT '{}',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Refresh tokens
-CREATE TABLE refresh_tokens (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    token_hash VARCHAR(255) NOT NULL,
-    expires_at TIMESTAMP NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Uploaded files (general)
-CREATE TABLE uploaded_files (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    filename VARCHAR(255) NOT NULL,
-    original_name VARCHAR(255) NOT NULL,
-    mime_type VARCHAR(100) NOT NULL,
-    size_bytes INTEGER NOT NULL,
-    file_path TEXT NOT NULL,
-    url TEXT NOT NULL,
-    thumbnail_url TEXT,
-    file_type VARCHAR(50), -- 'avatar', 'project', 'blog', 'document'
-    alt_text TEXT,
-    uploaded_by UUID REFERENCES users(id) ON DELETE SET NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Indexes
-CREATE INDEX idx_blogs_status ON blogs(status);
-CREATE INDEX idx_blogs_published_at ON blogs(published_at);
-CREATE INDEX idx_blogs_slug ON blogs(slug);
-CREATE INDEX idx_projects_status ON projects(status);
-CREATE INDEX idx_projects_featured ON projects(featured);
-CREATE INDEX idx_contacts_status ON contacts(status);
-CREATE INDEX idx_contacts_created_at ON contacts(created_at);
-CREATE INDEX idx_documents_project_id ON documents(project_id);
-CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
-CREATE INDEX idx_refresh_tokens_expires_at ON refresh_tokens(expires_at);
-```
-
----
-
-## 5. API Design
-
-### General Information
-
-* **Base URL:** `https://your-domain.com/api` (production) / `http://localhost:3000/api/v1` (dev)
-* **Auth:** JWT Bearer Token (`Authorization: Bearer <token>`)
-* **Content-Type:** `application/json` (except uploads, which use `multipart/form-data`)
-* **API Version:** v1
-
-### Standard Response Format
-
-**Success:**
-
-```json
-{
-  "success": true,
-  "data": { ... }
-}
-```
-
-**With pagination:**
-
-```json
-{
-  "success": true,
-  "data": [...],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 150,
-    "totalPages": 15,
-    "hasNext": true,
-    "hasPrev": false
-  }
-}
-```
-
-**Error:**
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "ERROR_CODE",
-    "message": "Human readable error message",
-    "details": "Additional error details (optional)"
-  },
-  "timestamp": "2025-10-13T10:30:00Z"
-}
-```
-
-### HTTP Status Codes
-
-`200` Success · `201` Created · `400` Bad Request · `401` Unauthorized · `403` Forbidden · `404` Not Found · `409` Conflict · `422` Validation Error · `429` Rate Limit Exceeded · `500` Internal Server Error
-
-### Standard Error Codes
-
-`INVALID_CREDENTIALS` · `TOKEN_EXPIRED` · `TOKEN_MISSING` · `TOKEN_INVALID` · `USER_NOT_FOUND` · `VALIDATION_ERROR` · `RESOURCE_NOT_FOUND` · `DUPLICATE_ENTRY` · `FILE_TOO_LARGE` · `INVALID_FILE_TYPE` · `RATE_LIMIT_EXCEEDED` · `FILE_UPLOAD_ERROR` · `INTERNAL_ERROR`
-
-### Standard Pagination Parameters
-
-```
-?page=1&limit=10&sort=createdAt&order=desc
-```
-
-* `page` (default 1) · `limit` (default 10, max 100) · `sort` (default `createdAt`) · `order` (`asc`/`desc`, default `desc`)
-
-### Main Endpoint List
-
-#### Authentication & User Management
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/auth/login` | Login, returns access + refresh token |
-| POST | `/api/auth/logout` | Logout, invalidates tokens |
-| GET | `/api/auth/me` | Get current user info |
-| PUT | `/api/auth/me` | Update user info |
-| POST | `/api/auth/refresh` | Refresh access token using refresh token |
-
-#### Blog Management
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/blogs` | List blogs (supports `search`, `status`, `tags`, pagination) |
-| GET | `/api/blogs/:id` | Get a single blog |
-| POST | `/api/blogs` | Create a blog |
-| PUT | `/api/blogs/:id` | Update a blog |
-| DELETE | `/api/blogs/:id` | Delete a blog |
-| POST | `/api/blogs/bulk-delete` | Bulk delete blogs (`{ "ids": [...] }`) |
-| GET | `/api/blogs/stats` | Blog statistics |
-
-#### Project Management
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/projects` | List projects (`featured`, `status`, `technology`) |
-| GET | `/api/projects/:id` | Get project detail |
-| POST | `/api/projects` | Create a project |
-| PUT | `/api/projects/:id` | Update a project |
-| DELETE | `/api/projects/:id` | Delete a project |
-| POST | `/api/projects/bulk-delete` | Bulk delete projects |
-| GET | `/api/projects/stats` | Project statistics |
-| GET | `/api/projects/:id/documents` | List documents for a project |
-| POST | `/api/projects/:id/documents` | Upload a document for a project (multipart) |
-
-#### Skills Management
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/skills` | List skills (`category`, `level`) |
-| POST | `/api/skills` | Create a skill |
-| PUT | `/api/skills/:id` | Update a skill |
-| DELETE | `/api/skills/:id` | Delete a skill |
-| POST | `/api/skills/bulk-delete` | Bulk delete skills |
-
-#### Certifications Management
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/certifications` | List certifications (`issuer`, `status`) |
-| POST | `/api/certifications` | Create a certification |
-| PUT | `/api/certifications/:id` | Update a certification |
-| DELETE | `/api/certifications/:id` | Delete a certification |
-| POST | `/api/certifications/bulk-delete` | Bulk delete certifications |
-
-#### Contact Management
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/contacts` | List contacts (`status`, sorting) — admin |
-| GET | `/api/contacts/:id` | Get contact detail — admin |
-| PUT | `/api/contacts/:id` | Update status/notes — admin |
-| DELETE | `/api/contacts/:id` | Delete a contact — admin |
-| POST | `/api/contacts` | **Public** — Submit the contact form. Rate limit: 5 per hour per IP |
-
-#### About Page Management
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/about` | Get About content |
-| PUT | `/api/about` | Update About content — admin |
-
-#### File Upload & Media
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/upload` | General file upload (`type`: avatar/project/blog/document) |
-| POST | `/api/upload/avatar` | Upload avatar |
-| POST | `/api/upload/project-images` | Upload project images |
-| POST | `/api/upload/documents` | Upload documents |
-| DELETE | `/api/upload/:id` | Delete a file |
-| GET | `/api/media` | List media (`type`, `search`) |
-
-#### Dashboard & Analytics
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/dashboard/stats` | Overview statistics (blogs, projects, contacts, skills, certifications, storage) |
-| GET | `/api/dashboard/recent` | Recent activities |
-
-### Rate Limiting
-
-| Endpoint type | Limit |
+| Component | Choice |
 |---|---|
-| Authentication | 5 attempts / 15 minutes / IP |
-| Contact Form | 5 submissions / hour / IP |
-| File Upload | 20 uploads / hour / user |
-| General API | 100 requests / minute / user |
-| Bulk Operations | 10 operations / minute / user |
-
-Response headers included: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
-
-### File Upload — Limits & Rules
-
-* **Size:** Images max 5MB · Documents max 10MB · Videos max 50MB.
-* **Allowed formats:**
-  * Images: JPEG, PNG, WebP, GIF, SVG (icons only).
-  * Documents: PDF, DOC, DOCX, TXT, MD.
-  * Archives: ZIP (for project files).
-* **Automatic image processing:** web-optimized compression, thumbnail generation (150x150, 300x300), WebP conversion, EXIF metadata removal for privacy.
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Language | TypeScript, React 19 |
+| Styling | Tailwind CSS v4 (CSS-first — see `src/app/globals.css`, no `tailwind.config.ts`) |
+| UI components | shadcn/ui (New York style) + Radix primitives |
+| ORM / DB | Prisma 7, PostgreSQL (client generated to `generated/prisma`, not the default location) |
+| Auth | NextAuth v5 (beta), credentials provider, JWT session strategy |
+| Forms | React Hook Form + Zod (client-side schema mirrored server-side in the action) |
+| Hosting | Vercel |
 
 ---
 
-## 6. Authentication & Technical Security
+## 2. Data Flow
 
-### JWT Configuration
+### Public reads
 
-* Access token: expires after **15 minutes**.
-* Refresh token: expires after **7 days**.
-* `issuer: 'portfolio-api'`, `audience: 'portfolio-admin'`.
-
-**Authentication flow:**
-
-1. Login with email/password → receive `accessToken` + `refreshToken`.
-2. Send `accessToken` in the `Authorization` header on every subsequent request.
-3. When the access token expires → use the `refreshToken` to get a new access token via `POST /api/auth/refresh`.
-4. Logout → invalidate the token (delete/blacklist the refresh token).
-
-### Authentication Middleware (sample)
-
-```javascript
-// middleware/auth.js
-const authenticateToken = async (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      error: { code: 'TOKEN_MISSING', message: 'Access token is required' },
-    });
-  }
-
-  try {
-    const decoded = jwt.verify(token, accessTokenSecret);
-    const user = await User.findById(decoded.userId);
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: { code: 'USER_NOT_FOUND', message: 'User not found' },
-      });
-    }
-    req.user = user;
-    next();
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        success: false,
-        error: { code: 'TOKEN_EXPIRED', message: 'Access token has expired' },
-      });
-    }
-    return res.status(403).json({
-      success: false,
-      error: { code: 'TOKEN_INVALID', message: 'Invalid access token' },
-    });
-  }
-};
+```
+Page (Server Component, async)
+  → getPublic*() in src/lib/actions/{resource}.ts   e.g. getPublicBlogs, getPublicProjects
+      → Prisma query, filtered to published/active content only
+  → renders with the typed result
 ```
 
-### Password Handling
+### Admin reads/writes
 
-```javascript
-const bcrypt = require('bcrypt');
-const hashPassword = async password => bcrypt.hash(password, 12); // minimum 12 rounds
-const comparePassword = async (password, hash) => bcrypt.compare(password, hash);
+```
+Admin page → Client component (form/table) → Server Action
+  → ensureAdmin() first (src/lib/auth-utils.ts) — throws if not an authenticated admin
+  → Prisma create/update/delete
+  → revalidatePath() on the affected public + admin routes
 ```
 
-### Security Headers (helmet + cors)
+`ensureAdmin()` checks the NextAuth session for either `role === 'ADMIN'` (a DB `User`, set
+by the `jwt` callback in `src/auth.config.ts`) or an email match against the
+`ADMIN_EMAIL` env var (the fallback admin). Every mutating action must call it first — this
+is the real authorization boundary, not just the route matcher (see §4).
 
-* Content-Security-Policy restricting `defaultSrc`, `styleSrc`, `imgSrc`, `scriptSrc` to trusted sources only.
-* HSTS enabled with `maxAge` of 1 year, including subdomains, with preload.
-* CORS allows only origins declared via `CORS_ORIGIN` (comma-separated list), `credentials: true`.
+### DB-with-fallback pattern
 
-### Input Sanitization
+A few `get*` functions in `src/lib/actions/about.ts` query the DB first and fall back to
+the static data in `src/data/content.ts` (`PROFILE`, `EXPERIENCES`) only if the table is
+empty — this is what makes the site render sensibly on a fresh install before the admin has
+entered real data. Don't remove this fallback, and don't add it to new resources unless
+there's a similar bootstrapping need.
 
-* Sanitize HTML using DOMPurify (whitelist of safe tags: `p, br, strong, em, ul, ol, li, h1-h6`, no attributes allowed).
-* Trim and strip `<` `>` characters from raw string input.
-* Validate request bodies with a schema (Joi) before processing — return `422 VALIDATION_ERROR` when invalid.
+---
 
-### Other Security Measures
+## 3. Domain Modules
 
-* JWT secrets should be random, sufficiently strong, and stored in environment variables.
-* Refresh tokens stored hashed, or as HTTP-only cookies.
-* Soft deletes for important data.
-* Audit logging for write/update operations on sensitive data.
-* Comply with OWASP, GDPR (especially the `contacts` table: allow deletion on request, avoid retaining more data than necessary).
+Every content type follows the same CRUD pattern, one Server Action file per Prisma model
+(with one intentional exception — see below):
+
+| Resource | Action file | Notes |
+|---|---|---|
+| Blog | `src/lib/actions/blog.ts` | draft/published/archived, tags |
+| Project | `src/lib/actions/project.ts` | tags, images, featured flag |
+| Skill | `src/lib/actions/skill.ts` | category enum, level 1–5 |
+| Certification | `src/lib/actions/certification.ts` | active/expired |
+| Contact | `src/lib/actions/contact.ts` | admin: status/notes/delete + visitor log; public: create only (via `/api/contact`, not a Server Action — see §5) |
+| Profile / SocialLink / Experience / Education / Achievement / SpokenLanguage / Activity | `src/lib/actions/about.ts` | one file for all seven — they're all edited together on the single admin "Resume" page, unlike every other resource |
+| Auth settings (change password) | `src/lib/actions/auth-settings.ts` | |
+
+For list-style resources (Blog, Project, Skill, Certification), admin reads support search,
+status/category filters, and bulk delete where the admin UI needs it — check the existing
+action file for a resource before adding a new query pattern.
+
+---
+
+## 4. Authentication
+
+- **`src/auth.config.ts`** — shared NextAuth config: JWT session (24h), `pages.signIn` =
+  `/admin/login`, `authorized()` callback redirects unauthenticated `/admin/*` requests to
+  the login page and redirects already-logged-in users away from it.
+- **`src/auth.ts`** — Credentials provider: looks up `User` in Postgres via Prisma + bcrypt.
+  If the DB is unreachable or the user doesn't exist, falls back to a single env-defined
+  admin (`ADMIN_EMAIL` / `ADMIN_PASSWORD_HASH`) — this is the recovery path if the DB is
+  down, keep it.
+- **`src/proxy.ts`** — the Next.js 16 middleware (renamed from `middleware.ts`; don't
+  recreate `middleware.ts`, having both causes a conflict). Matcher is `/admin/:path*`
+  only — it's a UX-layer redirect, not the security boundary. The real guard is
+  `ensureAdmin()`, called inside every mutating Server Action.
+- Sessions carry `role` and `id` via the `jwt`/`session` callbacks in `auth.config.ts`.
+
+---
+
+## 5. Route Handlers (`src/app/api/*`)
+
+Only used where a Server Action can't do the job (public POST without a form action,
+framework-required routes, or serving raw JSON):
+
+| Route | Method | Purpose |
+|---|---|---|
+| `/api/auth/[...nextauth]` | GET, POST | NextAuth's own handler (`export const { GET, POST } = handlers`) |
+| `/api/admin/create` | POST | One-time admin user creation, protected by `ADMIN_SETUP_KEY` |
+| `/api/contact` | POST | Public contact form submission, rate-limited |
+| `/api/visitor` | POST | Visitor logging (called from `VisitorModal`) |
+| `/api/swagger` | GET | Serves the OpenAPI JSON spec (built by `src/lib/swagger.ts`) |
+
+`/api-doc` (`src/app/api/../api-doc/page.tsx`, note: **not** under `src/app/api/`) is a
+Swagger UI *page* that fetches the spec above and renders it via
+`src/components/SwaggerUIClient.tsx` — it's auth-gated like the admin area even though it
+lives outside `src/app/admin/`.
+
+### Rate limiting
+
+`src/lib/rate-limit.ts` — a simple in-memory `Map<ip, {count, expiresAt}>` limiter
+(`checkRateLimit(ip, limit, windowMs)`), used by `/api/contact`. Being in-memory, it resets
+on redeploy/cold-start and doesn't share state across serverless instances — acceptable for
+this app's traffic level; swap for a durable store (e.g. Redis/Upstash) if that ever
+becomes a real problem.
+
+---
+
+## 6. Database Schema
+
+Source of truth: `prisma/schema.prisma`. Client generator output is `generated/prisma`
+(not the default `node_modules/.prisma`) — run `npx prisma generate` after any schema
+change (`npm run build` does this automatically).
+
+**Models:** `User`, `Blog`, `BlogTag`, `Tag`, `Project`, `ProjectTag`, `ProjectImage`,
+`Skill`, `Certification`, `SocialLink`, `Experience`, `Contact`, `Media`, `Profile`,
+`Education`, `Achievement`, `SpokenLanguage`, `Activity`.
+
+**Enums:** `Role` (ADMIN, SUPER_ADMIN) · `PostStatus` (DRAFT, PUBLISHED, ARCHIVED) ·
+`SkillCategory` (FRONTEND, BACKEND, DEVOPS, TOOLS, OTHER, LANGUAGE, FRAMEWORK, DATABASE,
+CLOUD, IAC, MONITORING, VERSION_CONTROL) · `CertStatus` (ACTIVE, EXPIRED) ·
+`ContactStatus` (UNREAD, READ, REPLIED).
+
+Notable relations: `Blog`/`Project` each belong to a `User` (`authorId`) and have a
+many-to-many with `Tag` through `BlogTag`/`ProjectTag`; `Project` has many `ProjectImage`;
+`Media` belongs to the `User` who uploaded it (`uploadedById`).
+
+Indexes exist on `Blog`/`Project` (`status`, plus `publishedAt`/`slug` or `featured`) and
+`Contact` (`status`, `createdAt`) for the list/filter queries the admin UI needs.
 
 ---
 
 ## 7. Environment Variables
 
-```bash
-NODE_ENV=development
-PORT=3000
-
-# Database
-DATABASE_URL=postgresql://username:password@localhost:5432/portfolio_db
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=portfolio_db
-DB_USER=username
-DB_PASSWORD=password
-
-# JWT Secrets
-JWT_ACCESS_SECRET=your-super-secure-access-token-secret
-JWT_REFRESH_SECRET=your-super-secure-refresh-token-secret
-
-# File Storage
-UPLOAD_DIR=uploads
-MAX_FILE_SIZE=10485760
-ALLOWED_FILE_TYPES=image/jpeg,image/png,image/webp,application/pdf
-
-# AWS S3 (if used)
-AWS_ACCESS_KEY_ID=your-access-key
-AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_REGION=us-east-1
-AWS_S3_BUCKET=portfolio-files
-
-# Email Service (for contact forms)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-
-# Redis (caching & rate limiting)
-REDIS_URL=redis://localhost:6379
-
-# Security
-CORS_ORIGIN=http://localhost:3000,https://yourportfolio.com
-RATE_LIMIT_WINDOW=900000
-RATE_LIMIT_MAX=100
-```
-
-> **Security note:** Never commit a `.env` file containing real values to git. Use `.env.local` for local development and validate environment variables on application startup.
-
----
-
-## 8. Deployment
-
-### Docker
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-
-```yaml
-# docker-compose.yml
-version: '3.8'
-services:
-  api:
-    build: .
-    ports:
-      - '3000:3000'
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:password@db:5432/portfolio
-    depends_on:
-      - db
-      - redis
-
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: portfolio
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  redis:
-    image: redis:alpine
-    ports:
-      - '6379:6379'
-
-volumes:
-  postgres_data:
-```
-
-### Deployment Process
+See `.env.example` for the authoritative, up-to-date list with generation commands. Summary:
 
 ```bash
-git pull origin main
-npm ci --production
-npm run migrate
-npm run build
-pm2 restart portfolio-api
+DATABASE_URL=            # PostgreSQL connection string (Neon / Prisma Postgres)
+AUTH_SECRET=              # NextAuth session secret
+AUTH_URL=                 # Production URL, no trailing slash
+ADMIN_EMAIL=               # Env-based admin fallback login
+ADMIN_PASSWORD_HASH=      # bcrypt hash for the above
+ADMIN_SETUP_KEY=          # Required to call POST /api/admin/create
+NEXT_PUBLIC_SITE_URL=      # Used for OpenGraph/canonical tags, sitemap.xml
 ```
 
-* **Frontend (Next.js):** recommended deployment via **Vercel** (per the MVP plan, Day 7).
-* **Backend:** run via **PM2** (cluster mode, leveraging multi-core CPUs).
-
-### Backup
-
-```bash
-DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR="/backups"
-
-pg_dump $DATABASE_URL > "$BACKUP_DIR/db_$DATE.sql"
-tar -czf "$BACKUP_DIR/files_$DATE.tar.gz" uploads/
-
-# Keep the last 7 days of backups
-find $BACKUP_DIR -name "*.sql" -mtime +7 -delete
-find $BACKUP_DIR -name "*.tar.gz" -mtime +7 -delete
-```
+> **Security note:** never commit `.env` with real values. `.env.example` holds only
+> placeholders and is safe to commit.
 
 ---
 
-## 9. Monitoring & Logging
+## 8. Routing Notes
 
-* Use `winston` for structured logging (JSON, with timestamp, error stack).
-* Log errors separately (`logs/error.log`) and combined logs (`logs/combined.log`); log to console only outside production.
-* **Health check endpoint** (`GET /health`): checks service status + database connection, returns `200` when healthy, `503` on error.
-* **Performance monitoring middleware:** records method, URL, status code, response time, user agent, and IP for each request.
-* Monitor: request/response logging, error tracking & alerting, performance monitoring, security event logging.
-
----
-
-## 10. Non-Functional Requirements the Architecture Must Satisfy
-
-* PageSpeed 90+ on both mobile/desktop, FCP < 1.5s.
-* Support 1000+ concurrent users; handle up to 500 blogs / 100 projects.
-* Sensible caching for static & dynamic content; scale horizontally via serverless architecture when needed.
-* HTTPS mandatory across the system.
-* Target uptime of 99.9%; have fallback mechanisms in place for errors.
-* TypeScript across the entire codebase to ensure type safety.
-* API versioning via URL path (`/api/v1/`), maintain backward compatibility, provide deprecation notices for breaking changes.
+- Dynamic detail routes (`blog/[slug]`, `project/[slug]`) export `generateStaticParams`
+  **and** `export const dynamic = 'force-dynamic'` — both are required, see
+  `docs/KNOWN_ISSUES.md` for why removing `force-dynamic` silently breaks 404 status codes.
+- `src/app/sitemap.ts` / `src/app/robots.ts` are generated from live DB content
+  (`getPublicBlogs`/`getPublicProjects`) — add new public content-bearing routes there too.
+- Global `src/app/not-found.tsx` and `src/app/error.tsx` match the site theme. **Do not**
+  add a root `src/app/loading.tsx` — see `docs/KNOWN_ISSUES.md`.
+- `src/app/template.tsx` adds a fade/slide route-change transition (Framer Motion) that
+  runs on every navigation, including admin routes.
 
 ---
 
-## 11. Source References
+## 9. Deployment
 
-This file synthesizes: `api-documentation.md`, `api-implementation-guide.md`, `openapi-spec.yaml`, and the architecture sections of `software_requirements_specification.mdx`.
+Hosted on **Vercel**. `npm run build` runs `prisma generate && next build --turbopack` —
+no separate migration step is wired into the build; run `npx prisma migrate deploy`
+against production manually (or via a Vercel deploy hook) when the schema changes. Set all
+variables from §7 in the Vercel project's environment settings.
+
+---
+
+## 10. Non-Functional Notes
+
+- TypeScript throughout for type safety; prefer types derived from action return values
+  (`Awaited<ReturnType<typeof getPublicBlogs>>[number]`) over hand-duplicated shapes.
+- Semantic Tailwind color tokens (`text-foreground`, `bg-background`, etc., defined in
+  `globals.css`) so components work in both light/dark themes automatically.
+- No automated test suite yet (`npm test` is a no-op placeholder) — run
+  `npm run type-check`, `npm run lint`, and for anything touching routing/rendering,
+  `npm run build`, before considering a change done.

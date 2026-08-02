@@ -1,385 +1,155 @@
-'use client';
+import { notFound } from 'next/navigation';
+import { MainLayout } from '@/components';
+import { getPublicProjectBySlug, getPublicProjects } from '@/lib/actions/project';
+import Link from 'next/link';
+import { ArrowLeft, ExternalLink, Github, Calendar } from 'lucide-react';
+import type { Metadata } from 'next';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-// import Image from 'next/image';
-import {
-  ArrowLeft,
-  Calendar,
-  Users,
-  FileText,
-  Upload,
-  ExternalLink,
-  Link as LinkIcon,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Github,
-} from 'lucide-react';
-import { Project, ProjectDocument } from '@/types/Project';
-// Temporary type definitions
+interface ProjectDetailPageProps {
+  params: Promise<{ slug: string }>;
+}
 
-import { DocumentUpload } from '@/components/users/projects/DocumentUpload';
-import { DocumentList } from '@/components/users/projects/DocumentList';
-import MainLayout from '@/components/MainLayout';
+// Force per-request rendering: with static params, Next.js caches unmatched
+// slugs from notFound() with a 200 status instead of 404.
+export const dynamic = 'force-dynamic';
 
-export default function ProjectDetail() {
-  const params = useParams();
-  const router = useRouter();
-  const id = params?.slug as string;
-  const [project, setProject] = useState<Project | null>(null);
-  const [documents, setDocuments] = useState<ProjectDocument[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showUpload, setShowUpload] = useState(false);
+export async function generateStaticParams() {
+  const projects = await getPublicProjects();
+  return projects.map(p => ({ slug: p.slug }));
+}
 
-  const loadProjectDetails = useCallback(async () => {
-    try {
-      // TODO: Implement actual data loading
-      // Mock project data for now
-      const mockProject: Project = {
-        id: id,
-        title: 'Sample Project',
-        description: 'This is a sample project description',
-        detailed_description:
-          'This is a detailed description of the sample project.',
-        category: 'Web Development',
-        status: 'in-progress',
-        image_url: 'https://via.placeholder.com/800x400',
-        demo_url: '#',
-        github_url: '#',
-        project_url: '#',
-        technologies: ['React', 'TypeScript', 'Next.js', 'Tailwind CSS'],
-        start_date: '2024-01-01',
-        end_date: '2024-12-31',
-        team_size: 3,
-        client_name: 'Sample Client',
-        featured: true,
-        created_at: '2024-01-01',
-        updated_at: '2024-01-01',
-      };
+export async function generateMetadata({ params }: ProjectDetailPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const project = await getPublicProjectBySlug(slug);
 
-      setProject(mockProject);
-    } catch (error) {
-      alert('Error loading project: ' + error);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+  if (!project) return { title: 'Project Not Found' };
 
-  const loadDocuments = useCallback(async () => {
-    try {
-      // TODO: Implement actual document loading
-      // Mock documents for now
-      const mockDocuments: ProjectDocument[] = [
-        {
-          id: '1',
-          project_id: id,
-          title: 'Project Requirements',
-          description: 'Initial project requirements document',
-          file_url: '#',
-          file_type: 'pdf',
-          file_size: 1024000,
-          created_at: '2024-01-01',
-          updated_at: '2024-01-01',
-        },
-        {
-          id: '2',
-          project_id: id,
-          title: 'Design Mockups',
-          description: 'UI/UX design mockups',
-          file_url: '#',
-          file_type: 'zip',
-          file_size: 2048000,
-          created_at: '2024-01-02',
-          updated_at: '2024-01-02',
-        },
-      ];
-
-      setDocuments(mockDocuments);
-    } catch (error) {
-      alert('Error loading documents: ' + error);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    if (id) {
-      loadProjectDetails();
-      loadDocuments();
-    }
-  }, [id, loadProjectDetails, loadDocuments]);
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'in-progress':
-        return <Clock className="w-5 h-5 text-blue-600" />;
-      case 'planning':
-        return <AlertCircle className="w-5 h-5 text-yellow-600" />;
-      default:
-        return <Clock className="w-5 h-5 text-slate-600" />;
-    }
+  return {
+    title: project.title,
+    description: project.description,
+    openGraph: {
+      title: project.title,
+      description: project.description ?? undefined,
+      type: 'website',
+    },
   };
+}
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-50 text-green-700 border-green-200';
-      case 'in-progress':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'planning':
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      default:
-        return 'bg-slate-50 text-slate-700 border-slate-200';
-    }
-  };
+export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
+  const { slug } = await params;
+  const project = await getPublicProjectBySlug(slug);
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading project details...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!project) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">
-            Project Not Found
-          </h2>
-          <button
-            onClick={() => router.push('/')}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Projects
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (!project) notFound();
 
   return (
     <MainLayout>
-      {/* Main Project Content */}
-      <div className="col-span-1 lg:col-span-8">
-        <button
-          onClick={() => router.push('/')}
-          className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors"
+      <div className="max-w-4xl mx-auto px-6 py-24 pt-32">
+        {/* Back link */}
+        <Link
+          href="/project"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-10 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Projects
-        </button>
+          <ArrowLeft className="h-4 w-4" />
+          All Projects
+        </Link>
 
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-          <div className="relative h-64 sm:h-80 bg-slate-100">
-            {/* <Image
-              src={project.image_url}
-              alt={project.title}
-              width={100}
-              height={100}
-              className="w-full h-full object-cover"
-            /> */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
+        {/* Header */}
+        <div className="mb-10">
+          <div className="flex flex-wrap items-center gap-3 mb-4">
             {project.featured && (
-              <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
-                <span className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium bg-blue-500 text-white shadow-lg backdrop-blur-sm">
-                  Featured Project
-                </span>
-              </div>
+              <span className="px-2.5 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                Featured
+              </span>
             )}
+            <span className="px-2.5 py-0.5 text-xs bg-muted rounded-full text-muted-foreground capitalize">
+              {project.status}
+            </span>
           </div>
 
-          <div className="p-8">
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                {project.category}
-              </span>
-              <span
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border ${getStatusColor(project.status)}`}
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 leading-tight">
+            {project.title}
+          </h1>
+
+          <p className="text-lg text-muted-foreground leading-relaxed mb-6">
+            {project.description}
+          </p>
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-3">
+            {project.demoUrl && (
+              <a
+                href={project.demoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-foreground text-background rounded-lg font-medium text-sm hover:bg-foreground/90 transition-colors"
               >
-                {getStatusIcon(project.status)}
-                {project.status.charAt(0).toUpperCase() +
-                  project.status.slice(1)}
-              </span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-4 leading-tight">
-              {project.title}
-            </h1>
-            <p className="text-base sm:text-lg text-slate-600 mb-6 leading-relaxed">
-              {project.description}
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
-                <Calendar className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
-                    Start Date
-                  </p>
-                  <p className="text-sm font-semibold text-slate-900 truncate">
-                    {formatDate(project.start_date)}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
-                <Calendar className="w-5 h-5 text-green-600 flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
-                    End Date
-                  </p>
-                  <p className="text-sm font-semibold text-slate-900 truncate">
-                    {formatDate(project.end_date)}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors sm:col-span-2 lg:col-span-1">
-                <Users className="w-5 h-5 text-purple-600 flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
-                    Team Size
-                  </p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {project.team_size}{' '}
-                    {project.team_size === 1 ? 'member' : 'members'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {project.client_name && (
-              <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-sm text-blue-600 font-medium mb-1">Client</p>
-                <p className="text-lg text-blue-900 font-semibold">
-                  {project.client_name}
-                </p>
-              </div>
+                <ExternalLink className="h-4 w-4" />
+                Live Demo
+              </a>
             )}
-
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3 uppercase tracking-wide">
-                Technologies
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {project.technologies.map((tech, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200 hover:from-blue-100 hover:to-blue-150 transition-all duration-200"
-                  >
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 mb-8">
-              {project.demo_url && (
-                <a
-                  href={project.demo_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  View Demo
-                </a>
-              )}
-              {project.github_url && (
-                <a
-                  href={project.github_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-800 text-white rounded-lg hover:bg-slate-900 transition-all duration-200 font-medium"
-                >
-                  <Github className="w-4 h-4" />
-                  GitHub
-                </a>
-              )}
-              {project.project_url && (
-                <a
-                  href={project.project_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-all duration-200 border border-slate-300 font-medium"
-                >
-                  <LinkIcon className="w-4 h-4" />
-                  Project Link
-                </a>
-              )}
-            </div>
-
-            {project.detailed_description && (
-              <div className="prose max-w-none">
-                <h2 className="text-2xl font-bold text-slate-900 mb-4">
-                  About This Project
-                </h2>
-                <p className="text-slate-700 whitespace-pre-line leading-relaxed">
-                  {project.detailed_description}
-                </p>
-              </div>
+            {project.repoUrl && (
+              <a
+                href={project.repoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 border border-border rounded-lg font-medium text-sm text-foreground hover:bg-accent transition-colors"
+              >
+                <Github className="h-4 w-4" />
+                View Code
+              </a>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Sidebar - Project Documents */}
-      <div className="col-span-1 lg:col-span-4">
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 lg:sticky lg:top-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <FileText className="w-6 h-6 text-blue-600" />
-              <h2 className="text-xl font-bold text-slate-900">Documents</h2>
+        <hr className="border-border mb-10" />
+
+        {/* Meta */}
+        <div className="grid sm:grid-cols-2 gap-6 mb-10">
+          {project.publishedAt && (
+            <div className="flex items-center gap-3 text-sm">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <p className="text-muted-foreground">Published</p>
+                <p className="text-foreground font-medium">
+                  {new Date(project.publishedAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </p>
+              </div>
             </div>
-            <button
-              onClick={() => setShowUpload(!showUpload)}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-            >
-              <Upload className="w-4 h-4" />
-              <span className="hidden sm:inline">Upload</span>
-            </button>
+          )}
+          <div>
+            <p className="text-sm text-muted-foreground mb-2">Technologies</p>
+            <div className="flex flex-wrap gap-2">
+              {project.technologies.map(tech => (
+                <span
+                  key={tech}
+                  className="px-2.5 py-1 text-xs bg-muted rounded-md text-muted-foreground"
+                >
+                  {tech}
+                </span>
+              ))}
+            </div>
           </div>
-
-          {showUpload && (
-            <DocumentUpload
-              projectId={project.id}
-              isOpen={showUpload}
-              onUploadComplete={() => {
-                loadDocuments();
-                setShowUpload(false);
-              }}
-              onCancel={() => setShowUpload(false)}
-            />
-          )}
-
-          {documents.length === 0 && !showUpload ? (
-            <div className="text-center py-8">
-              <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500 text-sm">
-                No documents uploaded yet
-              </p>
-              <p className="text-slate-400 text-xs mt-1">
-                Upload project documents to get started
-              </p>
-            </div>
-          ) : (
-            <DocumentList documents={documents} onDelete={loadDocuments} />
-          )}
         </div>
+
+        {/* Content */}
+        {project.content && (
+          <div
+            className="prose prose-neutral dark:prose-invert max-w-none
+              prose-headings:font-bold prose-headings:tracking-tight
+              prose-h2:text-2xl prose-h3:text-xl
+              prose-p:text-muted-foreground prose-p:leading-relaxed
+              prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+              prose-code:text-sm prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
+              prose-pre:bg-muted prose-pre:border prose-pre:border-border
+              prose-strong:text-foreground
+              prose-li:text-muted-foreground"
+            dangerouslySetInnerHTML={{ __html: project.content }}
+          />
+        )}
       </div>
     </MainLayout>
   );
