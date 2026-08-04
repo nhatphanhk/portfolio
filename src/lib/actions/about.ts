@@ -104,13 +104,12 @@ export async function updateProfile(formData: ProfileFormData) {
 // ─── Social Links ─────────────────────────────────────────────────────────────
 
 export async function getSocialLinks() {
-  let links: any[] = [];
   try {
-    links = await prisma.socialLink.findMany({ orderBy: { order: 'asc' } });
+    const links = await prisma.socialLink.findMany({ orderBy: { order: 'asc' } });
+    if (links.length > 0) return links;
   } catch (error) {
     console.error('Error fetching social links from db:', error);
   }
-  if (links.length > 0) return links;
   return PROFILE.socialLinks.map((l, i) => ({
     id: `static-${i}`,
     platform: l.platform,
@@ -160,13 +159,12 @@ const expSchema = z.object({
 export type ExperienceFormData = z.infer<typeof expSchema>;
 
 export async function getExperiences() {
-  let exps: any[] = [];
   try {
-    exps = await prisma.experience.findMany({ orderBy: { order: 'asc' } });
+    const exps = await prisma.experience.findMany({ orderBy: { order: 'asc' } });
+    if (exps.length > 0) return exps;
   } catch (error) {
     console.error('Error fetching experiences from db:', error);
   }
-  if (exps.length > 0) return exps;
   return EXPERIENCES.map(e => ({
     id: e.id,
     company: e.company,
@@ -475,18 +473,18 @@ export async function deleteActivity(id: string) {
 // ─── Skills (read-only, grouped by category) ──────────────────────────────────
 
 export async function getSkillsByCategory() {
-  let skills: any[] = [];
   try {
-    skills = await prisma.skill.findMany({
+    const skills = await prisma.skill.findMany({
       orderBy: [{ category: 'asc' }, { order: 'asc' }],
     });
+    const grouped = skills.reduce<Record<string, typeof skills>>((acc, s) => {
+      if (!acc[s.category]) acc[s.category] = [];
+      acc[s.category].push(s);
+      return acc;
+    }, {});
+    return grouped;
   } catch (error) {
     console.error('Error fetching skills from db:', error);
+    return {};
   }
-  const grouped = skills.reduce<Record<string, typeof skills>>((acc, s) => {
-    if (!acc[s.category]) acc[s.category] = [];
-    acc[s.category].push(s);
-    return acc;
-  }, {});
-  return grouped;
 }

@@ -139,56 +139,56 @@ export async function getAllProjectsFromDb() {
 }
 
 export async function getPublicProjects() {
-  let projects: any[] = [];
   try {
-    projects = await prisma.project.findMany({
+    const projects = await prisma.project.findMany({
       where: { status: 'PUBLISHED' },
       orderBy: { createdAt: 'desc' },
       include: { tags: { include: { tag: true } } },
     });
+    return projects.map(p => ({
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      description: p.description,
+      content: p.content || '',
+      thumbnailUrl: p.thumbnailUrl || undefined,
+      demoUrl: p.demoUrl || undefined,
+      repoUrl: p.repoUrl || undefined,
+      status: p.status === 'PUBLISHED' ? 'active' : 'archived',
+      featured: p.featured,
+      technologies: p.tags.map(t => t.tag.name),
+      publishedAt: p.createdAt.toISOString(),
+    }));
   } catch (error) {
     console.error('Error fetching public projects from db:', error);
+    return [];
   }
-  return projects.map(p => ({
-    id: p.id,
-    title: p.title,
-    slug: p.slug,
-    description: p.description,
-    content: p.content || '',
-    thumbnailUrl: p.thumbnailUrl || undefined,
-    demoUrl: p.demoUrl || undefined,
-    repoUrl: p.repoUrl || undefined,
-    status: p.status === 'PUBLISHED' ? 'active' : 'archived',
-    featured: p.featured,
-    technologies: p.tags.map(t => t.tag.name),
-    publishedAt: p.createdAt.toISOString(),
-  }));
 }
 
 export async function getPublicProjectBySlug(slug: string) {
-  let p = null;
   try {
-    p = await prisma.project.findUnique({
+    const p = await prisma.project.findUnique({
       where: { slug },
       include: { tags: { include: { tag: true } } },
     });
+    if (!p || p.status !== 'PUBLISHED') return null;
+    return {
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      description: p.description,
+      content: p.content || '',
+      thumbnailUrl: p.thumbnailUrl || undefined,
+      demoUrl: p.demoUrl || undefined,
+      repoUrl: p.repoUrl || undefined,
+      status: p.status === 'PUBLISHED' ? 'active' : 'archived',
+      featured: p.featured,
+      technologies: p.tags.map(t => t.tag.name),
+      publishedAt: p.createdAt.toISOString(),
+    };
   } catch (error) {
     console.error('Error fetching project by slug from db:', error);
+    return null;
   }
-  if (!p || p.status !== 'PUBLISHED') return null;
-  return {
-    id: p.id,
-    title: p.title,
-    slug: p.slug,
-    description: p.description,
-    content: p.content || '',
-    thumbnailUrl: p.thumbnailUrl || undefined,
-    demoUrl: p.demoUrl || undefined,
-    repoUrl: p.repoUrl || undefined,
-    status: p.status === 'PUBLISHED' ? 'active' : 'archived',
-    featured: p.featured,
-    technologies: p.tags.map(t => t.tag.name),
-    publishedAt: p.createdAt.toISOString(),
-  };
 }
 
