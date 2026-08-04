@@ -125,20 +125,30 @@ export async function deleteProject(id: string) {
 }
 
 export async function getAllProjectsFromDb() {
-  return prisma.project.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: {
-      tags: { include: { tag: true } },
-    },
-  });
+  try {
+    return await prisma.project.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        tags: { include: { tag: true } },
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching projects from db:', error);
+    return [];
+  }
 }
 
 export async function getPublicProjects() {
-  const projects = await prisma.project.findMany({
-    where: { status: 'PUBLISHED' },
-    orderBy: { createdAt: 'desc' },
-    include: { tags: { include: { tag: true } } },
-  });
+  let projects: any[] = [];
+  try {
+    projects = await prisma.project.findMany({
+      where: { status: 'PUBLISHED' },
+      orderBy: { createdAt: 'desc' },
+      include: { tags: { include: { tag: true } } },
+    });
+  } catch (error) {
+    console.error('Error fetching public projects from db:', error);
+  }
   return projects.map(p => ({
     id: p.id,
     title: p.title,
@@ -156,10 +166,15 @@ export async function getPublicProjects() {
 }
 
 export async function getPublicProjectBySlug(slug: string) {
-  const p = await prisma.project.findUnique({
-    where: { slug },
-    include: { tags: { include: { tag: true } } },
-  });
+  let p = null;
+  try {
+    p = await prisma.project.findUnique({
+      where: { slug },
+      include: { tags: { include: { tag: true } } },
+    });
+  } catch (error) {
+    console.error('Error fetching project by slug from db:', error);
+  }
   if (!p || p.status !== 'PUBLISHED') return null;
   return {
     id: p.id,
