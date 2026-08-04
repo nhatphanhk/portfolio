@@ -14,8 +14,13 @@ interface ProjectDetailPageProps {
 export const dynamic = 'force-dynamic';
 
 export async function generateStaticParams() {
-  const projects = await getPublicProjects();
-  return projects.map(p => ({ slug: p.slug }));
+  try {
+    const projects = await getPublicProjects();
+    return projects.map(p => ({ slug: p.slug }));
+  } catch (error) {
+    console.error('Error generating static params for projects:', error);
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: ProjectDetailPageProps): Promise<Metadata> {

@@ -14,8 +14,13 @@ interface BlogPostPageProps {
 export const dynamic = 'force-dynamic';
 
 export async function generateStaticParams() {
-  const posts = await getPublicBlogs();
-  return posts.map(post => ({ slug: post.slug }));
+  try {
+    const posts = await getPublicBlogs();
+    return posts.map(post => ({ slug: post.slug }));
+  } catch (error) {
+    console.error('Error generating static params for blogs:', error);
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
