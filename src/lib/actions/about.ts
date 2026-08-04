@@ -34,7 +34,12 @@ const profileSchema = z.object({
 export type ProfileFormData = z.infer<typeof profileSchema>;
 
 export async function getProfile() {
-  const dbProfile = await prisma.profile.findFirst();
+  let dbProfile = null;
+  try {
+    dbProfile = await prisma.profile.findFirst();
+  } catch (error) {
+    console.error('Error fetching profile from db:', error);
+  }
   const fallback = {
     id: null as null,
     name: PROFILE.name,
@@ -99,8 +104,12 @@ export async function updateProfile(formData: ProfileFormData) {
 // ─── Social Links ─────────────────────────────────────────────────────────────
 
 export async function getSocialLinks() {
-  const links = await prisma.socialLink.findMany({ orderBy: { order: 'asc' } });
-  if (links.length > 0) return links;
+  try {
+    const links = await prisma.socialLink.findMany({ orderBy: { order: 'asc' } });
+    if (links.length > 0) return links;
+  } catch (error) {
+    console.error('Error fetching social links from db:', error);
+  }
   return PROFILE.socialLinks.map((l, i) => ({
     id: `static-${i}`,
     platform: l.platform,
@@ -150,8 +159,12 @@ const expSchema = z.object({
 export type ExperienceFormData = z.infer<typeof expSchema>;
 
 export async function getExperiences() {
-  const exps = await prisma.experience.findMany({ orderBy: { order: 'asc' } });
-  if (exps.length > 0) return exps;
+  try {
+    const exps = await prisma.experience.findMany({ orderBy: { order: 'asc' } });
+    if (exps.length > 0) return exps;
+  } catch (error) {
+    console.error('Error fetching experiences from db:', error);
+  }
   return EXPERIENCES.map(e => ({
     id: e.id,
     company: e.company,
@@ -230,7 +243,12 @@ const eduSchema = z.object({
 export type EducationFormData = z.infer<typeof eduSchema>;
 
 export async function getEducation() {
-  return prisma.education.findMany({ orderBy: { order: 'asc' } });
+  try {
+    return await prisma.education.findMany({ orderBy: { order: 'asc' } });
+  } catch (error) {
+    console.error('Error fetching education from db:', error);
+    return [];
+  }
 }
 
 export async function createEducation(formData: EducationFormData) {
@@ -287,7 +305,12 @@ const achSchema = z.object({
 export type AchievementFormData = z.infer<typeof achSchema>;
 
 export async function getAchievements() {
-  return prisma.achievement.findMany({ orderBy: { order: 'asc' } });
+  try {
+    return await prisma.achievement.findMany({ orderBy: { order: 'asc' } });
+  } catch (error) {
+    console.error('Error fetching achievements from db:', error);
+    return [];
+  }
 }
 
 export async function createAchievement(formData: AchievementFormData) {
@@ -343,7 +366,12 @@ const langSchema = z.object({
 export type SpokenLanguageFormData = z.infer<typeof langSchema>;
 
 export async function getSpokenLanguages() {
-  return prisma.spokenLanguage.findMany({ orderBy: { order: 'asc' } });
+  try {
+    return await prisma.spokenLanguage.findMany({ orderBy: { order: 'asc' } });
+  } catch (error) {
+    console.error('Error fetching spoken languages from db:', error);
+    return [];
+  }
 }
 
 export async function createSpokenLanguage(formData: SpokenLanguageFormData) {
@@ -392,7 +420,12 @@ const actSchema = z.object({
 export type ActivityFormData = z.infer<typeof actSchema>;
 
 export async function getActivities() {
-  return prisma.activity.findMany({ orderBy: { order: 'asc' } });
+  try {
+    return await prisma.activity.findMany({ orderBy: { order: 'asc' } });
+  } catch (error) {
+    console.error('Error fetching activities from db:', error);
+    return [];
+  }
 }
 
 export async function createActivity(formData: ActivityFormData) {
@@ -440,13 +473,18 @@ export async function deleteActivity(id: string) {
 // ─── Skills (read-only, grouped by category) ──────────────────────────────────
 
 export async function getSkillsByCategory() {
-  const skills = await prisma.skill.findMany({
-    orderBy: [{ category: 'asc' }, { order: 'asc' }],
-  });
-  const grouped = skills.reduce<Record<string, typeof skills>>((acc, s) => {
-    if (!acc[s.category]) acc[s.category] = [];
-    acc[s.category].push(s);
-    return acc;
-  }, {});
-  return grouped;
+  try {
+    const skills = await prisma.skill.findMany({
+      orderBy: [{ category: 'asc' }, { order: 'asc' }],
+    });
+    const grouped = skills.reduce<Record<string, typeof skills>>((acc, s) => {
+      if (!acc[s.category]) acc[s.category] = [];
+      acc[s.category].push(s);
+      return acc;
+    }, {});
+    return grouped;
+  } catch (error) {
+    console.error('Error fetching skills from db:', error);
+    return {};
+  }
 }
