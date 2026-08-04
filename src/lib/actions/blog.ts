@@ -151,21 +151,31 @@ export async function deleteBlog(id: string) {
 }
 
 export async function getAllBlogsFromDb() {
-  return prisma.blog.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: {
-      tags: { include: { tag: true } },
-      author: { select: { name: true } },
-    },
-  });
+  try {
+    return await prisma.blog.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        tags: { include: { tag: true } },
+        author: { select: { name: true } },
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching blogs from db:', error);
+    return [];
+  }
 }
 
 export async function getPublicBlogs() {
-  const blogs = await prisma.blog.findMany({
-    where: { status: 'PUBLISHED' },
-    orderBy: { publishedAt: 'desc' },
-    include: { tags: { include: { tag: true } } },
-  });
+  let blogs: any[] = [];
+  try {
+    blogs = await prisma.blog.findMany({
+      where: { status: 'PUBLISHED' },
+      orderBy: { publishedAt: 'desc' },
+      include: { tags: { include: { tag: true } } },
+    });
+  } catch (error) {
+    console.error('Error fetching public blogs from db:', error);
+  }
   return blogs.map(b => ({
     id: b.id,
     title: b.title,
@@ -181,10 +191,15 @@ export async function getPublicBlogs() {
 }
 
 export async function getPublicBlogBySlug(slug: string) {
-  const b = await prisma.blog.findUnique({
-    where: { slug },
-    include: { tags: { include: { tag: true } } },
-  });
+  let b = null;
+  try {
+    b = await prisma.blog.findUnique({
+      where: { slug },
+      include: { tags: { include: { tag: true } } },
+    });
+  } catch (error) {
+    console.error('Error fetching blog by slug from db:', error);
+  }
   if (!b || b.status !== 'PUBLISHED') return null;
   return {
     id: b.id,
