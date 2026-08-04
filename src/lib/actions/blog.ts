@@ -166,52 +166,52 @@ export async function getAllBlogsFromDb() {
 }
 
 export async function getPublicBlogs() {
-  let blogs: any[] = [];
   try {
-    blogs = await prisma.blog.findMany({
+    const blogs = await prisma.blog.findMany({
       where: { status: 'PUBLISHED' },
       orderBy: { publishedAt: 'desc' },
       include: { tags: { include: { tag: true } } },
     });
+    return blogs.map(b => ({
+      id: b.id,
+      title: b.title,
+      slug: b.slug,
+      excerpt: b.excerpt || '',
+      content: b.content,
+      publishedAt: (b.publishedAt || b.createdAt).toISOString(),
+      readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
+      tags: b.tags.map(t => t.tag.name),
+      thumbnailUrl: b.thumbnailUrl || undefined,
+      status: b.status,
+    }));
   } catch (error) {
     console.error('Error fetching public blogs from db:', error);
+    return [];
   }
-  return blogs.map(b => ({
-    id: b.id,
-    title: b.title,
-    slug: b.slug,
-    excerpt: b.excerpt || '',
-    content: b.content,
-    publishedAt: (b.publishedAt || b.createdAt).toISOString(),
-    readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
-    tags: b.tags.map(t => t.tag.name),
-    thumbnailUrl: b.thumbnailUrl || undefined,
-    status: b.status,
-  }));
 }
 
 export async function getPublicBlogBySlug(slug: string) {
-  let b = null;
   try {
-    b = await prisma.blog.findUnique({
+    const b = await prisma.blog.findUnique({
       where: { slug },
       include: { tags: { include: { tag: true } } },
     });
+    if (!b || b.status !== 'PUBLISHED') return null;
+    return {
+      id: b.id,
+      title: b.title,
+      slug: b.slug,
+      excerpt: b.excerpt || '',
+      content: b.content,
+      publishedAt: (b.publishedAt || b.createdAt).toISOString(),
+      readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
+      tags: b.tags.map(t => t.tag.name),
+      thumbnailUrl: b.thumbnailUrl || undefined,
+      status: b.status,
+    };
   } catch (error) {
     console.error('Error fetching blog by slug from db:', error);
+    return null;
   }
-  if (!b || b.status !== 'PUBLISHED') return null;
-  return {
-    id: b.id,
-    title: b.title,
-    slug: b.slug,
-    excerpt: b.excerpt || '',
-    content: b.content,
-    publishedAt: (b.publishedAt || b.createdAt).toISOString(),
-    readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
-    tags: b.tags.map(t => t.tag.name),
-    thumbnailUrl: b.thumbnailUrl || undefined,
-    status: b.status,
-  };
 }
 
