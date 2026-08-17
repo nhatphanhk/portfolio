@@ -1,5 +1,9 @@
 import { MainLayout } from '@/components';
 import { ResumeMultiPage } from '@/components/resume/ResumeMultiPage';
+
+// Always render fresh so admin updates via revalidatePath are immediately reflected
+export const dynamic = 'force-dynamic';
+
 import {
   getProfile,
   getExperiences,

@@ -712,18 +712,26 @@ export function AdminResumeClient({ profile, experiences: initialExp, socialLink
   function LangForm({ data, onSave, onCancel }: { data: SpokenLanguageFormData; onSave: (d: SpokenLanguageFormData) => void; onCancel: () => void; }) {
     const [f, setF] = useState<SpokenLanguageFormData>(data);
     const [p, start] = useTransition();
+    const [err, setErr] = useState<string | null>(null);
+    const handleSave = () => {
+      if (!f.language.trim()) { setErr('Please enter a language name.'); return; }
+      if (!f.level) { setErr('Please select a proficiency level.'); return; }
+      setErr(null);
+      start(async () => { await onSave(f); });
+    };
     return (
       <div className="border border-primary/30 rounded-xl p-4 space-y-3 bg-primary/5">
         <div className="grid sm:grid-cols-2 gap-3">
           <Field label="Language">
-            <Input value={f.language} onChange={v => setF(x => ({ ...x, language: v }))} placeholder="English" />
+            <Input value={f.language} onChange={v => { setF(x => ({ ...x, language: v })); setErr(null); }} placeholder="English" />
           </Field>
           <Field label="Proficiency Level">
-            <Select value={f.level} onChange={v => setF(x => ({ ...x, level: v }))} options={LEVELS} />
+            <Select value={f.level} onChange={v => { setF(x => ({ ...x, level: v })); setErr(null); }} options={LEVELS} />
           </Field>
         </div>
+        {err && <p className="text-xs text-destructive">{err}</p>}
         <div className="flex gap-2 pt-1">
-          <SaveBtn pending={p} onClick={() => start(async () => { await onSave(f); })} />
+          <SaveBtn pending={p} onClick={handleSave} />
           <CancelBtn onClick={onCancel} />
         </div>
       </div>
@@ -742,7 +750,10 @@ export function AdminResumeClient({ profile, experiences: initialExp, socialLink
             {spokenLanguages.map(lang => (
               editLangId === lang.id ? (
                 <LangForm key={lang.id} data={{ language: lang.language, level: lang.level }}
-                  onSave={async (d) => { await updateSpokenLanguage(lang.id, d); setSpokenLanguages(prev => prev.map(l => l.id === lang.id ? { ...l, ...d } : l)); setEditLangId(null); showSaved('lang'); }}
+                  onSave={async (d) => {
+                    const res = await updateSpokenLanguage(lang.id, d);
+                    if (res.ok) { setSpokenLanguages(prev => prev.map(l => l.id === lang.id ? { ...l, ...d } : l)); setEditLangId(null); showSaved('lang'); }
+                  }}
                   onCancel={() => setEditLangId(null)} />
               ) : (
                 <div key={lang.id} className="flex items-center justify-between p-4 rounded-xl border border-border bg-card">
@@ -762,7 +773,15 @@ export function AdminResumeClient({ profile, experiences: initialExp, socialLink
             ))}
             {addingLang ? (
               <LangForm data={langForm}
-                onSave={async (d) => { await createSpokenLanguage(d); setSpokenLanguages(prev => [...prev, { id: Date.now().toString(), ...d, order: prev.length, createdAt: new Date(), updatedAt: new Date() }]); setAddingLang(false); setLangForm(blankLang()); showSaved('lang'); }}
+                onSave={async (d) => {
+                  const res = await createSpokenLanguage(d);
+                  if (res.ok) {
+                    setSpokenLanguages(prev => [...prev, { id: Date.now().toString(), ...d, order: prev.length, createdAt: new Date(), updatedAt: new Date() }]);
+                    setAddingLang(false);
+                    setLangForm(blankLang());
+                    showSaved('lang');
+                  }
+                }}
                 onCancel={() => { setAddingLang(false); setLangForm(blankLang()); }} />
             ) : (
               <AddBtn label="Add Language" onClick={() => { setAddingLang(true); setEditLangId(null); }} />

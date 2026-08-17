@@ -21,9 +21,9 @@ const skillSchema = z.object({
     'MONITORING',
     'VERSION_CONTROL',
   ]),
-  level: z.number().int().min(1).max(5),
+  level: z.number().int(),
   iconUrl: z.string().url().optional().or(z.literal('')),
-  order: z.number().int().min(0).default(0),
+  order: z.number().int(),
 });
 
 export type SkillFormData = z.infer<typeof skillSchema>;

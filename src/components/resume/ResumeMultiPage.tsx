@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ResumeCard3D } from '@/components/ui/ResumeCard3D';
-import { MapPin, Mail, Download, Layers, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Mail, Layers, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import * as Icons from 'lucide-react';
 
 const ICON_MAP = Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
 
-const LEVEL_LABELS = ['', 'Beginner', 'Elementary', 'Intermediate', 'Advanced', 'Expert'];
 const CATEGORY_LABELS: Record<string, string> = {
   LANGUAGE: 'Programming Languages',
   FRAMEWORK: 'Frameworks / Libraries',
@@ -108,42 +107,167 @@ interface ResumeMultiPageProps {
   activities?: ActivityData[];
 }
 
-function SkillDots({ level }: { level: number }) {
-  return (
-    <div className="flex gap-1" aria-label={`Skill level ${level} of 5`}>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div
-          key={i}
-          className={`w-1.5 h-1.5 rounded-full transition-colors ${
-            i < level ? 'bg-primary' : 'bg-gray-200'
-          }`}
-        />
-      ))}
-    </div>
-  );
-}
-
-// ── Content height estimator for pagination ──────────────────────────────
+// ── Content height estimators ───────────────────────────────────────────────
 function estimateExperienceWeight(exp: ExperienceData): number {
-  let score = 90; // Base: title, company, dates
-  if (exp.description) score += Math.min(exp.description.length / 3, 70);
+  let score = 95;
+  if (exp.description) score += Math.min(exp.description.length / 3.5, 80);
   if (exp.achievements) {
     const lines = exp.achievements.split('\n').filter(Boolean).length;
-    score += lines * 22;
+    score += lines * 24;
   }
-  if (exp.techStack) score += 28;
+  if (exp.techStack) score += 30;
   return score;
 }
 
 function estimateEducationWeight(edu: EducationData): number {
-  let score = 75;
-  if (edu.fieldOfStudy) score += 18;
-  if (edu.description) score += 35;
+  let score = 80;
+  if (edu.fieldOfStudy) score += 20;
+  if (edu.description) score += 38;
   return score;
 }
 
 function estimateSkillCatWeight(skills: SkillItem[]): number {
-  return 32 + skills.length * 20;
+  // Tag-cloud layout: roughly 2-3 skills per row
+  const rows = Math.ceil(skills.length / 2.5);
+  return 40 + rows * 26;
+}
+
+type LeftPageGroup = { experiences: ExperienceData[]; education: EducationData[] };
+type RightPageGroup = {
+  skillCats: string[];
+  showSoftSkills: boolean;
+  spokenLanguages: SpokenLanguageData[];
+  achievements: AchievementData[];
+  activities: ActivityData[];
+};
+
+function newRightGroup(): RightPageGroup {
+  return {
+    skillCats: [],
+    showSoftSkills: false,
+    spokenLanguages: [],
+    achievements: [],
+    activities: [],
+  };
+}
+
+/**
+ * Core pagination logic.
+ * Ensures content is APPENDED to new pages instead of overwriting existing ones.
+ */
+function paginateContent(
+  experiences: ExperienceData[],
+  education: EducationData[],
+  skillsByCategory: SkillsByCategoryData,
+  profile: ProfileData,
+  spokenLanguages: SpokenLanguageData[],
+  achievements: AchievementData[],
+  activities: ActivityData[],
+) {
+  const PAGE1_LEFT = 500;
+  const PAGE1_RIGHT = 540;
+  const EXTRA_LIMIT = 860;
+
+  // ── LEFT COLUMN ──────────────────────────────────────────────────────────
+  const leftGroups: LeftPageGroup[] = [{ experiences: [], education: [] }];
+  let lPage = 0;
+  let lWeight = 0;
+
+  for (const exp of experiences) {
+    const w = estimateExperienceWeight(exp);
+    const limit = lPage === 0 ? PAGE1_LEFT : EXTRA_LIMIT;
+    const hasContent = leftGroups[lPage].experiences.length > 0 || leftGroups[lPage].education.length > 0;
+    if (lWeight + w > limit && hasContent) {
+      lPage++;
+      lWeight = 0;
+      leftGroups.push({ experiences: [], education: [] });
+    }
+    leftGroups[lPage].experiences.push(exp);
+    lWeight += w;
+  }
+
+  for (const edu of education) {
+    const w = estimateEducationWeight(edu);
+    const limit = lPage === 0 ? PAGE1_LEFT : EXTRA_LIMIT;
+    const hasContent = leftGroups[lPage].experiences.length > 0 || leftGroups[lPage].education.length > 0;
+    if (lWeight + w > limit && hasContent) {
+      lPage++;
+      lWeight = 0;
+      leftGroups.push({ experiences: [], education: [] });
+    }
+    leftGroups[lPage].education.push(edu);
+    lWeight += w;
+  }
+
+  // ── RIGHT COLUMN ─────────────────────────────────────────────────────────
+  const rightGroups: RightPageGroup[] = [newRightGroup()];
+  let rPage = 0;
+  let rWeight = 0;
+
+  // Helper: ensure right page exists and bump if overflowing
+  function ensureRightSpace(needed: number) {
+    const limit = rPage === 0 ? PAGE1_RIGHT : EXTRA_LIMIT;
+    const hasContent =
+      rightGroups[rPage].skillCats.length > 0 ||
+      rightGroups[rPage].showSoftSkills ||
+      rightGroups[rPage].spokenLanguages.length > 0 ||
+      rightGroups[rPage].achievements.length > 0 ||
+      rightGroups[rPage].activities.length > 0;
+
+    if (rWeight + needed > limit && hasContent) {
+      rPage++;
+      rWeight = 0;
+      rightGroups.push(newRightGroup());
+    }
+  }
+
+  // Skills
+  for (const cat of Object.keys(skillsByCategory)) {
+    const skills = skillsByCategory[cat] ?? [];
+    const w = estimateSkillCatWeight(skills);
+    ensureRightSpace(w);
+    rightGroups[rPage].skillCats.push(cat);
+    rWeight += w;
+  }
+
+  // Soft skills
+  if (profile.softSkills) {
+    ensureRightSpace(65);
+    rightGroups[rPage].showSoftSkills = true;
+    rWeight += 65;
+  }
+
+  // Spoken languages — FIX: assign to the CURRENT page after ensuring space
+  if (spokenLanguages.length > 0) {
+    const w = 48 + spokenLanguages.length * 22;
+    ensureRightSpace(w);
+    rightGroups[rPage].spokenLanguages = spokenLanguages;
+    rWeight += w;
+  }
+
+  // Achievements
+  if (achievements.length > 0) {
+    const w = 48 + achievements.length * 42;
+    ensureRightSpace(w);
+    rightGroups[rPage].achievements = achievements;
+    rWeight += w;
+  }
+
+  // Activities
+  if (activities.length > 0) {
+    const w = 48 + activities.length * 42;
+    ensureRightSpace(w);
+    rightGroups[rPage].activities = activities;
+    rWeight += w;
+  }
+
+  const totalPages = Math.max(leftGroups.length, rightGroups.length, 1);
+
+  return Array.from({ length: totalPages }, (_, i) => ({
+    pageNumber: i + 1,
+    left: leftGroups[i] ?? { experiences: [], education: [] },
+    right: rightGroups[i] ?? newRightGroup(),
+  }));
 }
 
 /**
@@ -163,188 +287,21 @@ export function ResumeMultiPage({
   const [activePageTab, setActivePageTab] = useState<number>(1);
   const [viewMode, setViewMode] = useState<'stack' | 'paged'>('stack');
 
-  // ── Compute intelligent pagination ──────────────────────────────────────
-  // Page 1 budget: ~680 units (left side), ~720 units (right side)
-  // Page 2+ budget: ~900 units (left side), ~920 units (right side)
-  const PAGE1_LEFT_LIMIT = 520;
-  const PAGE1_RIGHT_LIMIT = 560;
-  const SUBSEQUENT_PAGE_LIMIT = 880;
+  const pages = useMemo(
+    () =>
+      paginateContent(
+        experiences,
+        education,
+        skillsByCategory,
+        profile,
+        spokenLanguages,
+        achievements,
+        activities,
+      ),
+    [experiences, education, skillsByCategory, profile, spokenLanguages, achievements, activities],
+  );
 
-  // 1. Partition Left Column Items (Experiences, Education)
-  const leftPageGroups: Array<{
-    experiences: ExperienceData[];
-    education: EducationData[];
-  }> = [];
-
-  let currentLeftPage = 0;
-  let currentLeftWeight = 0;
-  leftPageGroups.push({ experiences: [], education: [] });
-
-  // Distribute experiences
-  experiences.forEach(exp => {
-    const weight = estimateExperienceWeight(exp);
-    const limit = currentLeftPage === 0 ? PAGE1_LEFT_LIMIT : SUBSEQUENT_PAGE_LIMIT;
-
-    if (currentLeftWeight + weight > limit && leftPageGroups[currentLeftPage].experiences.length > 0) {
-      currentLeftPage++;
-      currentLeftWeight = 0;
-      leftPageGroups.push({ experiences: [], education: [] });
-    }
-
-    leftPageGroups[currentLeftPage].experiences.push(exp);
-    currentLeftWeight += weight;
-  });
-
-  // Distribute education
-  education.forEach(edu => {
-    const weight = estimateEducationWeight(edu);
-    const limit = currentLeftPage === 0 ? PAGE1_LEFT_LIMIT : SUBSEQUENT_PAGE_LIMIT;
-
-    if (currentLeftWeight + weight > limit && (leftPageGroups[currentLeftPage].experiences.length > 0 || leftPageGroups[currentLeftPage].education.length > 0)) {
-      currentLeftPage++;
-      currentLeftWeight = 0;
-      leftPageGroups.push({ experiences: [], education: [] });
-    }
-
-    leftPageGroups[currentLeftPage].education.push(edu);
-    currentLeftWeight += weight;
-  });
-
-  // 2. Partition Right Column Items (Skills, Soft Skills, Languages, Achievements, Activities)
-  const skillCategories = Object.keys(skillsByCategory);
-  const rightPageGroups: Array<{
-    skillCats: string[];
-    showSoftSkills: boolean;
-    spokenLanguages: SpokenLanguageData[];
-    achievements: AchievementData[];
-    activities: ActivityData[];
-  }> = [];
-
-  let currentRightPage = 0;
-  let currentRightWeight = 0;
-  rightPageGroups.push({
-    skillCats: [],
-    showSoftSkills: false,
-    spokenLanguages: [],
-    achievements: [],
-    activities: [],
-  });
-
-  // Distribute skill categories
-  skillCategories.forEach(cat => {
-    const skills = skillsByCategory[cat] ?? [];
-    const weight = estimateSkillCatWeight(skills);
-    const limit = currentRightPage === 0 ? PAGE1_RIGHT_LIMIT : SUBSEQUENT_PAGE_LIMIT;
-
-    if (currentRightWeight + weight > limit && rightPageGroups[currentRightPage].skillCats.length > 0) {
-      currentRightPage++;
-      currentRightWeight = 0;
-      rightPageGroups.push({
-        skillCats: [],
-        showSoftSkills: false,
-        spokenLanguages: [],
-        achievements: [],
-        activities: [],
-      });
-    }
-
-    rightPageGroups[currentRightPage].skillCats.push(cat);
-    currentRightWeight += weight;
-  });
-
-  // Soft skills placement
-  if (profile.softSkills) {
-    const weight = 60;
-    const limit = currentRightPage === 0 ? PAGE1_RIGHT_LIMIT : SUBSEQUENT_PAGE_LIMIT;
-    if (currentRightWeight + weight > limit) {
-      currentRightPage++;
-      currentRightWeight = 0;
-      rightPageGroups.push({
-        skillCats: [],
-        showSoftSkills: false,
-        spokenLanguages: [],
-        achievements: [],
-        activities: [],
-      });
-    }
-    rightPageGroups[currentRightPage].showSoftSkills = true;
-    currentRightWeight += weight;
-  }
-
-  // Spoken languages placement
-  if (spokenLanguages.length > 0) {
-    const weight = 40 + spokenLanguages.length * 20;
-    const limit = currentRightPage === 0 ? PAGE1_RIGHT_LIMIT : SUBSEQUENT_PAGE_LIMIT;
-    if (currentRightWeight + weight > limit) {
-      currentRightPage++;
-      currentRightWeight = 0;
-      rightPageGroups.push({
-        skillCats: [],
-        showSoftSkills: false,
-        spokenLanguages: [],
-        achievements: [],
-        activities: [],
-      });
-    }
-    rightPageGroups[currentRightPage].spokenLanguages = spokenLanguages;
-    currentRightWeight += weight;
-  }
-
-  // Achievements placement
-  if (achievements.length > 0) {
-    const weight = 45 + achievements.length * 40;
-    const limit = currentRightPage === 0 ? PAGE1_RIGHT_LIMIT : SUBSEQUENT_PAGE_LIMIT;
-    if (currentRightWeight + weight > limit) {
-      currentRightPage++;
-      currentRightWeight = 0;
-      rightPageGroups.push({
-        skillCats: [],
-        showSoftSkills: false,
-        spokenLanguages: [],
-        achievements: [],
-        activities: [],
-      });
-    }
-    rightPageGroups[currentRightPage].achievements = achievements;
-    currentRightWeight += weight;
-  }
-
-  // Activities placement
-  if (activities.length > 0) {
-    const weight = 45 + activities.length * 40;
-    const limit = currentRightPage === 0 ? PAGE1_RIGHT_LIMIT : SUBSEQUENT_PAGE_LIMIT;
-    if (currentRightWeight + weight > limit) {
-      currentRightPage++;
-      currentRightWeight = 0;
-      rightPageGroups.push({
-        skillCats: [],
-        showSoftSkills: false,
-        spokenLanguages: [],
-        achievements: [],
-        activities: [],
-      });
-    }
-    rightPageGroups[currentRightPage].activities = activities;
-    currentRightWeight += weight;
-  }
-
-  // Total pages is the max of left and right pages
-  const totalPages = Math.max(leftPageGroups.length, rightPageGroups.length, 1);
-
-  // Normalize pages
-  const pages = Array.from({ length: totalPages }, (_, pageIndex) => {
-    return {
-      pageNumber: pageIndex + 1,
-      left: leftPageGroups[pageIndex] ?? { experiences: [], education: [] },
-      right: rightPageGroups[pageIndex] ?? {
-        skillCats: [],
-        showSoftSkills: false,
-        spokenLanguages: [],
-        achievements: [],
-        activities: [],
-      },
-    };
-  });
+  const totalPages = pages.length;
 
   return (
     <div className="w-full">
@@ -352,7 +309,9 @@ export function ResumeMultiPage({
       <div className="max-w-5xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-3 bg-card/60 backdrop-blur-sm border border-border px-4 py-2.5 rounded-xl print:hidden shadow-xs">
         <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
           <FileText className="w-4 h-4 text-primary" />
-          <span>Document format: <strong className="text-foreground font-semibold">Standard Executive</strong></span>
+          <span>
+            Document format: <strong className="text-foreground font-semibold">Standard Executive</strong>
+          </span>
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-semibold">
             {totalPages === 1 ? '1 Page' : `${totalPages} Pages (Auto-paginated)`}
           </span>
@@ -375,7 +334,7 @@ export function ResumeMultiPage({
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode('paged')}
+                onClick={() => { setViewMode('paged'); setActivePageTab(1); }}
                 className={`px-2.5 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
                   viewMode === 'paged' ? 'bg-card text-foreground font-medium shadow-xs' : 'text-muted-foreground hover:text-foreground'
                 }`}
@@ -385,13 +344,13 @@ export function ResumeMultiPage({
               </button>
             </div>
 
-            {/* Page Tab Selector (when in paged mode) */}
+            {/* Page Tab Selector (paged mode) */}
             {viewMode === 'paged' && (
               <div className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-lg border border-border/50">
                 <button
                   type="button"
                   disabled={activePageTab === 1}
-                  onClick={() => setActivePageTab(prev => Math.max(prev - 1, 1))}
+                  onClick={() => setActivePageTab(p => Math.max(p - 1, 1))}
                   className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
                   aria-label="Previous Page"
                 >
@@ -399,7 +358,7 @@ export function ResumeMultiPage({
                 </button>
                 {Array.from({ length: totalPages }).map((_, i) => (
                   <button
-                    key={i}
+                    key={i + 1}
                     type="button"
                     onClick={() => setActivePageTab(i + 1)}
                     className={`px-2 py-0.5 rounded text-xs transition-colors ${
@@ -414,7 +373,7 @@ export function ResumeMultiPage({
                 <button
                   type="button"
                   disabled={activePageTab === totalPages}
-                  onClick={() => setActivePageTab(prev => Math.min(prev + 1, totalPages))}
+                  onClick={() => setActivePageTab(p => Math.min(p + 1, totalPages))}
                   className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
                   aria-label="Next Page"
                 >
@@ -438,7 +397,7 @@ export function ResumeMultiPage({
               className="relative print:break-after-page print:mb-0"
               style={{ breakAfter: idx < totalPages - 1 ? 'page' : 'auto' }}
             >
-              {/* Page Number Badge above card for multi-page mode */}
+              {/* Page label badge */}
               {totalPages > 1 && (
                 <div className="max-w-5xl mx-auto flex items-center justify-between mb-2 px-1 text-xs text-muted-foreground print:hidden">
                   <span className="font-semibold uppercase tracking-wider text-[11px] text-primary/80">
@@ -455,7 +414,6 @@ export function ResumeMultiPage({
                   <div>
                     {/* ── HEADER ─────────────────────────────── */}
                     {page.pageNumber === 1 ? (
-                      /* Page 1 Full Executive Header */
                       <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 border-b-2 border-gray-900 mb-8">
                         <div>
                           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 leading-none mb-2">
@@ -481,9 +439,14 @@ export function ResumeMultiPage({
                           {socialLinks.map(social => {
                             const Icon = social.iconName ? ICON_MAP[social.iconName] || Icons.Link : Icons.Link;
                             return (
-                              <div key={social.platform} className="flex sm:justify-end items-center gap-1.5">
+                              <div key={social.id} className="flex sm:justify-end items-center gap-1.5">
                                 <Icon className="w-3.5 h-3.5 shrink-0 text-gray-400" />
-                                <a href={social.url} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">
+                                <a
+                                  href={social.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="hover:text-blue-600 transition-colors"
+                                >
                                   {social.platform}
                                 </a>
                               </div>
@@ -492,7 +455,6 @@ export function ResumeMultiPage({
                         </div>
                       </header>
                     ) : (
-                      /* Page 2+ Running Minimal Header */
                       <header className="flex items-center justify-between pb-4 border-b border-gray-200 mb-6 text-xs text-gray-500">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-gray-900 text-sm">{profile.name}</span>
@@ -520,7 +482,7 @@ export function ResumeMultiPage({
                           </section>
                         )}
 
-                        {/* Experience Section for this page */}
+                        {/* Experience */}
                         {page.left.experiences.length > 0 && (
                           <section>
                             <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">
@@ -528,7 +490,10 @@ export function ResumeMultiPage({
                             </h3>
                             <div className="space-y-5">
                               {page.left.experiences.map(exp => (
-                                <div key={exp.id} className="relative pl-4 border-l-2 border-gray-200 hover:border-blue-400 transition-colors">
+                                <div
+                                  key={exp.id}
+                                  className="relative pl-4 border-l-2 border-gray-200 hover:border-blue-400 transition-colors"
+                                >
                                   <div className="flex flex-wrap justify-between items-baseline gap-2 mb-0.5">
                                     <h4 className="font-bold text-gray-900 text-sm">{exp.position}</h4>
                                     <span className="text-xs text-gray-400 font-mono">
@@ -542,21 +507,31 @@ export function ResumeMultiPage({
                                   )}
                                   {exp.achievements && (
                                     <ul className="mt-1.5 space-y-0.5">
-                                      {exp.achievements.split('\n').filter(Boolean).map((a, i) => (
-                                        <li key={i} className="text-xs text-gray-500 flex gap-1.5">
-                                          <span className="text-blue-400 mt-0.5">•</span>
-                                          <span>{a}</span>
-                                        </li>
-                                      ))}
+                                      {exp.achievements
+                                        .split('\n')
+                                        .filter(Boolean)
+                                        .map((a, i) => (
+                                          <li key={i} className="text-xs text-gray-500 flex gap-1.5">
+                                            <span className="text-blue-400 mt-0.5">•</span>
+                                            <span>{a}</span>
+                                          </li>
+                                        ))}
                                     </ul>
                                   )}
                                   {exp.techStack && (
                                     <div className="flex flex-wrap gap-1 mt-2">
-                                      {exp.techStack.split(',').map(t => t.trim()).filter(Boolean).map(t => (
-                                        <span key={t} className="px-1.5 py-0.5 text-[10px] bg-gray-100 rounded text-gray-500 font-medium">
-                                          {t}
-                                        </span>
-                                      ))}
+                                      {exp.techStack
+                                        .split(',')
+                                        .map(t => t.trim())
+                                        .filter(Boolean)
+                                        .map(t => (
+                                          <span
+                                            key={t}
+                                            className="px-1.5 py-0.5 text-[10px] bg-gray-100 rounded text-gray-500 font-medium"
+                                          >
+                                            {t}
+                                          </span>
+                                        ))}
                                     </div>
                                   )}
                                 </div>
@@ -565,13 +540,16 @@ export function ResumeMultiPage({
                           </section>
                         )}
 
-                        {/* Education Section for this page */}
+                        {/* Education */}
                         {page.left.education.length > 0 && (
                           <section>
                             <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Education</h3>
                             <div className="space-y-4">
                               {page.left.education.map(edu => (
-                                <div key={edu.id} className="relative pl-4 border-l-2 border-gray-200 hover:border-blue-400 transition-colors">
+                                <div
+                                  key={edu.id}
+                                  className="relative pl-4 border-l-2 border-gray-200 hover:border-blue-400 transition-colors"
+                                >
                                   <div className="flex flex-wrap justify-between items-baseline gap-2 mb-0.5">
                                     <h4 className="font-bold text-gray-900 text-sm">{edu.degree}</h4>
                                     <span className="text-xs text-gray-400 font-mono">
@@ -581,7 +559,9 @@ export function ResumeMultiPage({
                                   </div>
                                   <p className="text-xs text-blue-600 font-semibold">{edu.institution}</p>
                                   {edu.fieldOfStudy && <p className="text-xs text-gray-400">{edu.fieldOfStudy}</p>}
-                                  {edu.description && <p className="text-xs text-gray-500 leading-relaxed mt-1">{edu.description}</p>}
+                                  {edu.description && (
+                                    <p className="text-xs text-gray-500 leading-relaxed mt-1">{edu.description}</p>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -594,7 +574,7 @@ export function ResumeMultiPage({
 
                       {/* RIGHT COLUMN */}
                       <div className="flex flex-col gap-6">
-                        {/* Skills Categories for this page */}
+                        {/* Skills */}
                         {page.right.skillCats.length > 0 && (
                           <section>
                             <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3.5">
@@ -603,20 +583,17 @@ export function ResumeMultiPage({
                             <div className="space-y-4">
                               {page.right.skillCats.map(cat => (
                                 <div key={cat}>
-                                  <h4 className="text-xs font-semibold text-gray-700 uppercase mb-1.5">
+                                  <h4 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2">
                                     {CATEGORY_LABELS[cat] ?? cat}
                                   </h4>
-                                  <div className="space-y-1.5">
+                                  <div className="flex flex-wrap gap-1.5">
                                     {(skillsByCategory[cat] ?? []).map(skill => (
-                                      <div key={skill.id} className="flex items-center justify-between gap-2">
-                                        <span className="text-xs text-gray-600 font-medium">{skill.name}</span>
-                                        <div className="flex flex-col items-end gap-0.5">
-                                          <SkillDots level={skill.level ?? 0} />
-                                          <span className="text-[9px] text-gray-400">
-                                            {LEVEL_LABELS[skill.level ?? 0]}
-                                          </span>
-                                        </div>
-                                      </div>
+                                      <span
+                                        key={skill.id}
+                                        className="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 rounded-md font-medium"
+                                      >
+                                        {skill.name}
+                                      </span>
                                     ))}
                                   </div>
                                 </div>
@@ -630,24 +607,33 @@ export function ResumeMultiPage({
                           <section>
                             <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Soft Skills</h3>
                             <div className="flex flex-wrap gap-1.5">
-                              {profile.softSkills.split(',').map(s => s.trim()).filter(Boolean).map(s => (
-                                <span key={s} className="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded-full font-medium">
-                                  {s}
-                                </span>
-                              ))}
+                              {profile.softSkills
+                                .split(',')
+                                .map(s => s.trim())
+                                .filter(Boolean)
+                                .map(s => (
+                                  <span
+                                    key={s}
+                                    className="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded-full font-medium"
+                                  >
+                                    {s}
+                                  </span>
+                                ))}
                             </div>
                           </section>
                         )}
 
-                        {/* Spoken Languages */}
+                        {/* Spoken Languages — always rendered when assigned to this page */}
                         {page.right.spokenLanguages.length > 0 && (
                           <section>
                             <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Languages</h3>
-                            <div className="space-y-1.5">
+                            <div className="space-y-2">
                               {page.right.spokenLanguages.map(lang => (
-                                <div key={lang.id} className="flex justify-between items-center text-xs">
-                                  <span className="text-gray-700 font-medium">{lang.language}</span>
-                                  <span className="text-gray-400 text-[11px]">{lang.level}</span>
+                                <div key={lang.id} className="flex justify-between items-center">
+                                  <span className="text-xs text-gray-700 font-semibold">{lang.language}</span>
+                                  <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                                    {lang.level}
+                                  </span>
                                 </div>
                               ))}
                             </div>
@@ -662,7 +648,9 @@ export function ResumeMultiPage({
                               {page.right.achievements.map(ach => (
                                 <div key={ach.id} className="text-xs">
                                   <p className="font-semibold text-gray-800">{ach.title}</p>
-                                  {ach.description && <p className="text-gray-500 text-[11px] mt-0.5">{ach.description}</p>}
+                                  {ach.description && (
+                                    <p className="text-gray-500 text-[11px] mt-0.5">{ach.description}</p>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -677,7 +665,9 @@ export function ResumeMultiPage({
                               {page.right.activities.map(act => (
                                 <div key={act.id} className="text-xs">
                                   <p className="font-semibold text-gray-800">{act.title}</p>
-                                  {act.description && <p className="text-gray-500 text-[11px] mt-0.5">{act.description}</p>}
+                                  {act.description && (
+                                    <p className="text-gray-500 text-[11px] mt-0.5">{act.description}</p>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -690,9 +680,7 @@ export function ResumeMultiPage({
                   {/* ── PAGE FOOTER ─────────────────────────── */}
                   <footer className="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-400">
                     <span>{profile.name} — Curriculum Vitae</span>
-                    <span className="font-medium">
-                      Page {page.pageNumber} of {totalPages}
-                    </span>
+                    <span className="font-medium">Page {page.pageNumber} of {totalPages}</span>
                   </footer>
                 </div>
               </ResumeCard3D>
