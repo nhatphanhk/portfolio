@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
-import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import { CommandPalette } from '@/components/ui/CommandPalette';
 import { Analytics } from '@vercel/analytics/react';
@@ -56,16 +55,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
-          <Toaster position="bottom-right" />
-          <CommandPalette />
-          <Analytics />
-          <SpeedInsights />
-        </ThemeProvider>
+        {children}
+        <Toaster position="bottom-right" />
+        <CommandPalette />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
 }
+

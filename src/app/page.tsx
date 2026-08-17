@@ -2,7 +2,6 @@ import { MainLayout } from '@/components';
 import { HeroSection } from '@/components/hero-section/HeroSection';
 import { AboutSection } from '@/components/hero-section/AboutSection';
 import { BPSCSection } from '@/components/hero-section/BPSCSection';
-import ContactSection from '@/components/hero-section/ContactSection';
 import type { Metadata } from 'next';
 import { SITE_DESCRIPTION } from '@/lib/constants';
 import { getProfile, getSocialLinks } from '@/lib/actions/about';
@@ -29,7 +28,6 @@ export default async function Home() {
       <HeroSection profile={profile} socialLinks={socialLinks} />
       <AboutSection profile={profile} skillsByCategory={skillsByCategory} />
       <BPSCSection projects={projects} blogs={blogs} certs={certs} />
-      <ContactSection profile={profile} socialLinks={socialLinks} />
     </MainLayout>
   );
 }
