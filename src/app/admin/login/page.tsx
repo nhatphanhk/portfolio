@@ -41,6 +41,13 @@ export default function AdminLoginPage() {
         return;
       }
 
+      // Mark device as verified admin to permanently bypass visitor modal
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('is_admin', 'true');
+        localStorage.setItem('visitor_logged', 'true');
+        sessionStorage.setItem('visitor_logged', 'true');
+      }
+
       router.push('/admin');
       router.refresh();
     } catch {

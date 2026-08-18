@@ -50,7 +50,6 @@ export function AdminSkillsClient({ skills }: { skills: Skill[] }) {
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Name</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Category</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Level (1-5)</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Order</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -75,18 +74,6 @@ export function AdminSkillsClient({ skills }: { skills: Skill[] }) {
                     <span className="px-2 py-0.5 text-xs bg-muted rounded text-muted-foreground">
                       {skill.category}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 hidden sm:table-cell">
-                    {skill.level ? (
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium">{skill.level}</span>
-                        <div className="flex gap-0.5">
-                          {[1, 2, 3, 4, 5].map(v => (
-                            <div key={v} className={`h-1.5 w-3 rounded-sm ${v <= skill.level! ? 'bg-primary' : 'bg-muted'}`} />
-                          ))}
-                        </div>
-                      </div>
-                    ) : '—'}
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">{skill.order}</td>
                   <td className="px-4 py-3">
@@ -117,7 +104,6 @@ export function AdminSkillsClient({ skills }: { skills: Skill[] }) {
             id: editTarget.id,
             name: editTarget.name,
             category: editTarget.category as 'FRONTEND' | 'BACKEND' | 'DEVOPS' | 'TOOLS' | 'OTHER',
-            level: editTarget.level ?? 3,
             iconUrl: editTarget.iconUrl ?? '',
             order: editTarget.order,
           }}

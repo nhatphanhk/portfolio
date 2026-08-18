@@ -2,8 +2,6 @@
 
 @plugin 'tailwindcss-animate';
 
-@custom-variant dark (&:is(.dark *));
-
 body {
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
@@ -31,6 +29,10 @@ body {
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-navy: var(--navy);
+  --color-navy-light: var(--navy-light);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -48,98 +50,289 @@ body {
   --animate-accordion-up: accordion-up 0.2s ease-out;
 
   @keyframes accordion-down {
-    from {
-      height: 0;
-    }
-    to {
-      height: var(--radix-accordion-content-height);
-    }
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height); }
   }
-
   @keyframes accordion-up {
-    from {
-      height: var(--radix-accordion-content-height);
-    }
-    to {
-      height: 0;
-    }
+    from { height: var(--radix-accordion-content-height); }
+    to { height: 0; }
+  }
+  @keyframes sun-radiance {
+    0%, 100% { transform: scale(1); opacity: 0.96; filter: drop-shadow(0 0 25px rgba(245,158,11,0.35)); }
+    50% { transform: scale(1.025); opacity: 0.90; filter: drop-shadow(0 0 40px rgba(251,191,36,0.45)); }
+  }
+  @keyframes solar-rays-spin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to   { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+  @keyframes solar-rays-spin-rev {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to   { transform: translate(-50%, -50%) rotate(-360deg); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+  }
+  @keyframes corona-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.85; }
+    50% { transform: scale(1.08); opacity: 1; }
   }
 }
 
+/* ── Gold + Blue fixed theme ── */
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: oklch(0.97 0.012 85);
+  --foreground: oklch(0.16 0.04 255);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.16 0.04 255);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.16 0.04 255);
+
+  --primary: oklch(0.72 0.18 78);
+  --primary-foreground: oklch(0.12 0.04 255);
+
+  --secondary: oklch(0.94 0.03 255);
+  --secondary-foreground: oklch(0.3 0.16 255);
+
+  --muted: oklch(0.95 0.015 80);
+  --muted-foreground: oklch(0.48 0.05 255);
+
+  --accent: oklch(0.42 0.22 255);
+  --accent-foreground: oklch(0.99 0 0);
+
+  --destructive: oklch(0.577 0.245 27.325);
+
+  --border: oklch(0.88 0.03 80);
+  --input: oklch(0.92 0.02 80);
+  --ring: oklch(0.72 0.18 78);
+
+  --gold: oklch(0.72 0.18 78);
+  --gold-light: oklch(0.88 0.16 85);
+  --navy: oklch(0.19 0.08 255);
+  --navy-light: oklch(0.35 0.14 255);
+
+  --chart-1: oklch(0.72 0.18 78);
+  --chart-2: oklch(0.42 0.22 255);
+  --chart-3: oklch(0.62 0.18 170);
+  --chart-4: oklch(0.65 0.2 320);
+  --chart-5: oklch(0.68 0.18 40);
+
+  --sidebar: oklch(0.96 0.015 80);
+  --sidebar-foreground: oklch(0.16 0.04 255);
+  --sidebar-primary: oklch(0.72 0.18 78);
+  --sidebar-primary-foreground: oklch(0.12 0.04 255);
+  --sidebar-accent: oklch(0.42 0.22 255);
+  --sidebar-accent-foreground: oklch(0.99 0 0);
+  --sidebar-border: oklch(0.88 0.03 80);
+  --sidebar-ring: oklch(0.72 0.18 78);
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground; }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: oklch(0.93 0.02 80); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, oklch(0.72 0.18 78), oklch(0.42 0.22 255));
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: oklch(0.62 0.2 78); }
+
+/* ── Selection ── */
+::selection { background: oklch(0.72 0.18 78 / 30%); color: oklch(0.12 0.04 255); }
+
+/* ═══════════════════════════════════════════════
+   COSMIC DEEP SPACE & REALISTIC SUN SYSTEM
+═══════════════════════════════════════════════ */
+
+/* Full-section deep space background */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    /* Solar coronal atmospheric scatter on the right */
+    radial-gradient(ellipse 70% 70% at 75% 50%, oklch(0.45 0.18 75 / 22%) 0%, transparent 65%),
+    /* Blue atmospheric scatter on top-left */
+    radial-gradient(ellipse 65% 60% at 15% 20%, oklch(0.30 0.15 258 / 25%) 0%, transparent 70%),
+    /* Cosmic nebula cloud mid-bottom */
+    radial-gradient(ellipse 80% 40% at 50% 100%, oklch(0.38 0.12 70 / 18%) 0%, transparent 70%),
+    /* Deep space gradient base */
+    linear-gradient(
+      165deg,
+      #030712 0%,
+      #060c24 25%,
+      #0a1338 50%,
+      #0d1a45 75%,
+      #09122c 100%
+    );
+}
+
+/* ── Rotating solar coronal rays (Centered directly on the Sun, softened) ── */
+.solar-rays-layer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1400px;
+  height: 1400px;
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
+  pointer-events: none;
+  animation: solar-rays-spin 65s linear infinite;
+  opacity: 0.22;
+  mix-blend-mode: screen;
+  filter: blur(8px);
+}
+
+.solar-rays-layer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(255, 235, 150, 0.5) 1.5deg,
+    transparent 4.5deg,
+    transparent 24deg,
+    rgba(255, 215, 100, 0.35) 25.5deg,
+    transparent 29deg,
+    transparent 54deg,
+    rgba(255, 240, 180, 0.45) 55.5deg,
+    transparent 59deg,
+    transparent 84deg,
+    rgba(255, 205, 80, 0.3) 85.5deg,
+    transparent 89deg,
+    transparent 114deg,
+    rgba(255, 235, 150, 0.4) 115.5deg,
+    transparent 119deg,
+    transparent 144deg,
+    rgba(255, 215, 100, 0.35) 145.5deg,
+    transparent 149deg,
+    transparent 174deg,
+    rgba(255, 245, 190, 0.5) 175.5deg,
+    transparent 179deg,
+    transparent 204deg,
+    rgba(255, 205, 80, 0.3) 205.5deg,
+    transparent 209deg,
+    transparent 234deg,
+    rgba(255, 235, 150, 0.4) 235.5deg,
+    transparent 239deg,
+    transparent 264deg,
+    rgba(255, 215, 100, 0.35) 265.5deg,
+    transparent 269deg,
+    transparent 294deg,
+    rgba(255, 240, 180, 0.45) 295.5deg,
+    transparent 299deg,
+    transparent 324deg,
+    rgba(255, 205, 80, 0.3) 325.5deg,
+    transparent 329deg,
+    transparent 354deg,
+    rgba(255, 245, 190, 0.5) 355.5deg,
+    transparent 360deg
+  );
+  border-radius: 50%;
+  mask-image: radial-gradient(circle, rgba(0,0,0,1) 20%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0) 75%);
+  -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 20%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0) 75%);
+}
+
+.solar-rays-layer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(
+    from 15deg,
+    transparent 0deg,
+    rgba(255, 220, 120, 0.35) 2deg,
+    transparent 6deg,
+    transparent 42deg,
+    rgba(255, 240, 170, 0.4) 43.5deg,
+    transparent 48deg,
+    transparent 72deg,
+    rgba(255, 210, 90, 0.25) 73.5deg,
+    transparent 78deg,
+    transparent 102deg,
+    rgba(255, 230, 140, 0.35) 103.5deg,
+    transparent 108deg,
+    transparent 132deg,
+    rgba(255, 245, 180, 0.4) 133.5deg,
+    transparent 138deg,
+    transparent 162deg,
+    rgba(255, 210, 90, 0.25) 163.5deg,
+    transparent 168deg,
+    transparent 192deg,
+    rgba(255, 230, 140, 0.35) 193.5deg,
+    transparent 198deg,
+    transparent 222deg,
+    rgba(255, 245, 180, 0.4) 223.5deg,
+    transparent 228deg,
+    transparent 252deg,
+    rgba(255, 210, 90, 0.25) 253.5deg,
+    transparent 258deg,
+    transparent 282deg,
+    rgba(255, 230, 140, 0.35) 283.5deg,
+    transparent 288deg,
+    transparent 312deg,
+    rgba(255, 245, 180, 0.4) 313.5deg,
+    transparent 318deg,
+    transparent 342deg,
+    rgba(255, 210, 90, 0.25) 343.5deg,
+    transparent 348deg,
+    transparent 360deg
+  );
+  border-radius: 50%;
+  animation: solar-rays-spin-rev 48s linear infinite;
+  mask-image: radial-gradient(circle, rgba(0,0,0,1) 15%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0) 70%);
+  -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 15%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0) 70%);
+}
+
+/* ── Realistic Celestial Sun Orb (Softened & Calmed Down) ── */
+.realistic-sun-orb {
+  position: relative;
+  width: min(400px, 40vw);
+  height: min(400px, 40vw);
+  border-radius: 50%;
+  /* Warm celestial solar gradient without harsh blinding white */
+  background: radial-gradient(
+    circle at 50% 50%,
+    #fffde7 0%,
+    #fff9c4 14%,
+    #ffe082 30%,
+    #ffb74d 48%,
+    #f57c00 68%,
+    #e65100 84%,
+    #bf360c 94%,
+    rgba(191, 54, 12, 0.25) 98%,
+    transparent 100%
+  );
+  box-shadow:
+    /* Inner warm solar depth */
+    inset 0 0 35px rgba(255, 245, 157, 0.6),
+    inset 0 0 70px rgba(255, 183, 77, 0.35),
+    /* Soft, calm solar bloom */
+    0 0 25px 6px rgba(255, 213, 79, 0.4),
+    0 0 60px 18px rgba(255, 152, 0, 0.28),
+    0 0 110px 35px rgba(245, 124, 0, 0.16),
+    0 0 190px 65px rgba(230, 81, 0, 0.08);
+  animation: sun-radiance 6s ease-in-out infinite;
+}
+
+/* ── Gold shimmer text ── */
+.text-gold-shimmer {
+  background: linear-gradient(
+    90deg,
+    oklch(0.78 0.20 80) 0%,
+    oklch(0.96 0.18 88) 30%,
+    oklch(0.78 0.20 80) 55%,
+    oklch(0.92 0.22 84) 80%,
+    oklch(0.78 0.20 80) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
 }
