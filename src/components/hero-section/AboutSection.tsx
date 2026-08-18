@@ -25,9 +25,10 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
   const glowOrbRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!sectionRef.current) return;
     const ctx = gsap.context(() => {
       // ── Ambient background parallax orb ──
-      if (glowOrbRef.current) {
+      if (glowOrbRef.current && sectionRef.current) {
         gsap.to(glowOrbRef.current, {
           y: 120,
           x: -40,
@@ -129,7 +130,7 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
         );
 
       // ── Numbers Counter Animation ──
-      const statEls = document.querySelectorAll<HTMLElement>('[data-about="stat-number"]');
+      const statEls = gsap.utils.toArray<HTMLElement>('[data-about="stat-number"]', sectionRef.current ?? undefined);
       statEls.forEach(el => {
         const target = parseInt(el.dataset.target ?? '0', 10);
         const obj = { val: 0 };
@@ -183,7 +184,6 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
                 background: 'oklch(0.72 0.18 78 / 15%)',
                 color: 'oklch(0.55 0.2 78)',
                 border: '1px solid oklch(0.72 0.18 78 / 30%)',
-                opacity: 0,
               }}
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -194,7 +194,7 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
             <h2
               data-about="heading"
               className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.15] mb-4"
-              style={{ opacity: 0, color: 'oklch(0.16 0.04 255)' }}
+              style={{ color: 'oklch(0.16 0.04 255)' }}
             >
               Building the web,{' '}
               <span className="text-gold-shimmer font-black">one project at a time.</span>
@@ -214,7 +214,6 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
             <p
               data-about="bio"
               className="text-base sm:text-lg text-slate-700 leading-relaxed mb-6 font-normal"
-              style={{ opacity: 0 }}
             >
               {profile.bio}
             </p>
@@ -222,7 +221,7 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
             {/* Meta Information */}
             <div className="flex flex-col sm:flex-row gap-4 text-sm text-slate-600 mb-8">
               {profile.location && (
-                <div data-about="meta-item" className="flex items-center gap-2 font-medium" style={{ opacity: 0 }}>
+                <div data-about="meta-item" className="flex items-center gap-2 font-medium">
                   <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600">
                     <MapPin className="h-4 w-4" />
                   </div>
@@ -230,7 +229,7 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
                 </div>
               )}
               {profile.email && (
-                <div data-about="meta-item" className="flex items-center gap-2 font-medium" style={{ opacity: 0 }}>
+                <div data-about="meta-item" className="flex items-center gap-2 font-medium">
                   <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600">
                     <Mail className="h-4 w-4" />
                   </div>
@@ -246,7 +245,6 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
               data-about="cta"
               href="/resume"
               className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm bg-primary text-primary-foreground shadow-md shadow-primary/25 hover:gap-3 hover:scale-105 active:scale-95 transition-all duration-200"
-              style={{ opacity: 0 }}
             >
               <span>Read Full Resume & Bio</span>
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -258,7 +256,6 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
             <div
               data-about="skills-card"
               className="p-7 sm:p-9 rounded-3xl bg-white border border-border/80 shadow-xl shadow-slate-900/5 relative overflow-hidden"
-              style={{ opacity: 0 }}
             >
               <div className="flex items-center justify-between mb-5">
                 <p className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
@@ -281,7 +278,6 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
                       background: 'oklch(0.72 0.18 78 / 10%)',
                       border: '1px solid oklch(0.72 0.18 78 / 30%)',
                       color: 'oklch(0.35 0.14 78)',
-                      opacity: 0,
                     }}
                     onMouseEnter={e => {
                       const el = e.currentTarget as HTMLElement;
@@ -311,7 +307,6 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
                 <div
                   data-about="stat-card"
                   className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:bg-amber-500/5 hover:border-amber-500/20"
-                  style={{ opacity: 0 }}
                 >
                   <p
                     data-about="stat-number"
@@ -327,7 +322,6 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
                 <div
                   data-about="stat-card"
                   className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:bg-blue-500/5 hover:border-blue-500/20"
-                  style={{ opacity: 0 }}
                 >
                   <p
                     data-about="stat-number"
@@ -343,7 +337,6 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
                 <div
                   data-about="stat-card"
                   className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:bg-teal-500/5 hover:border-teal-500/20"
-                  style={{ opacity: 0 }}
                 >
                   <p
                     data-about="stat-number"

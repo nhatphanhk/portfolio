@@ -142,6 +142,7 @@ export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
 
   // ── GSAP Entrance Timeline ────────────────────────────────────────────────
   useEffect(() => {
+    if (!sectionRef.current) return;
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
       tl.fromTo('[data-hero="name"]', { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 1.0 }, 0.2)
@@ -192,7 +193,6 @@ export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
           <h1
             data-hero="name"
             className="font-extrabold tracking-tight leading-[1.0] mb-5"
-            style={{ opacity: 0 }}
           >
             <span
               className="block text-2xl sm:text-3xl font-semibold mb-2"
@@ -226,7 +226,6 @@ export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
             data-hero="title"
             className="text-xl sm:text-2xl xl:text-3xl font-bold mb-5 tracking-tight"
             style={{
-              opacity: 0,
               color: 'oklch(0.72 0.18 255)',
               textShadow: '0 2px 20px rgba(0, 0, 0, 0.7)',
             }}
@@ -248,7 +247,6 @@ export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
             data-hero="tagline"
             className="text-base sm:text-lg xl:text-xl max-w-md mb-10 leading-relaxed font-normal"
             style={{
-              opacity: 0,
               color: 'oklch(0.84 0.05 255)',
               textShadow: '0 1px 12px rgba(0, 0, 0, 0.7)',
             }}
@@ -260,7 +258,6 @@ export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
           <div
             data-hero="ctas"
             className="flex flex-wrap gap-3.5 mb-10"
-            style={{ opacity: 0 }}
           >
             <Link
               id="hero-view-projects"
@@ -311,7 +308,6 @@ export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
                   title={link.platform}
                   className="p-3 rounded-xl transition-all duration-200 hover:scale-110"
                   style={{
-                    opacity: 0,
                     background: 'rgba(255, 255, 255, 0.08)',
                     border: '1px solid rgba(251, 191, 36, 0.3)',
                     color: '#fbbf24',
@@ -343,7 +339,7 @@ export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
         <div
           data-hero="sun-container"
           className="relative hidden lg:flex items-center justify-center"
-          style={{ minHeight: '520px', opacity: 0 }}
+          style={{ minHeight: '520px' }}
         >
           {/* ── Layer 1: Coronal Solar Rays (Emanating DIRECTLY from the Sun's Center) ── */}
           <div className="solar-rays-layer" aria-hidden="true" />
@@ -406,7 +402,7 @@ export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
       <div
         data-hero="scroll"
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 pointer-events-none"
-        style={{ opacity: 0, zIndex: 10 }}
+        style={{ zIndex: 10 }}
       >
         <span
           className="text-[10px] font-bold tracking-widest uppercase"

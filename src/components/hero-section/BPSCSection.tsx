@@ -29,9 +29,10 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
   const orb2Ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!sectionRef.current) return;
     const ctx = gsap.context(() => {
       // ── Background parallax floating gradient orbs ──
-      if (orb1Ref.current) {
+      if (orb1Ref.current && sectionRef.current) {
         gsap.to(orb1Ref.current, {
           y: 180,
           ease: 'none',
@@ -44,7 +45,7 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
         });
       }
 
-      if (orb2Ref.current) {
+      if (orb2Ref.current && sectionRef.current) {
         gsap.to(orb2Ref.current, {
           y: -140,
           ease: 'none',
@@ -58,7 +59,8 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
       }
 
       // ── Section Headers Animations ──
-      gsap.utils.toArray<HTMLElement>('[data-bpsc="section-header"]').forEach(el => {
+      const headers = gsap.utils.toArray<HTMLElement>('[data-bpsc="section-header"]', sectionRef.current ?? undefined);
+      headers.forEach(el => {
         gsap.fromTo(
           el,
           { opacity: 0, y: 30 },
@@ -73,48 +75,57 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
       });
 
       // ── Project Cards 3D-Like Stagger Reveal ──
-      gsap.fromTo(
-        '[data-bpsc="project-card"]',
-        { opacity: 0, scale: 0.92, y: 45 },
-        {
-          opacity: 1,
-          scale: 1,
-          y: 0,
-          duration: 0.75,
-          stagger: 0.15,
-          ease: 'power3.out',
-          scrollTrigger: { trigger: '[data-bpsc="projects-grid"]', start: 'top 82%' },
-        }
-      );
+      const projectCards = gsap.utils.toArray<HTMLElement>('[data-bpsc="project-card"]', sectionRef.current ?? undefined);
+      if (projectCards.length > 0) {
+        gsap.fromTo(
+          projectCards,
+          { opacity: 0, scale: 0.92, y: 45 },
+          {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            duration: 0.75,
+            stagger: 0.15,
+            ease: 'power3.out',
+            scrollTrigger: { trigger: '[data-bpsc="projects-grid"]', start: 'top 82%' },
+          }
+        );
+      }
 
       // ── Blog Rows Staggered Slide In ──
-      gsap.fromTo(
-        '[data-bpsc="blog-row"]',
-        { opacity: 0, x: -35 },
-        {
-          opacity: 1,
-          x: 0,
-          duration: 0.6,
-          stagger: 0.12,
-          ease: 'power2.out',
-          scrollTrigger: { trigger: '[data-bpsc="blogs-list"]', start: 'top 85%' },
-        }
-      );
+      const blogRows = gsap.utils.toArray<HTMLElement>('[data-bpsc="blog-row"]', sectionRef.current ?? undefined);
+      if (blogRows.length > 0) {
+        gsap.fromTo(
+          blogRows,
+          { opacity: 0, x: -35 },
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.6,
+            stagger: 0.12,
+            ease: 'power2.out',
+            scrollTrigger: { trigger: '[data-bpsc="blogs-list"]', start: 'top 85%' },
+          }
+        );
+      }
 
       // ── Certification Cards Spring In ──
-      gsap.fromTo(
-        '[data-bpsc="cert-card"]',
-        { opacity: 0, y: 35, scale: 0.94 },
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.65,
-          stagger: 0.12,
-          ease: 'back.out(1.5)',
-          scrollTrigger: { trigger: '[data-bpsc="certs-grid"]', start: 'top 85%' },
-        }
-      );
+      const certCards = gsap.utils.toArray<HTMLElement>('[data-bpsc="cert-card"]', sectionRef.current ?? undefined);
+      if (certCards.length > 0) {
+        gsap.fromTo(
+          certCards,
+          { opacity: 0, y: 35, scale: 0.94 },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.65,
+            stagger: 0.12,
+            ease: 'back.out(1.5)',
+            scrollTrigger: { trigger: '[data-bpsc="certs-grid"]', start: 'top 85%' },
+          }
+        );
+      }
     }, sectionRef);
 
     return () => ctx.revert();
@@ -146,7 +157,6 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
           <div
             data-bpsc="section-header"
             className="flex items-end justify-between mb-10 pb-4 border-b border-border/70"
-            style={{ opacity: 0 }}
           >
             <div>
               <div className="flex items-center gap-2 mb-2">
@@ -177,7 +187,6 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
                 key={project.id}
                 href={`/project/${project.slug}`}
                 className="group relative p-7 rounded-3xl bg-white border border-border/80 shadow-md shadow-slate-900/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-1.5"
-                style={{ opacity: 0 }}
               >
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-extrabold text-lg sm:text-xl text-slate-900 group-hover:text-primary transition-colors">
@@ -223,7 +232,6 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
           <div
             data-bpsc="section-header"
             className="flex items-end justify-between mb-10 pb-4 border-b border-border/70"
-            style={{ opacity: 0 }}
           >
             <div>
               <div className="flex items-center gap-2 mb-2">
@@ -254,7 +262,6 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
                 key={post.id}
                 href={`/blog/${post.slug}`}
                 className="group flex items-center justify-between p-5 rounded-2xl bg-white border border-border/70 shadow-xs hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5 transition-all duration-200"
-                style={{ opacity: 0 }}
               >
                 <div className="flex-1 min-w-0 pr-6">
                   <h3 className="font-bold text-base sm:text-lg text-slate-900 group-hover:text-blue-600 transition-colors truncate mb-1.5">
@@ -290,7 +297,6 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
           <div
             data-bpsc="section-header"
             className="flex items-end justify-between mb-10 pb-4 border-b border-border/70"
-            style={{ opacity: 0 }}
           >
             <div>
               <div className="flex items-center gap-2 mb-2">
@@ -320,7 +326,6 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
                 data-bpsc="cert-card"
                 key={cert.id}
                 className="p-6 rounded-2xl bg-white border border-border/80 shadow-xs hover:border-teal-500/40 hover:shadow-lg hover:shadow-teal-500/5 transition-all duration-200 flex flex-col justify-between"
-                style={{ opacity: 0 }}
               >
                 <div>
                   <div className="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center mb-3">
