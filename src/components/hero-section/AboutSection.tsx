@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowRight, MapPin, Mail, Sparkles, Award, Code2, Users } from 'lucide-react';
+import { ArrowRight, MapPin, Mail, Sparkles, Code2 } from 'lucide-react';
 import type { getProfile } from '@/lib/actions/about';
 import type { getPublicSkillsByCategory } from '@/lib/actions/skill';
 import gsap from 'gsap';

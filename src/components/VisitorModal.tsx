@@ -30,6 +30,19 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+function saveVisitorSession(visitorName?: string) {
+  if (typeof window === 'undefined') return;
+  // 1. Persistent LocalStorage (never expires unless cleared)
+  localStorage.setItem('visitor_logged', 'true');
+  if (visitorName) {
+    localStorage.setItem('visitor_name', visitorName);
+  }
+  // 2. SessionStorage
+  sessionStorage.setItem('visitor_logged', 'true');
+  // 3. Persistent Cookie (valid for 1 full year)
+  document.cookie = 'visitor_logged=true; path=/; max-age=31536000; SameSite=Lax';
+}
+
 export function VisitorModal() {
   const [open, setOpen] = useState(false);
 
@@ -74,17 +87,10 @@ export function VisitorModal() {
   });
 
   const markVisitorAsLogged = (visitorName?: string) => {
-    // 1. Persistent LocalStorage (never expires unless cleared)
-    localStorage.setItem('visitor_logged', 'true');
-    if (visitorName) {
-      localStorage.setItem('visitor_name', visitorName);
-    }
-    // 2. SessionStorage
-    sessionStorage.setItem('visitor_logged', 'true');
-    // 3. Persistent Cookie (valid for 1 full year)
-    document.cookie = 'visitor_logged=true; path=/; max-age=31536000; SameSite=Lax';
+    saveVisitorSession(visitorName);
     setOpen(false);
   };
+
 
   const onSubmit = async (data: FormData) => {
     try {
