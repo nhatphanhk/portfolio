@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { MainLayout } from '@/components';
-import { getPublicBlogBySlug, getPublicBlogs } from '@/lib/actions/blog';
+import { getPublicBlogBySlug } from '@/lib/actions/blog';
 import Link from 'next/link';
 import { ArrowLeft, Clock } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -9,14 +9,10 @@ interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
 }
 
-// Force per-request rendering: with static params, Next.js caches unmatched
-// slugs from notFound() with a 200 status instead of 404.
+// Force per-request rendering so every request hits the DB live.
+// This also means we do NOT need generateStaticParams — and removes the
+// build-time DB connection that causes P1001 errors in CI/CD.
 export const dynamic = 'force-dynamic';
-
-export async function generateStaticParams() {
-  const posts = await getPublicBlogs();
-  return posts.map(post => ({ slug: post.slug }));
-}
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
