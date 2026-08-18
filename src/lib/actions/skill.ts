@@ -76,21 +76,26 @@ export async function getAllSkillsFromDb() {
 }
 
 export async function getPublicSkillsByCategory() {
-  const skills = await prisma.skill.findMany({
-    orderBy: [{ category: 'asc' }, { order: 'asc' }],
-  });
-  const grouped: Record<string, any[]> = {};
-  for (const s of skills) {
-    if (!grouped[s.category]) grouped[s.category] = [];
-    grouped[s.category].push({
-      id: s.id,
-      name: s.name,
-      category: s.category,
-      level: s.level || 0,
-      iconUrl: s.iconUrl || undefined,
-      order: s.order,
+  try {
+    const skills = await prisma.skill.findMany({
+      orderBy: [{ category: 'asc' }, { order: 'asc' }],
     });
+    const grouped: Record<string, any[]> = {};
+    for (const s of skills) {
+      if (!grouped[s.category]) grouped[s.category] = [];
+      grouped[s.category].push({
+        id: s.id,
+        name: s.name,
+        category: s.category,
+        level: s.level || 0,
+        iconUrl: s.iconUrl || undefined,
+        order: s.order,
+      });
+    }
+    return grouped;
+  } catch (error) {
+    console.error('Error fetching public skills from db:', error);
+    return {};
   }
-  return grouped;
 }
 
