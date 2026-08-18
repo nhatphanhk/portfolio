@@ -43,9 +43,10 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
       }
 
       // ── Left column timeline: label -> heading -> line -> bio -> meta -> cta ──
+      const contentCol = sectionRef.current?.querySelector('[data-about="content-col"]') as HTMLElement | null;
       const leftTl = gsap.timeline({
         scrollTrigger: {
-          trigger: '[data-about="content-col"]',
+          trigger: contentCol ?? '[data-about="content-col"]',
           start: 'top 82%',
         },
       });
@@ -88,9 +89,10 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
         );
 
       // ── Right column: Card wrapper & Skill tags stagger with elastic pop ──
+      const skillsCol = sectionRef.current?.querySelector('[data-about="skills-col"]') as HTMLElement | null;
       const rightTl = gsap.timeline({
         scrollTrigger: {
-          trigger: '[data-about="skills-col"]',
+          trigger: skillsCol ?? '[data-about="skills-col"]',
           start: 'top 80%',
         },
       });

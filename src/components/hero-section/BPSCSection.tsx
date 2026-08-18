@@ -76,6 +76,7 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
 
       // ── Project Cards 3D-Like Stagger Reveal ──
       const projectCards = gsap.utils.toArray<HTMLElement>('[data-bpsc="project-card"]', sectionRef.current ?? undefined);
+      const projectsGrid = sectionRef.current?.querySelector('[data-bpsc="projects-grid"]') as HTMLElement | null;
       if (projectCards.length > 0) {
         gsap.fromTo(
           projectCards,
@@ -87,13 +88,14 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
             duration: 0.75,
             stagger: 0.15,
             ease: 'power3.out',
-            scrollTrigger: { trigger: '[data-bpsc="projects-grid"]', start: 'top 82%' },
+            scrollTrigger: { trigger: projectsGrid ?? projectCards[0], start: 'top 82%' },
           }
         );
       }
 
       // ── Blog Rows Staggered Slide In ──
       const blogRows = gsap.utils.toArray<HTMLElement>('[data-bpsc="blog-row"]', sectionRef.current ?? undefined);
+      const blogsList = sectionRef.current?.querySelector('[data-bpsc="blogs-list"]') as HTMLElement | null;
       if (blogRows.length > 0) {
         gsap.fromTo(
           blogRows,
@@ -104,13 +106,14 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
             duration: 0.6,
             stagger: 0.12,
             ease: 'power2.out',
-            scrollTrigger: { trigger: '[data-bpsc="blogs-list"]', start: 'top 85%' },
+            scrollTrigger: { trigger: blogsList ?? blogRows[0], start: 'top 85%' },
           }
         );
       }
 
       // ── Certification Cards Spring In ──
       const certCards = gsap.utils.toArray<HTMLElement>('[data-bpsc="cert-card"]', sectionRef.current ?? undefined);
+      const certsGrid = sectionRef.current?.querySelector('[data-bpsc="certs-grid"]') as HTMLElement | null;
       if (certCards.length > 0) {
         gsap.fromTo(
           certCards,
@@ -122,7 +125,7 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
             duration: 0.65,
             stagger: 0.12,
             ease: 'back.out(1.5)',
-            scrollTrigger: { trigger: '[data-bpsc="certs-grid"]', start: 'top 85%' },
+            scrollTrigger: { trigger: certsGrid ?? certCards[0], start: 'top 85%' },
           }
         );
       }
