@@ -42,9 +42,12 @@ model Blog {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  authorId String
-  author   User     @relation(fields: [authorId], references: [id])
-  tags     BlogTag[]
+  authorId    String
+  author      User         @relation(fields: [authorId], references: [id])
+  tags        BlogTag[]
+  seriesId    String?
+  seriesOrder Int?         @default(0)
+  series      BlogSeries?  @relation(fields: [seriesId], references: [id])
 
   @@index([status])
   @@index([publishedAt])
@@ -293,6 +296,33 @@ model Activity {
   updatedAt   DateTime  @updatedAt
 
   @@map("activities")
+}
+
+model BlogSeries {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  description String?
+  coverUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  blogs Blog[]
+
+  @@map("blog_series")
+}
+
+model SiteContent {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  type      String   @default("text") // "text", "number", "url", "html"
+  label     String?  // Human-readable label for admin UI
+  grp       String?  // "hero", "about", "stats", "bpsc"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("site_content")
 }
 
 // ─── Enums ────────────────────────────────────────────────────────────────────

@@ -9,25 +9,31 @@ import { getPublicProjects } from '@/lib/actions/project';
 import { getPublicBlogs } from '@/lib/actions/blog';
 import { getPublicCertifications } from '@/lib/actions/certification';
 import { getPublicSkillsByCategory } from '@/lib/actions/skill';
+import { getSiteContentRecord } from '@/lib/actions/site-content';
 
 export const metadata: Metadata = {
-  title: 'Nhat Phan — Full-Stack Developer',
+  title: {
+    absolute: 'nhatphanhk102',
+  },
   description: SITE_DESCRIPTION,
 };
 
 export default async function Home() {
-  const profile = await getProfile();
-  const socialLinks = await getSocialLinks();
-  const projects = await getPublicProjects();
-  const blogs = await getPublicBlogs();
-  const certs = await getPublicCertifications();
-  const skillsByCategory = await getPublicSkillsByCategory();
+  const [profile, socialLinks, projects, blogs, certs, skillsByCategory, siteContent] = await Promise.all([
+    getProfile(),
+    getSocialLinks(),
+    getPublicProjects(),
+    getPublicBlogs(),
+    getPublicCertifications(),
+    getPublicSkillsByCategory(),
+    getSiteContentRecord(),
+  ]);
 
   return (
     <MainLayout>
-      <HeroSection profile={profile} socialLinks={socialLinks} />
-      <AboutSection profile={profile} skillsByCategory={skillsByCategory} />
-      <BPSCSection projects={projects} blogs={blogs} certs={certs} />
+      <HeroSection profile={profile} socialLinks={socialLinks} content={siteContent} />
+      <AboutSection profile={profile} skillsByCategory={skillsByCategory} content={siteContent} />
+      <BPSCSection projects={projects} blogs={blogs} certs={certs} content={siteContent} />
     </MainLayout>
   );
 }

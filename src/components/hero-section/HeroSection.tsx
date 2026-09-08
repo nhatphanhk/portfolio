@@ -3,11 +3,8 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Download, ArrowRight, ChevronDown } from 'lucide-react';
-import * as Icons from 'lucide-react';
-import * as THREE from 'three';
 import gsap from 'gsap';
-
-const ICON_MAP = Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
+import DynamicIcon from '@/components/ui/DynamicIcon';
 
 interface HeroSectionProps {
   profile: {
@@ -18,9 +15,10 @@ interface HeroSectionProps {
     avatarUrl?: string;
   };
   socialLinks: Array<{ platform: string; url: string; iconName?: string | null }>;
+  content?: Record<string, string>;
 }
 
-export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
+export function HeroSection({ profile, socialLinks, content }: HeroSectionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -29,114 +27,128 @@ export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 400);
-    camera.position.z = 60;
-
-    // Helper: Create soft circular radial gradient star texture (NO CHUNKY SQUARES)
-    const createStarTexture = () => {
-      const texCanvas = document.createElement('canvas');
-      texCanvas.width = 64;
-      texCanvas.height = 64;
-      const ctx = texCanvas.getContext('2d')!;
-      const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-      grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-      grad.addColorStop(0.2, 'rgba(255, 235, 170, 0.85)');
-      grad.addColorStop(0.5, 'rgba(160, 200, 255, 0.35)');
-      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 64, 64);
-      const texture = new THREE.CanvasTexture(texCanvas);
-      texture.needsUpdate = true;
-      return texture;
-    };
-
-    const starTexture = createStarTexture();
-
-    const makeParticles = (
-      count: number,
-      color: number,
-      size: number,
-      opacity: number,
-      spread: number
-    ) => {
-      const positions = new Float32Array(count * 3);
-      for (let i = 0; i < count * 3; i++) {
-        positions[i] = (Math.random() - 0.5) * spread;
-      }
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      const mat = new THREE.PointsMaterial({
-        size,
-        color,
-        map: starTexture,
-        transparent: true,
-        opacity,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        sizeAttenuation: true,
-      });
-      return { points: new THREE.Points(geo, mat), geo, mat };
-    };
-
-    // Layer 1: Distant fine starfield (small, sharp)
-    const distantStars = makeParticles(900, 0xd0e4ff, 0.45, 0.65, 160);
-    // Layer 2: Golden solar dust & midground stars
-    const goldStars = makeParticles(500, 0xffd54f, 0.65, 0.75, 130);
-    // Layer 3: Foreground bright twinkling stars
-    const brightStars = makeParticles(180, 0xffffff, 0.95, 0.85, 110);
-
-    scene.add(distantStars.points, goldStars.points, brightStars.points);
-
-    const mouse = { x: 0, y: 0 };
-    const onMouseMove = (e: MouseEvent) => {
-      mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;
-      mouse.y = -(e.clientY / window.innerHeight - 0.5) * 2;
-    };
-    window.addEventListener('mousemove', onMouseMove);
-
-    const onResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    };
-    window.addEventListener('resize', onResize);
-
     let frameId: number;
-    const clock = new THREE.Clock();
-    const animate = () => {
-      frameId = requestAnimationFrame(animate);
-      const t = clock.getElapsedTime();
+    let disposed = false;
 
-      distantStars.points.rotation.y = t * 0.008;
-      distantStars.points.rotation.x = t * 0.004;
+    import('three').then((THREE) => {
+      if (disposed) return;
 
-      goldStars.points.rotation.y = -t * 0.012;
-      goldStars.points.rotation.z = t * 0.005;
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
 
-      brightStars.points.rotation.x = t * 0.015;
-      brightStars.points.rotation.y = t * 0.006;
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 400);
+      camera.position.z = 60;
 
-      camera.position.x += (mouse.x * 1.5 - camera.position.x) * 0.02;
-      camera.position.y += (mouse.y * 1.5 - camera.position.y) * 0.02;
-      renderer.render(scene, camera);
-    };
-    animate();
+      // Helper: Create soft circular radial gradient star texture (NO CHUNKY SQUARES)
+      const createStarTexture = () => {
+        const texCanvas = document.createElement('canvas');
+        texCanvas.width = 64;
+        texCanvas.height = 64;
+        const ctx = texCanvas.getContext('2d')!;
+        const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        grad.addColorStop(0.2, 'rgba(255, 235, 170, 0.85)');
+        grad.addColorStop(0.5, 'rgba(160, 200, 255, 0.35)');
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 64, 64);
+        const texture = new THREE.CanvasTexture(texCanvas);
+        texture.needsUpdate = true;
+        return texture;
+      };
+
+      const starTexture = createStarTexture();
+
+      const makeParticles = (
+        count: number,
+        color: number,
+        size: number,
+        opacity: number,
+        spread: number
+      ) => {
+        const positions = new Float32Array(count * 3);
+        for (let i = 0; i < count * 3; i++) {
+          positions[i] = (Math.random() - 0.5) * spread;
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const mat = new THREE.PointsMaterial({
+          size,
+          color,
+          map: starTexture,
+          transparent: true,
+          opacity,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          sizeAttenuation: true,
+        });
+        return { points: new THREE.Points(geo, mat), geo, mat };
+      };
+
+      // Layer 1: Distant fine starfield (small, sharp)
+      const distantStars = makeParticles(900, 0xd0e4ff, 0.45, 0.65, 160);
+      // Layer 2: Golden solar dust & midground stars
+      const goldStars = makeParticles(500, 0xffd54f, 0.65, 0.75, 130);
+      // Layer 3: Foreground bright twinkling stars
+      const brightStars = makeParticles(180, 0xffffff, 0.95, 0.85, 110);
+
+      scene.add(distantStars.points, goldStars.points, brightStars.points);
+
+      const mouse = { x: 0, y: 0 };
+      const onMouseMove = (e: MouseEvent) => {
+        mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;
+        mouse.y = -(e.clientY / window.innerHeight - 0.5) * 2;
+      };
+      window.addEventListener('mousemove', onMouseMove);
+
+      const onResize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      };
+      window.addEventListener('resize', onResize);
+
+      const clock = new THREE.Clock();
+      const animate = () => {
+        frameId = requestAnimationFrame(animate);
+        const t = clock.getElapsedTime();
+
+        distantStars.points.rotation.y = t * 0.008;
+        distantStars.points.rotation.x = t * 0.004;
+
+        goldStars.points.rotation.y = -t * 0.012;
+        goldStars.points.rotation.z = t * 0.005;
+
+        brightStars.points.rotation.x = t * 0.015;
+        brightStars.points.rotation.y = t * 0.006;
+
+        camera.position.x += (mouse.x * 1.5 - camera.position.x) * 0.02;
+        camera.position.y += (mouse.y * 1.5 - camera.position.y) * 0.02;
+        renderer.render(scene, camera);
+      };
+      animate();
+
+      // Store cleanup references on the canvas element
+      (canvas as unknown as Record<string, () => void>).__threeCleanup = () => {
+        cancelAnimationFrame(frameId);
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('resize', onResize);
+        starTexture.dispose();
+        [distantStars, goldStars, brightStars].forEach(p => {
+          p.geo.dispose();
+          p.mat.dispose();
+        });
+        renderer.dispose();
+      };
+    });
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(frameId);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('resize', onResize);
-      starTexture.dispose();
-      [distantStars, goldStars, brightStars].forEach(p => {
-        p.geo.dispose();
-        p.mat.dispose();
-      });
-      renderer.dispose();
+      const cleanup = (canvas as unknown as Record<string, () => void>)?.__threeCleanup;
+      if (cleanup) cleanup();
     };
   }, []);
 
@@ -201,7 +213,7 @@ export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
                 letterSpacing: '0.04em',
               }}
             >
-              Hi, I&apos;m
+              {content?.hero_greeting || "Hi, I'm"}
             </span>
             <span
               className="block text-6xl sm:text-7xl xl:text-8xl text-gold-shimmer font-black"
@@ -269,7 +281,7 @@ export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
                 boxShadow: '0 4px 25px rgba(245, 158, 11, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.5)',
               }}
             >
-              View Projects
+              {content?.hero_cta_projects || 'View Projects'}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
 
@@ -288,7 +300,7 @@ export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
                 }}
               >
                 <Download className="h-4 w-4" />
-                Resume
+                {content?.hero_cta_resume || 'Resume'}
               </a>
             )}
           </div>
@@ -296,7 +308,6 @@ export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
           {/* Social Icons */}
           <div className="flex items-center gap-2.5">
             {socialLinks.map(link => {
-              const Icon = link.iconName ? ICON_MAP[link.iconName] || Icons.Link : Icons.Link;
               return (
                 <a
                   data-hero="social"
@@ -328,7 +339,7 @@ export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
                     el.style.boxShadow = '';
                   }}
                 >
-                  <Icon className="h-4 w-4" />
+                  <DynamicIcon name={link.iconName} className="h-4 w-4" />
                 </a>
               );
             })}

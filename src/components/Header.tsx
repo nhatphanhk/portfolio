@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -73,9 +74,9 @@ const Header = () => {
           <Link
             href="/"
             className="group flex items-center gap-3 transition-all duration-300 hover:scale-105"
-            aria-label="Nhat Phan — Home"
+            aria-label="nhatphanhk102 — Home"
           >
-            {/* Glowing Luxury Monogram Badge */}
+            {/* Glowing Luxury Logo Badge */}
             <div className="relative flex items-center justify-center">
               <div
                 className="absolute inset-0 rounded-full blur-[6px] opacity-70 group-hover:opacity-100 transition-opacity duration-300"
@@ -84,14 +85,19 @@ const Header = () => {
                 }}
               />
               <div
-                className="relative w-9 h-9 rounded-full flex items-center justify-center font-black text-xs tracking-wider border border-white/30 transition-transform duration-300 shadow-md group-hover:rotate-12"
+                className="relative w-9 h-9 rounded-full flex items-center justify-center overflow-hidden border border-amber-300/40 transition-transform duration-300 shadow-md group-hover:scale-105 bg-[#ece5dc]"
                 style={{
-                  background: 'linear-gradient(135deg, #fde047 0%, #eab308 50%, #ca8a04 100%)',
-                  color: '#1e1b4b',
                   boxShadow: '0 2px 14px rgba(234, 179, 8, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.6)',
                 }}
               >
-                NP
+                <Image
+                  src="/icon.png"
+                  alt="nhatphanhk102 logo"
+                  width={36}
+                  height={36}
+                  className="w-full h-full object-cover"
+                  priority
+                />
               </div>
             </div>
 
@@ -107,10 +113,10 @@ const Header = () => {
                     : 'none',
                 }}
               >
-                Nhat
+                nhatphan
               </span>
               <span className="text-lg font-black tracking-tight text-gold-shimmer">
-                Phan
+                hk102
               </span>
               <span
                 className="w-2 h-2 rounded-full animate-pulse inline-block"

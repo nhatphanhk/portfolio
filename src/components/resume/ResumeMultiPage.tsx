@@ -3,9 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { ResumeCard3D } from '@/components/ui/ResumeCard3D';
 import { MapPin, Mail, Layers, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
-import * as Icons from 'lucide-react';
-
-const ICON_MAP = Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
+import DynamicIcon from '@/components/ui/DynamicIcon';
 
 const CATEGORY_LABELS: Record<string, string> = {
   LANGUAGE: 'Programming Languages',
@@ -437,10 +435,9 @@ export function ResumeMultiPage({
                             </div>
                           )}
                           {socialLinks.map(social => {
-                            const Icon = social.iconName ? ICON_MAP[social.iconName] || Icons.Link : Icons.Link;
                             return (
                               <div key={social.id} className="flex sm:justify-end items-center gap-1.5">
-                                <Icon className="w-3.5 h-3.5 shrink-0 text-gray-400" />
+                                <DynamicIcon name={social.iconName} className="w-3.5 h-3.5 shrink-0 text-gray-400" />
                                 <a
                                   href={social.url}
                                   target="_blank"

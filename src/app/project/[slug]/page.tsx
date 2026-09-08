@@ -4,6 +4,7 @@ import { getPublicProjectBySlug, getPublicProjects } from '@/lib/actions/project
 import Link from 'next/link';
 import { ArrowLeft, ExternalLink, Github, Calendar } from 'lucide-react';
 import type { Metadata } from 'next';
+import { BlogContent } from '@/components/blog/BlogContent';
 
 interface ProjectDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -142,18 +143,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 
         {/* Content */}
         {project.content && (
-          <div
-            className="prose prose-neutral dark:prose-invert max-w-none
-              prose-headings:font-bold prose-headings:tracking-tight
-              prose-h2:text-2xl prose-h3:text-xl
-              prose-p:text-muted-foreground prose-p:leading-relaxed
-              prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-              prose-code:text-sm prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
-              prose-pre:bg-muted prose-pre:border prose-pre:border-border
-              prose-strong:text-foreground
-              prose-li:text-muted-foreground"
-            dangerouslySetInnerHTML={{ __html: project.content }}
-          />
+          <BlogContent html={project.content} />
         )}
       </div>
     </MainLayout>

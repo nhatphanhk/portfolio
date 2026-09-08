@@ -1,4 +1,5 @@
 'use server';
+import { cache } from 'react';
 
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
@@ -33,7 +34,7 @@ const profileSchema = z.object({
 
 export type ProfileFormData = z.infer<typeof profileSchema>;
 
-export async function getProfile() {
+export const getProfile = cache(async () => {
   let dbProfile = null;
   try {
     dbProfile = await prisma.profile.findFirst();
@@ -77,7 +78,7 @@ export async function getProfile() {
     interests: dbProfile.interests,
     fromDb: true as const,
   };
-}
+});
 
 export async function updateProfile(formData: ProfileFormData) {
   await ensureAdmin();
@@ -103,7 +104,7 @@ export async function updateProfile(formData: ProfileFormData) {
 
 // ─── Social Links ─────────────────────────────────────────────────────────────
 
-export async function getSocialLinks() {
+export const getSocialLinks = cache(async () => {
   try {
     const links = await prisma.socialLink.findMany({ orderBy: { order: 'asc' } });
     if (links.length > 0) return links;
@@ -119,7 +120,7 @@ export async function getSocialLinks() {
     createdAt: new Date(),
     updatedAt: new Date(),
   }));
-}
+});
 
 export async function upsertSocialLink(
   platform: string,

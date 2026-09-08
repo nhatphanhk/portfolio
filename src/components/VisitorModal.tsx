@@ -150,7 +150,7 @@ export function VisitorModal() {
           <DialogHeader className="space-y-1.5 text-center sm:text-center">
             <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">
               Welcome to{' '}
-              <span className="text-gold-shimmer font-black">Nhat Phan&apos;s</span>{' '}
+              <span className="text-gold-shimmer font-black">nhatphanhk102&apos;s</span>{' '}
               Portfolio
             </DialogTitle>
             <DialogDescription className="text-xs sm:text-sm text-slate-600 font-medium max-w-sm mx-auto leading-relaxed">

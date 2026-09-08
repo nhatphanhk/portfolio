@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { createProject, updateProject, type ProjectFormData } from '@/lib/actions/project';
+import { TipTapEditor } from '@/components/admin/editor/TipTapEditor';
 
 const schema = z.object({
   title: z.string().min(3).max(255),
@@ -33,7 +34,7 @@ interface ProjectDialogProps {
 export function ProjectDialog({ mode, open, onOpenChange, initialData }: ProjectDialogProps) {
   const [isPending, startTransition] = useTransition();
 
-  const { register, handleSubmit, setValue, formState: { errors }, reset } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, formState: { errors }, reset } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       title: initialData?.title ?? '',
@@ -100,8 +101,12 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Content (Markdown)</label>
-            <textarea {...register('content')} rows={8} placeholder="# Project Details&#10;&#10;Describe the project in detail..." className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring resize-y" />
+            <label className="block text-sm font-medium mb-1">Content</label>
+            <TipTapEditor
+              content={watch('content') ?? ''}
+              onChange={(html: string) => setValue('content', html, { shouldValidate: true })}
+              placeholder="Describe the project in detail..."
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
