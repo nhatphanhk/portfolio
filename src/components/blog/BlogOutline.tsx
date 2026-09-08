@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Heading } from './BlogContent';
+import type { Heading } from '@/lib/blog-utils';
 
 interface BlogOutlineProps {
   headings: Heading[];

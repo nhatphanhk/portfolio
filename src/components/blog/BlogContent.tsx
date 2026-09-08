@@ -3,30 +3,9 @@
 import DOMPurify from 'dompurify';
 import { useEffect, useState } from 'react';
 
-export interface Heading {
-  id: string;
-  text: string;
-  level: number;
-}
+import { slugifyHeading, type Heading } from '@/lib/blog-utils';
 
-export function extractHeadings(html: string): Heading[] {
-  if (!html) return [];
-
-  const regex = /<h([2-4])(?:\s+[^>]*)?>(.*?)<\/h\1>/gi;
-  const headings: Heading[] = [];
-  let match;
-
-  while ((match = regex.exec(html)) !== null) {
-    const level = parseInt(match[1], 10);
-    const rawText = match[2].replace(/<[^>]*>/g, '').trim();
-    const id = rawText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-    if (rawText) {
-      headings.push({ id, text: rawText, level });
-    }
-  }
-
-  return headings;
-}
+export type { Heading };
 
 function processHtml(html: string): string {
   if (typeof window === 'undefined') return html;
@@ -41,8 +20,7 @@ function processHtml(html: string): string {
   
   div.querySelectorAll('h2, h3, h4').forEach((element) => {
     const text = element.textContent || '';
-    const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-    element.id = id;
+    element.id = slugifyHeading(text);
   });
   
   return div.innerHTML;
