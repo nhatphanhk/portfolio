@@ -116,26 +116,35 @@ action file for a resource before adding a new query pattern.
 Only used where a Server Action can't do the job (public POST without a form action,
 framework-required routes, or serving raw JSON):
 
-| Route | Method | Purpose |
-|---|---|---|
-| `/api/auth/[...nextauth]` | GET, POST | NextAuth's own handler (`export const { GET, POST } = handlers`) |
-| `/api/admin/create` | POST | One-time admin user creation, protected by `ADMIN_SETUP_KEY` |
-| `/api/contact` | POST | Public contact form submission, rate-limited |
-| `/api/visitor` | POST | Visitor logging (called from `VisitorModal`) |
-| `/api/swagger` | GET | Serves the OpenAPI JSON spec (built by `src/lib/swagger.ts`) |
+| Route | Method | Purpose | Rate Limit |
+|---|---|---|---|
+| `/api/auth/[...nextauth]` | GET, POST | NextAuth's own handler (`export const { GET, POST } = handlers`) | Framework managed |
+| `/api/admin/create` | POST | One-time admin user creation, protected by `ADMIN_SETUP_KEY` | 3 req / 15m / IP (`ADMIN_SETUP`) |
+| `/api/contact` | POST | Public contact form submission | 5 req / 10m / IP (`FORM_SUBMIT`) |
+| `/api/visitor` | POST | Visitor logging (called from `VisitorModal`) | 5 req / 10m / IP (`FORM_SUBMIT`) |
+| `/api/upload` | POST | Authenticated file/image/PDF upload | 10 req / 5m / IP (`UPLOAD`) |
+| `/api/resume/parse-pdf` | POST | Authenticated CV parsing with Gemini AI fallback | 5 req / 10m / IP (`AI_PARSING`) |
+| `/api/swagger` | GET | Serves OpenAPI JSON spec (built by `src/lib/swagger.ts`) | 30 req / 1m / IP (`DOCS_SPEC`) |
 
-`/api-doc` (`src/app/api/../api-doc/page.tsx`, note: **not** under `src/app/api/`) is a
+`/api-doc` (`src/app/api-doc/page.tsx`, note: **not** under `src/app/api/`) is a
 Swagger UI *page* that fetches the spec above and renders it via
 `src/components/SwaggerUIClient.tsx` — it's auth-gated like the admin area even though it
 lives outside `src/app/admin/`.
 
-### Rate limiting
+### Rate limiting & Cost Optimization
 
-`src/lib/rate-limit.ts` — a simple in-memory `Map<ip, {count, expiresAt}>` limiter
-(`checkRateLimit(ip, limit, windowMs)`), used by `/api/contact`. Being in-memory, it resets
-on redeploy/cold-start and doesn't share state across serverless instances — acceptable for
-this app's traffic level; swap for a durable store (e.g. Redis/Upstash) if that ever
-becomes a real problem.
+`src/lib/rate-limit.ts` provides an in-memory sliding-window limiter with:
+- **Zero Cost (0đ):** No external paid Redis or Upstash subscriptions required.
+- **Auto-GC (Garbage Collection):** Periodic pruning every 5 minutes prevents memory leaks in long-running processes.
+- **`getClientIp(req)` helper:** Accurately parses `cf-connecting-ip`, `x-forwarded-for`, and `x-real-ip`.
+- **`RATE_LIMIT_PRESETS`:** Centralized limits for forms, AI parsing, uploads, admin setup, and API spec.
+
+### High-Traffic Defense & Caching Strategy (ISR)
+
+To protect PostgreSQL connections from being exhausted when traffic surges (e.g. viral links or crawlers):
+- Public pages (`/`, `/blog`, `/project`, `/skills`, `/certifications`, `/contact`) export `export const revalidate = 300;` (5 minutes).
+- **Edge Caching:** Vercel Edge CDN serves cached static HTML responses in <20ms without invoking Prisma or PostgreSQL.
+- **Instant Admin Invalidation:** Mutating Server Actions call `revalidatePath()` upon save, which immediately purges the Edge cache — updates are instantly visible without waiting for the 300s window.
 
 ---
 

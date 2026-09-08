@@ -56,7 +56,7 @@ const Footer = async () => {
             <h4 className="text-sm font-semibold mb-4" style={{ color: 'oklch(0.55 0.22 255)' }}>
               Connect
             </h4>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-2.5">
               {socialLinks.map(social => {
                 return (
                   <a
@@ -64,11 +64,12 @@ const Footer = async () => {
                     href={social.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm transition-colors hover:text-blue-300"
-                    style={{ color: 'oklch(0.60 0.07 255)' }}
+                    aria-label={social.platform}
+                    title={social.platform}
+                    className="p-2.5 rounded-xl border border-white/10 bg-white/5 transition-all hover:bg-white/15 hover:scale-110 hover:border-amber-400/40 hover:text-amber-300"
+                    style={{ color: 'oklch(0.75 0.12 255)' }}
                   >
                     <DynamicIcon name={social.iconName} className="h-4 w-4" />
-                    {social.platform}
                   </a>
                 );
               })}

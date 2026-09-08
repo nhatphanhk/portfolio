@@ -80,7 +80,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   );
 
   return (
-    <div className="border border-border bg-background flex flex-wrap items-center gap-1 p-1 rounded-t-md">
+    <div className="border border-border border-b-0 bg-slate-50 flex flex-wrap items-center gap-1 p-1.5 rounded-t-md">
       <IconButton
         onClick={() => editor.chain().focus().toggleBold().run()}
         disabled={!editor.can().chain().focus().toggleBold().run()}

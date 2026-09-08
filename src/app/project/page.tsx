@@ -10,6 +10,8 @@ export const metadata: Metadata = {
     'A showcase of my full-stack projects — from web applications to developer tools, built with modern technologies.',
 };
 
+export const revalidate = 300;
+
 export default async function ProjectPage() {
   const projects = await getPublicProjects();
   const featured = projects.filter(p => p.featured);

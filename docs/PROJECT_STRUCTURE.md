@@ -18,9 +18,11 @@ app/
 ├── api-doc/page.tsx                           # Swagger UI page (auth-gated, NOT under api/)
 ├── api/
 │   ├── auth/[...nextauth]/route.ts            # NextAuth handler
-│   ├── admin/create/route.ts                  # One-time admin creation (ADMIN_SETUP_KEY)
-│   ├── contact/route.ts, visitor/route.ts     # Public POST endpoints
-│   └── swagger/route.ts                       # Raw OpenAPI JSON (what api-doc/ renders)
+│   ├── admin/create/route.ts                  # One-time admin creation (ADMIN_SETUP_KEY, rate-limited)
+│   ├── contact/route.ts, visitor/route.ts     # Public POST endpoints (rate-limited)
+│   ├── upload/route.ts                        # Authenticated upload endpoint (rate-limited)
+│   ├── resume/parse-pdf/route.ts              # Authenticated CV parsing with Gemini AI (rate-limited)
+│   └── swagger/route.ts                       # Raw OpenAPI JSON (rate-limited, what api-doc/ renders)
 └── admin/
     ├── login/page.tsx                          # Outside (dashboard) group — no sidebar
     └── (dashboard)/
@@ -81,7 +83,7 @@ lib/
 │   └── auth-settings.ts # change-password action
 ├── auth-utils.ts        # ensureAdmin() — the real authorization guard for every mutation
 ├── db.ts                # Prisma client singleton
-├── rate-limit.ts         # In-memory rate limiter (used by /api/contact)
+├── rate-limit.ts         # In-memory sliding-window limiter with Auto-GC & presets (protects all API routes)
 ├── swagger.ts            # Builds the OpenAPI spec object
 ├── constants.ts          # Site-wide constants (SITE_NAME, NAV_LINKS, ...)
 └── utils.ts               # cn() Tailwind class-merge helper

@@ -9,6 +9,8 @@ export const metadata: Metadata = {
     "Get in touch — I'm open to new projects, collaborations, and conversations about web development.",
 };
 
+export const revalidate = 300;
+
 export default async function ContactPage() {
   const [profile, socialLinks] = await Promise.all([
     getProfile(),

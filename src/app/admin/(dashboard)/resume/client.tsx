@@ -6,10 +6,15 @@ import { ResumeToolbar } from '@/components/admin/resume/ResumeToolbar';
 import { LiveResumeCanvas } from '@/components/admin/resume/LiveResumeCanvas';
 import { ResumeSectionSidebar } from '@/components/admin/resume/ResumeSectionSidebar';
 import { ResumeItemDialog, ItemType } from '@/components/admin/resume/ResumeItemDialog';
+import { ResumePdfDialog } from '@/components/admin/resume/ResumePdfDialog';
+import { ResumePdfConvertDialog } from '@/components/admin/resume/ResumePdfConvertDialog';
+import { ParsedResumeData } from '@/lib/pdf-resume-parser';
 import {
   SectionId,
   ResumeSectionLayout,
+  ResumeTemplateStyle,
   DEFAULT_SECTION_LAYOUT,
+  DEFAULT_HARVARD_ORDER,
   SECTION_META,
   parseSectionLayout,
 } from '@/lib/resume-layout';
@@ -73,11 +78,19 @@ export function AdminResumeClient({
   // ── UI Controls State ──────────────────────────────────────
   const [isEditMode, setIsEditMode] = useState(true);
   const [isSectionSidebarOpen, setIsSectionSidebarOpen] = useState(true);
+  const [isPdfDialogOpen, setIsPdfDialogOpen] = useState(false);
+  const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'stack' | 'paged'>('stack');
   const [activePage, setActivePage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, startSavingTransition] = useTransition();
+
+  // Pending deletion tracking for replaced items
+  const [deletedExpIds, setDeletedExpIds] = useState<string[]>([]);
+  const [deletedEduIds, setDeletedEduIds] = useState<string[]>([]);
+  const [deletedSkillIds, setDeletedSkillIds] = useState<string[]>([]);
+  const [deletedLangIds, setDeletedLangIds] = useState<string[]>([]);
 
   const handleScrollToSection = useCallback((sectionId: string) => {
     const el = document.getElementById(sectionId);
@@ -105,9 +118,57 @@ export function AdminResumeClient({
     setHasUnsavedChanges(true);
   }, []);
 
+  const handleSavePdfUrl = useCallback(
+    async (url: string | null) => {
+      setProfile((prev: any) => ({
+        ...prev,
+        resumeUrl: url,
+      }));
+      try {
+        await updateProfile({
+          ...profile,
+          resumeUrl: url || undefined,
+        });
+        setHasUnsavedChanges(false);
+      } catch (e) {
+        console.error('Failed to update profile resumeUrl', e);
+        throw e;
+      }
+    },
+    [profile]
+  );
+
+  // ── Template Style Selection ──────────────────────────────
+  const handleSelectTemplateStyle = useCallback((style: ResumeTemplateStyle) => {
+    setSectionLayout(prev => ({
+      ...prev,
+      templateStyle: style,
+    }));
+    setHasUnsavedChanges(true);
+    toast.info(
+      `Đã chuyển sang mẫu ${style === 'harvard' ? '🏛️ Chuẩn Harvard (Đơn cột)' : '📐 Hiện đại (2 cột)'}`
+    );
+  }, []);
+
   // ── Dynamic Sections Layout Handlers ───────────────────────
   const handleMoveSection = useCallback((id: SectionId, direction: 'up' | 'down') => {
     setSectionLayout(prev => {
+      // Harvard single-column order reordering
+      if (prev.templateStyle !== 'modern') {
+        const list = [...(prev.order || DEFAULT_HARVARD_ORDER)];
+        const idx = list.indexOf(id);
+        if (idx === -1) return prev;
+        const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+        if (targetIdx < 0 || targetIdx >= list.length) return prev;
+
+        [list[idx], list[targetIdx]] = [list[targetIdx], list[idx]];
+        return {
+          ...prev,
+          order: list,
+        };
+      }
+
+      // Modern 2-column order reordering
       const inLeft = prev.left.includes(id);
       const inRight = prev.right.includes(id);
       const colKey = inLeft ? 'left' : inRight ? 'right' : null;
@@ -188,11 +249,207 @@ export function AdminResumeClient({
     }
   }, []);
 
+  // ── Apply Parsed Data from PDF CV ──────────────────────────
+  const handleApplyParsedResume = useCallback(
+    (parsed: ParsedResumeData, mode: 'replace' | 'merge', newPdfUrl?: string | null) => {
+      // 1. Profile fields
+      if (parsed.profile && Object.keys(parsed.profile).length > 0) {
+        setProfile((prev: any) => ({
+          ...prev,
+          ...(parsed.profile.name ? { name: parsed.profile.name } : {}),
+          ...(parsed.profile.title ? { title: parsed.profile.title } : {}),
+          ...(parsed.profile.email ? { email: parsed.profile.email } : {}),
+          ...(parsed.profile.phone ? { phone: parsed.profile.phone } : {}),
+          ...(parsed.profile.location ? { location: parsed.profile.location } : {}),
+          ...(parsed.profile.bio ? { bio: parsed.profile.bio } : {}),
+          ...(parsed.profile.careerObjective ? { careerObjective: parsed.profile.careerObjective } : {}),
+          ...(parsed.profile.softSkills ? { softSkills: parsed.profile.softSkills } : {}),
+          ...(newPdfUrl ? { resumeUrl: newPdfUrl } : {}),
+        }));
+      } else if (newPdfUrl) {
+        setProfile((prev: any) => ({ ...prev, resumeUrl: newPdfUrl }));
+      }
+
+      // 2. Experiences
+      if (parsed.experiences && parsed.experiences.length > 0) {
+        const mappedExps = parsed.experiences.map((exp, idx) => ({
+          id: `temp-exp-${Date.now()}-${idx}`,
+          company: exp.company,
+          position: exp.position,
+          description: exp.description || null,
+          achievements: exp.achievements || null,
+          techStack: exp.techStack || null,
+          startDate: exp.startDate ? new Date(exp.startDate) : new Date(),
+          endDate: exp.endDate ? new Date(exp.endDate) : null,
+          isCurrent: exp.isCurrent ?? false,
+          order: idx,
+        }));
+
+        if (mode === 'replace') {
+          setDeletedExpIds(prev => [
+            ...prev,
+            ...experiences.filter(e => e.id && !e.id.startsWith('temp-')).map(e => e.id),
+          ]);
+          setExperiences(mappedExps);
+        } else {
+          setExperiences(prev => [...prev, ...mappedExps]);
+        }
+      }
+
+      // 3. Education
+      if (parsed.education && parsed.education.length > 0) {
+        const mappedEdu = parsed.education.map((edu, idx) => ({
+          id: `temp-edu-${Date.now()}-${idx}`,
+          institution: edu.institution,
+          degree: edu.degree,
+          fieldOfStudy: edu.fieldOfStudy || null,
+          startDate: edu.startDate ? new Date(edu.startDate) : new Date(),
+          endDate: edu.endDate ? new Date(edu.endDate) : null,
+          isCurrent: edu.isCurrent ?? false,
+          gpa: edu.gpa || null,
+          description: edu.description || null,
+          order: idx,
+        }));
+
+        if (mode === 'replace') {
+          setDeletedEduIds(prev => [
+            ...prev,
+            ...education.filter(e => e.id && !e.id.startsWith('temp-')).map(e => e.id),
+          ]);
+          setEducation(mappedEdu);
+        } else {
+          setEducation(prev => [...prev, ...mappedEdu]);
+        }
+      }
+
+      // 4. Skills
+      if (parsed.skills && parsed.skills.length > 0) {
+        if (mode === 'replace') {
+          const existingIds: string[] = [];
+          for (const list of Object.values(skillsByCategory)) {
+            for (const sk of list) {
+              if (sk.id && !sk.id.startsWith('temp-')) existingIds.push(sk.id);
+            }
+          }
+          setDeletedSkillIds(prev => [...prev, ...existingIds]);
+
+          const nextSkills: Record<string, any[]> = {};
+          parsed.skills.forEach((sk, idx) => {
+            const cat = sk.category || 'OTHER';
+            if (!nextSkills[cat]) nextSkills[cat] = [];
+            nextSkills[cat].push({
+              id: `temp-skill-${Date.now()}-${idx}`,
+              name: sk.name,
+              category: cat,
+              level: sk.level || 80,
+              order: idx,
+            });
+          });
+          setSkillsByCategory(nextSkills);
+        } else {
+          setSkillsByCategory(prev => {
+            const next = { ...prev };
+            parsed.skills.forEach((sk, idx) => {
+              const cat = sk.category || 'OTHER';
+              if (!next[cat]) next[cat] = [];
+              const exists = next[cat].some(
+                s => s.name.toLowerCase() === sk.name.toLowerCase()
+              );
+              if (!exists) {
+                next[cat].push({
+                  id: `temp-skill-${Date.now()}-${idx}`,
+                  name: sk.name,
+                  category: cat,
+                  level: sk.level || 80,
+                  order: next[cat].length,
+                });
+              }
+            });
+            return next;
+          });
+        }
+      }
+
+      // 5. Spoken Languages
+      if (parsed.spokenLanguages && parsed.spokenLanguages.length > 0) {
+        const mappedLangs = parsed.spokenLanguages.map((l, idx) => ({
+          id: `temp-lang-${Date.now()}-${idx}`,
+          language: l.language,
+          level: l.level || 'Professional Working',
+          order: idx,
+        }));
+
+        if (mode === 'replace') {
+          setDeletedLangIds(prev => [
+            ...prev,
+            ...spokenLanguages.filter(l => l.id && !l.id.startsWith('temp-')).map(l => l.id),
+          ]);
+          setSpokenLanguages(mappedLangs);
+        } else {
+          setSpokenLanguages(prev => {
+            const current = [...prev];
+            for (const item of mappedLangs) {
+              if (!current.some(c => c.language.toLowerCase() === item.language.toLowerCase())) {
+                current.push(item);
+              }
+            }
+            return current;
+          });
+        }
+      }
+
+      // 6. Social Links
+      if (parsed.socialLinks && parsed.socialLinks.length > 0) {
+        setSocialLinks(prev => {
+          const current = [...prev];
+          for (const s of parsed.socialLinks) {
+            const idx = current.findIndex(
+              c => c.platform.toLowerCase() === s.platform.toLowerCase()
+            );
+            if (idx >= 0) {
+              current[idx] = { ...current[idx], url: s.url };
+            } else {
+              current.push({
+                id: `temp-social-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                platform: s.platform,
+                url: s.url,
+                order: current.length,
+              });
+            }
+          }
+          return current;
+        });
+      }
+
+      setHasUnsavedChanges(true);
+      toast.info('Đã tải dữ liệu PDF lên bản CV Studio. Bấm "Lưu thay đổi" để hoàn tất lưu trữ.');
+    },
+    [experiences, education, skillsByCategory, spokenLanguages]
+  );
+
   // ── Save All Uncommitted Changes ───────────────────────────
   const handleSaveAll = () => {
     startSavingTransition(async () => {
       try {
         const layoutJson = JSON.stringify(sectionLayout);
+
+        // Delete items queued for deletion (from replace mode)
+        for (const id of deletedExpIds) {
+          try { await deleteExperience(id); } catch (_e) {}
+        }
+        for (const id of deletedEduIds) {
+          try { await deleteEducation(id); } catch (_e) {}
+        }
+        for (const id of deletedSkillIds) {
+          try { await deleteSkill(id); } catch (_e) {}
+        }
+        for (const id of deletedLangIds) {
+          try { await deleteSpokenLanguage(id); } catch (_e) {}
+        }
+        setDeletedExpIds([]);
+        setDeletedEduIds([]);
+        setDeletedSkillIds([]);
+        setDeletedLangIds([]);
 
         // Save profile
         const profileRes = await updateProfile({
@@ -217,11 +474,16 @@ export function AdminResumeClient({
           return;
         }
 
-        // Save inline-modified experiences
+        // Save inline-modified or newly added experiences
         for (const exp of experiences) {
+          const sDate = exp.startDate
+            ? (typeof exp.startDate === 'string' ? exp.startDate : new Date(exp.startDate).toISOString().slice(0, 7))
+            : new Date().toISOString().slice(0, 7);
+          const eDate = exp.endDate
+            ? (typeof exp.endDate === 'string' ? exp.endDate : new Date(exp.endDate).toISOString().slice(0, 7))
+            : undefined;
+
           if (exp.id && !exp.id.startsWith('temp-')) {
-            const sDate = exp.startDate ? new Date(exp.startDate).toISOString().slice(0, 7) : '';
-            const eDate = exp.endDate ? new Date(exp.endDate).toISOString().slice(0, 7) : undefined;
             await updateExperience(exp.id, {
               company: exp.company,
               position: exp.position,
@@ -232,14 +494,30 @@ export function AdminResumeClient({
               endDate: exp.isCurrent ? undefined : eDate,
               isCurrent: exp.isCurrent,
             });
+          } else {
+            await createExperience({
+              company: exp.company,
+              position: exp.position,
+              description: exp.description || undefined,
+              achievements: exp.achievements || undefined,
+              techStack: exp.techStack || undefined,
+              startDate: sDate,
+              endDate: exp.isCurrent ? undefined : eDate,
+              isCurrent: exp.isCurrent ?? false,
+            });
           }
         }
 
-        // Save inline-modified education
+        // Save inline-modified or newly added education
         for (const edu of education) {
+          const sDate = edu.startDate
+            ? (typeof edu.startDate === 'string' ? edu.startDate : new Date(edu.startDate).toISOString().slice(0, 7))
+            : new Date().toISOString().slice(0, 7);
+          const eDate = edu.endDate
+            ? (typeof edu.endDate === 'string' ? edu.endDate : new Date(edu.endDate).toISOString().slice(0, 7))
+            : undefined;
+
           if (edu.id && !edu.id.startsWith('temp-')) {
-            const sDate = edu.startDate ? new Date(edu.startDate).toISOString().slice(0, 7) : '';
-            const eDate = edu.endDate ? new Date(edu.endDate).toISOString().slice(0, 7) : undefined;
             await updateEducation(edu.id, {
               institution: edu.institution,
               degree: edu.degree,
@@ -250,6 +528,60 @@ export function AdminResumeClient({
               gpa: edu.gpa || undefined,
               description: edu.description || undefined,
             });
+          } else {
+            await createEducation({
+              institution: edu.institution,
+              degree: edu.degree,
+              fieldOfStudy: edu.fieldOfStudy || undefined,
+              startDate: sDate,
+              endDate: edu.isCurrent ? undefined : eDate,
+              isCurrent: edu.isCurrent ?? false,
+              gpa: edu.gpa || undefined,
+              description: edu.description || undefined,
+            });
+          }
+        }
+
+        // Save newly added skills from PDF or manual additions
+        for (const [cat, skillList] of Object.entries(skillsByCategory)) {
+          for (const sk of skillList) {
+            if (sk.id && sk.id.startsWith('temp-')) {
+              try {
+                await createSkill({
+                  name: sk.name,
+                  category: cat as any,
+                  level: sk.level || 80,
+                  order: 0,
+                });
+              } catch (_err) {
+                console.error('Failed to create skill during Save All:', _err);
+              }
+            }
+          }
+        }
+
+        // Save newly added spoken languages
+        for (const lang of spokenLanguages) {
+          if (lang.id && lang.id.startsWith('temp-')) {
+            try {
+              await createSpokenLanguage({
+                language: lang.language,
+                level: lang.level || 'Professional',
+              });
+            } catch (_err) {
+              console.error('Failed to create spoken language during Save All:', _err);
+            }
+          }
+        }
+
+        // Save newly added social links
+        for (const social of socialLinks) {
+          if (social.id && social.id.startsWith('temp-')) {
+            try {
+              await upsertSocialLink(social.platform, social.url, social.iconName);
+            } catch (_err) {
+              console.error('Failed to upsert social link during Save All:', _err);
+            }
           }
         }
 
@@ -275,6 +607,10 @@ export function AdminResumeClient({
       setActivities(initialActivities);
       setSkillsByCategory(initialSkillsByCategory);
       setSectionLayout(parseSectionLayout(initialProfile.interests));
+      setDeletedExpIds([]);
+      setDeletedEduIds([]);
+      setDeletedSkillIds([]);
+      setDeletedLangIds([]);
       setHasUnsavedChanges(false);
       toast.info('Đã khôi phục dữ liệu ban đầu.');
     }
@@ -578,7 +914,7 @@ export function AdminResumeClient({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-muted/20">
+    <div className="h-full flex-1 flex flex-col min-h-0 overflow-hidden bg-muted/20">
       {/* ── Top Sticky WYSIWYG Toolbar ── */}
       <ResumeToolbar
         isEditMode={isEditMode}
@@ -595,10 +931,14 @@ export function AdminResumeClient({
         resumeUrl={profile.resumeUrl}
         isSectionSidebarOpen={isSectionSidebarOpen}
         onToggleSectionSidebar={() => setIsSectionSidebarOpen(prev => !prev)}
+        onOpenPdfDialog={() => setIsPdfDialogOpen(true)}
+        onOpenConvertDialog={() => setIsConvertDialogOpen(true)}
+        templateStyle={sectionLayout.templateStyle}
+        onSelectTemplateStyle={handleSelectTemplateStyle}
       />
 
       {/* ── Workspace Area: Section Sidebar on Left + Dedicated Canvas on Right ── */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 min-h-0 flex overflow-hidden relative">
         {/* Left: Section Toolbox Sidebar */}
         <ResumeSectionSidebar
           isOpen={isSectionSidebarOpen}
@@ -617,6 +957,9 @@ export function AdminResumeClient({
           activityCount={activities.length}
           onOpenDialog={handleOpenDialog}
           onScrollToSection={handleScrollToSection}
+          resumeUrl={profile.resumeUrl}
+          onOpenPdfDialog={() => setIsPdfDialogOpen(true)}
+          onOpenConvertDialog={() => setIsConvertDialogOpen(true)}
         />
 
         {/* Right: Isolated Scrollable Canvas Viewport */}
@@ -684,6 +1027,23 @@ export function AdminResumeClient({
         type={dialogState.type}
         item={dialogState.item}
         onSave={handleSaveDialogItem}
+      />
+
+      {/* ── PDF Resume Import & Management Dialog ── */}
+      <ResumePdfDialog
+        open={isPdfDialogOpen}
+        onOpenChange={setIsPdfDialogOpen}
+        currentResumeUrl={profile.resumeUrl}
+        onSavePdfUrl={handleSavePdfUrl}
+        onOpenConvertDialog={() => setIsConvertDialogOpen(true)}
+      />
+
+      {/* ── PDF to CV Conversion Modal Dialog ── */}
+      <ResumePdfConvertDialog
+        open={isConvertDialogOpen}
+        onOpenChange={setIsConvertDialogOpen}
+        currentResumeUrl={profile.resumeUrl}
+        onApplyParsedData={handleApplyParsedResume}
       />
     </div>
   );

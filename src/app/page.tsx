@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
 };
 
+// Edge caching for high-traffic defense: revalidate every 5 minutes.
+// Content changes made in Admin are instantly refreshed via revalidatePath.
+export const revalidate = 300;
+
 export default async function Home() {
   const [profile, socialLinks, projects, blogs, certs, skillsByCategory, siteContent] = await Promise.all([
     getProfile(),

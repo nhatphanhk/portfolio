@@ -22,9 +22,10 @@ import {
   RotateCcw,
   Eye,
   CheckCircle2,
+  FileUp,
 } from 'lucide-react';
 import { ItemType } from './ResumeItemDialog';
-import { SectionId, ResumeSectionLayout } from '@/lib/resume-layout';
+import { SectionId, ResumeSectionLayout, DEFAULT_HARVARD_ORDER } from '@/lib/resume-layout';
 
 interface SectionConfig {
   id: SectionId;
@@ -118,6 +119,9 @@ interface ResumeSectionSidebarProps {
   onOpenDialog: (type: ItemType) => void;
   onScrollToSection: (sectionId: string) => void;
   activeSection?: string;
+  resumeUrl?: string | null;
+  onOpenPdfDialog?: () => void;
+  onOpenConvertDialog?: () => void;
 }
 
 export function ResumeSectionSidebar({
@@ -138,6 +142,9 @@ export function ResumeSectionSidebar({
   onOpenDialog,
   onScrollToSection,
   activeSection,
+  resumeUrl,
+  onOpenPdfDialog,
+  onOpenConvertDialog,
 }: ResumeSectionSidebarProps) {
   const getItemCount = (id: SectionId): number | undefined => {
     switch (id) {
@@ -173,9 +180,14 @@ export function ResumeSectionSidebar({
     );
   }
 
+  const isHarvard = sectionLayout.templateStyle !== 'modern';
+  const harvardOrderedSections = (sectionLayout.order || DEFAULT_HARVARD_ORDER).filter(
+    id => !sectionLayout.hidden.includes(id)
+  );
+
   const renderSectionCard = (
     secId: SectionId,
-    column: 'left' | 'right',
+    column: 'left' | 'right' | undefined,
     idx: number,
     totalInCol: number
   ) => {
@@ -248,15 +260,17 @@ export function ResumeSectionSidebar({
             <ArrowDown className="w-3 h-3" />
           </button>
 
-          {/* Switch Column */}
-          <button
-            type="button"
-            onClick={() => onSwitchSectionColumn(secId)}
-            className="p-1 rounded hover:bg-muted text-blue-500 hover:text-blue-600 transition-colors"
-            title={`Chuyển sang ${column === 'left' ? 'Cột Phải' : 'Cột Trái'}`}
-          >
-            <ArrowLeftRight className="w-3 h-3" />
-          </button>
+          {/* Switch Column (only in 2-column Modern layout) */}
+          {!isHarvard && column && (
+            <button
+              type="button"
+              onClick={() => onSwitchSectionColumn(secId)}
+              className="p-1 rounded hover:bg-muted text-blue-500 hover:text-blue-600 transition-colors"
+              title={`Chuyển sang ${column === 'left' ? 'Cột Phải' : 'Cột Trái'}`}
+            >
+              <ArrowLeftRight className="w-3 h-3" />
+            </button>
+          )}
 
           {/* Hide Section */}
           <button
@@ -342,6 +356,34 @@ export function ResumeSectionSidebar({
             <span className="truncate">Thành tích</span>
           </button>
         </div>
+
+        {/* PDF Import & Convert Tools */}
+        {(onOpenConvertDialog || onOpenPdfDialog) && (
+          <div className="mt-2.5 pt-2.5 border-t border-border/50 flex flex-col gap-1.5">
+            {onOpenConvertDialog && (
+              <button
+                type="button"
+                onClick={onOpenConvertDialog}
+                className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 transition-all text-left"
+                title="Trích xuất PDF CV vào Live Canvas"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span className="truncate">Chuyển PDF sang CV</span>
+              </button>
+            )}
+            {onOpenPdfDialog && (
+              <button
+                type="button"
+                onClick={onOpenPdfDialog}
+                className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-muted/60 hover:bg-muted text-foreground transition-colors text-left"
+                title="Quản lý file PDF đính kèm"
+              >
+                <FileUp className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <span className="truncate">{resumeUrl ? 'Đổi File PDF' : 'Đính kèm File PDF'}</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Sections List by Column */}
@@ -364,6 +406,36 @@ export function ResumeSectionSidebar({
                 <span>Thông tin cá nhân & Tiêu đề</span>
               </div>
             </button>
+
+            {/* Attached PDF Resume */}
+            <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs hover:bg-muted/70 text-foreground">
+              <button
+                type="button"
+                onClick={onOpenPdfDialog}
+                className="flex items-center gap-2 flex-1 text-left"
+              >
+                <div className={`p-1 rounded-md ${resumeUrl ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}>
+                  <FileUp className="w-3.5 h-3.5" />
+                </div>
+                <span>Tệp PDF Resume (CV)</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                  resumeUrl ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold' : 'bg-muted text-muted-foreground'
+                }`}>
+                  {resumeUrl ? 'Đã có PDF' : 'Chưa có'}
+                </span>
+              </button>
+              {onOpenPdfDialog && (
+                <button
+                  type="button"
+                  onClick={onOpenPdfDialog}
+                  className="p-1 rounded-md hover:bg-primary/20 text-muted-foreground hover:text-primary transition-colors"
+                  title="Import hoặc quản lý file PDF"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
             <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs hover:bg-muted/70 text-foreground">
               <button
                 type="button"
@@ -390,49 +462,75 @@ export function ResumeSectionSidebar({
           </div>
         </div>
 
-        {/* ── Left Column Sections ── */}
-        <div>
-          <div className="flex items-center justify-between px-1 mb-1.5">
-            <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1">
-              <span>Cột Trái (Left)</span>
-              <span className="text-[10px] text-muted-foreground">({leftSections.length})</span>
-            </span>
-            <span className="text-[10px] text-muted-foreground">Khổ 2/3</span>
-          </div>
+        {/* ── Sections Ordering ── */}
+        {isHarvard ? (
+          <div>
+            <div className="flex items-center justify-between px-1 mb-1.5">
+              <span className="text-[10px] font-bold text-amber-800 dark:text-amber-500 uppercase tracking-wider flex items-center gap-1">
+                <span>Thứ Tự Các Mục (Đơn Cột)</span>
+                <span className="text-[10px] text-muted-foreground">({harvardOrderedSections.length})</span>
+              </span>
+              <span className="text-[10px] text-muted-foreground">Chuẩn Harvard</span>
+            </div>
 
-          <div className="space-y-1">
-            {leftSections.map((secId, idx) =>
-              renderSectionCard(secId, 'left', idx, leftSections.length)
-            )}
-            {leftSections.length === 0 && (
-              <div className="text-[11px] text-muted-foreground/60 italic p-2 border border-dashed rounded-lg text-center">
-                Không có mục nào ở cột trái
+            <div className="space-y-1">
+              {harvardOrderedSections.map((secId, idx) =>
+                renderSectionCard(secId, undefined, idx, harvardOrderedSections.length)
+              )}
+              {harvardOrderedSections.length === 0 && (
+                <div className="text-[11px] text-muted-foreground/60 italic p-2 border border-dashed rounded-lg text-center">
+                  Tất cả các mục đang bị ẩn
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* ── Left Column Sections ── */}
+            <div>
+              <div className="flex items-center justify-between px-1 mb-1.5">
+                <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1">
+                  <span>Cột Trái (Left)</span>
+                  <span className="text-[10px] text-muted-foreground">({leftSections.length})</span>
+                </span>
+                <span className="text-[10px] text-muted-foreground">Khổ 2/3</span>
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* ── Right Column Sections ── */}
-        <div>
-          <div className="flex items-center justify-between px-1 mb-1.5">
-            <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1">
-              <span>Cột Phải (Right)</span>
-              <span className="text-[10px] text-muted-foreground">({rightSections.length})</span>
-            </span>
-            <span className="text-[10px] text-muted-foreground">Khổ 1/3</span>
-          </div>
-
-          <div className="space-y-1">
-            {rightSections.map((secId, idx) =>
-              renderSectionCard(secId, 'right', idx, rightSections.length)
-            )}
-            {rightSections.length === 0 && (
-              <div className="text-[11px] text-muted-foreground/60 italic p-2 border border-dashed rounded-lg text-center">
-                Không có mục nào ở cột phải
+              <div className="space-y-1">
+                {leftSections.map((secId, idx) =>
+                  renderSectionCard(secId, 'left', idx, leftSections.length)
+                )}
+                {leftSections.length === 0 && (
+                  <div className="text-[11px] text-muted-foreground/60 italic p-2 border border-dashed rounded-lg text-center">
+                    Không có mục nào ở cột trái
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+
+            {/* ── Right Column Sections ── */}
+            <div>
+              <div className="flex items-center justify-between px-1 mb-1.5">
+                <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1">
+                  <span>Cột Phải (Right)</span>
+                  <span className="text-[10px] text-muted-foreground">({rightSections.length})</span>
+                </span>
+                <span className="text-[10px] text-muted-foreground">Khổ 1/3</span>
+              </div>
+
+              <div className="space-y-1">
+                {rightSections.map((secId, idx) =>
+                  renderSectionCard(secId, 'right', idx, rightSections.length)
+                )}
+                {rightSections.length === 0 && (
+                  <div className="text-[11px] text-muted-foreground/60 italic p-2 border border-dashed rounded-lg text-center">
+                    Không có mục nào ở cột phải
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* ── Hidden Sections (if any) ── */}
         {hiddenSections.length > 0 && (

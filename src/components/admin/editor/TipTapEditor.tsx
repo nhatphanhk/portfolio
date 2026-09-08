@@ -43,7 +43,7 @@ export function TipTapEditor({ content, onChange, placeholder = 'Write something
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose-base dark:prose-invert max-w-none focus:outline-none min-h-[300px] p-4 border border-t-0 border-border rounded-b-md bg-background',
+        class: 'prose prose-sm sm:prose-base dark:prose-invert max-w-none focus:outline-none min-h-[300px] p-4 border border-border rounded-b-md bg-white shadow-xs',
       },
     },
   });

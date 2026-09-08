@@ -13,9 +13,13 @@ import {
   AlertCircle,
   Layers,
   SlidersHorizontal,
+  FileUp,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+
+import { ResumeTemplateStyle } from '@/lib/resume-layout';
 
 interface ResumeToolbarProps {
   isEditMode: boolean;
@@ -32,6 +36,10 @@ interface ResumeToolbarProps {
   resumeUrl?: string | null;
   isSectionSidebarOpen?: boolean;
   onToggleSectionSidebar?: () => void;
+  onOpenPdfDialog?: () => void;
+  onOpenConvertDialog?: () => void;
+  templateStyle?: ResumeTemplateStyle;
+  onSelectTemplateStyle?: (style: ResumeTemplateStyle) => void;
 }
 
 export function ResumeToolbar({
@@ -49,6 +57,10 @@ export function ResumeToolbar({
   resumeUrl,
   isSectionSidebarOpen,
   onToggleSectionSidebar,
+  onOpenPdfDialog,
+  onOpenConvertDialog,
+  templateStyle = 'harvard',
+  onSelectTemplateStyle,
 }: ResumeToolbarProps) {
   return (
     <div className="w-full bg-card/95 backdrop-blur-md border-b border-border shadow-2xs px-4 py-2.5 z-10 shrink-0">
@@ -96,6 +108,36 @@ export function ResumeToolbar({
               <span>Xem trước sạch</span>
             </button>
           </div>
+
+          {/* Template Style Switcher */}
+          {onSelectTemplateStyle && (
+            <div className="flex items-center bg-muted/80 p-1 rounded-xl border border-border/60 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => onSelectTemplateStyle('harvard')}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all ${
+                  templateStyle !== 'modern'
+                    ? 'bg-amber-800 dark:bg-amber-700 text-white shadow-xs font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title="Bố cục chuẩn Harvard / Ivy League (Đơn cột, Phông Serif, Gạch ngang toàn phần, Hành văn chuẩn OCS)"
+              >
+                <span>🏛️ Chuẩn Harvard</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onSelectTemplateStyle('modern')}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all ${
+                  templateStyle === 'modern'
+                    ? 'bg-primary text-primary-foreground shadow-xs font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title="Bố cục 2 Cột Hiện Đại (Khổ 2:1, Phông Sans-serif)"
+              >
+                <span>📐 2 Cột Modern</span>
+              </button>
+            </div>
+          )}
 
           {/* Multi-page controls */}
           {totalPages > 1 && (
@@ -193,6 +235,42 @@ export function ResumeToolbar({
           </Button>
 
           <div className="hidden md:block h-5 w-px bg-border/80 mx-1" />
+
+          {/* Convert PDF to CV Button */}
+          {onOpenConvertDialog && (
+            <Button
+              type="button"
+              size="sm"
+              onClick={onOpenConvertDialog}
+              className="text-xs h-8 gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold shadow-xs transition-all border border-amber-400/30"
+              title="Trích xuất và chuyển đổi file PDF thành bản CV trên canvas"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+              <span>Chuyển PDF sang CV</span>
+            </Button>
+          )}
+
+          {/* Import / Manage PDF Button */}
+          {onOpenPdfDialog && (
+            <Button
+              type="button"
+              variant={resumeUrl ? 'outline' : 'default'}
+              size="sm"
+              onClick={onOpenPdfDialog}
+              className={`text-xs h-8 gap-1.5 transition-all ${
+                resumeUrl
+                  ? 'border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10'
+                  : 'bg-primary text-primary-foreground font-semibold shadow-xs'
+              }`}
+              title="Quản lý & Đính kèm file PDF Resume tải về"
+            >
+              <FileUp className="w-3.5 h-3.5" />
+              <span>{resumeUrl ? 'Đổi File PDF' : 'Đính kèm PDF'}</span>
+              {resumeUrl && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              )}
+            </Button>
+          )}
 
           {/* External links */}
           <div className="flex items-center gap-1.5">
