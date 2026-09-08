@@ -12,10 +12,7 @@ const credentialsSchema = z.object({
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  secret:
-    process.env.AUTH_SECRET ||
-    process.env.NEXTAUTH_SECRET ||
-    '6b4c107144e59046c827c81a2e316a81b37996a60e0a30bc4a5b48bc0a1331ba',
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   providers: [
     Credentials({
       name: 'Credentials',
@@ -34,15 +31,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             where: { email }
           });
           
-          if (dbUser && dbUser.password) {
-            const isValid = await bcrypt.compare(password, dbUser.password);
-            if (isValid) {
-              return {
-                id: dbUser.id,
-                email: dbUser.email,
-                name: dbUser.name,
-                role: dbUser.role,
-              };
+          if (dbUser) {
+            if (dbUser.password) {
+              const isValid = await bcrypt.compare(password, dbUser.password);
+              if (isValid) {
+                return {
+                  id: dbUser.id,
+                  email: dbUser.email,
+                  name: dbUser.name,
+                  role: dbUser.role,
+                };
+              }
             }
             return null;
           }

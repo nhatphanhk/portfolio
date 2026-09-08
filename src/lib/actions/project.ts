@@ -1,4 +1,5 @@
 'use server';
+import { cache } from 'react';
 
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
@@ -165,7 +166,7 @@ export async function getPublicProjects() {
   }
 }
 
-export async function getPublicProjectBySlug(slug: string) {
+export const getPublicProjectBySlug = cache(async (slug: string) => {
   try {
     const p = await prisma.project.findUnique({
       where: { slug },
@@ -190,5 +191,5 @@ export async function getPublicProjectBySlug(slug: string) {
     console.error('Error fetching project by slug from db:', error);
     return null;
   }
-}
+});
 

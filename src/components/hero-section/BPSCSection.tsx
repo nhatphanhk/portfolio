@@ -17,9 +17,10 @@ interface BPSCSectionProps {
   projects: Awaited<ReturnType<typeof getPublicProjects>>;
   blogs: Awaited<ReturnType<typeof getPublicBlogs>>;
   certs: Awaited<ReturnType<typeof getPublicCertifications>>;
+  content?: Record<string, string>;
 }
 
-export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
+export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProps) {
   const featuredProjects = projects.filter(p => p.featured);
   const recentPosts = blogs.slice(0, 3);
   const certifications = certs.filter(c => c.status === 'ACTIVE').slice(0, 3);
@@ -167,11 +168,11 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
                   <Briefcase className="w-4 h-4" />
                 </span>
                 <p className="text-xs font-black uppercase tracking-widest text-amber-600">
-                  Portfolio Highlights
+                  {content?.bpsc_projects_badge || 'Portfolio Highlights'}
                 </p>
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-                Featured Projects
+                {content?.bpsc_projects_title || 'Featured Projects'}
               </h2>
             </div>
             <Link
@@ -242,11 +243,11 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
                   <BookOpen className="w-4 h-4" />
                 </span>
                 <p className="text-xs font-black uppercase tracking-widest text-blue-600">
-                  Articles & Thoughts
+                  {content?.bpsc_blogs_badge || 'Articles & Thoughts'}
                 </p>
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-                Latest Publications
+                {content?.bpsc_blogs_title || 'Latest Publications'}
               </h2>
             </div>
             <Link
@@ -307,11 +308,11 @@ export function BPSCSection({ projects, blogs, certs }: BPSCSectionProps) {
                   <Award className="w-4 h-4" />
                 </span>
                 <p className="text-xs font-black uppercase tracking-widest text-teal-600">
-                  Credentials & Badges
+                  {content?.bpsc_certs_badge || 'Credentials & Badges'}
                 </p>
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-                Verified Certifications
+                {content?.bpsc_certs_title || 'Verified Certifications'}
               </h2>
             </div>
             <Link

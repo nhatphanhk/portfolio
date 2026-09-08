@@ -15,9 +15,10 @@ if (typeof window !== 'undefined') {
 interface AboutSectionProps {
   profile: Awaited<ReturnType<typeof getProfile>>;
   skillsByCategory: Awaited<ReturnType<typeof getPublicSkillsByCategory>>;
+  content?: Record<string, string>;
 }
 
-export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
+export function AboutSection({ profile, skillsByCategory, content }: AboutSectionProps) {
   const allSkills = Object.values(skillsByCategory).flat();
   const topSkills = allSkills.filter(s => s.level >= 4).slice(0, 10);
 
@@ -189,7 +190,7 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
               }}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>About Me</span>
+              <span>{content?.about_badge || 'About Me'}</span>
             </div>
 
             {/* Heading */}
@@ -198,8 +199,12 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
               className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.15] mb-4"
               style={{ color: 'oklch(0.16 0.04 255)' }}
             >
-              Building the web,{' '}
-              <span className="text-gold-shimmer font-black">one project at a time.</span>
+              {content?.about_heading || (
+                <>
+                  Building the web,{' '}
+                  <span className="text-gold-shimmer font-black">one project at a time.</span>
+                </>
+              )}
             </h2>
 
             {/* Expanding Accent Line */}
@@ -262,10 +267,10 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
               <div className="flex items-center justify-between mb-5">
                 <p className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                   <Code2 className="w-4 h-4 text-primary" />
-                  <span>Core Technologies</span>
+                  <span>{content?.about_skills_badge || 'Core Technologies'}</span>
                 </p>
                 <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                  Top Stack
+                  {content?.about_top_stack_badge || 'Top Stack'}
                 </span>
               </div>
 
@@ -312,12 +317,12 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
                 >
                   <p
                     data-about="stat-number"
-                    data-target="5"
+                    data-target={content?.stat_years_value || '5'}
                     className="text-2xl sm:text-3xl font-black text-amber-500"
                   >
                     0+
                   </p>
-                  <p className="text-[11px] font-semibold text-slate-500 mt-1">Years Exp</p>
+                  <p className="text-[11px] font-semibold text-slate-500 mt-1">{content?.stat_years_label || 'Years Exp'}</p>
                 </div>
 
                 {/* Stat 2 */}
@@ -327,12 +332,12 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
                 >
                   <p
                     data-about="stat-number"
-                    data-target="20"
+                    data-target={content?.stat_projects_value || '20'}
                     className="text-2xl sm:text-3xl font-black text-blue-600"
                   >
                     0+
                   </p>
-                  <p className="text-[11px] font-semibold text-slate-500 mt-1">Projects</p>
+                  <p className="text-[11px] font-semibold text-slate-500 mt-1">{content?.stat_projects_label || 'Projects'}</p>
                 </div>
 
                 {/* Stat 3 */}
@@ -342,12 +347,12 @@ export function AboutSection({ profile, skillsByCategory }: AboutSectionProps) {
                 >
                   <p
                     data-about="stat-number"
-                    data-target="15"
+                    data-target={content?.stat_clients_value || '15'}
                     className="text-2xl sm:text-3xl font-black text-teal-600"
                   >
                     0+
                   </p>
-                  <p className="text-[11px] font-semibold text-slate-500 mt-1">Clients</p>
+                  <p className="text-[11px] font-semibold text-slate-500 mt-1">{content?.stat_clients_label || 'Clients'}</p>
                 </div>
               </div>
             </div>

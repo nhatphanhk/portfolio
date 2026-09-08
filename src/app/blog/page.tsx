@@ -1,8 +1,9 @@
 import { MainLayout } from '@/components';
 import Link from 'next/link';
 import { getPublicBlogs } from '@/lib/actions/blog';
+import { getPublicSeries } from '@/lib/actions/series';
 import type { Metadata } from 'next';
-import { ArrowRight, Clock } from 'lucide-react';
+import { ArrowRight, Clock, Layers } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Blog',
@@ -11,8 +12,11 @@ export const metadata: Metadata = {
 };
 
 export default async function BlogPage() {
-  const posts = await getPublicBlogs();
-  const tags = Array.from(new Set(posts.flatMap(p => p.tags)));
+  const [posts, seriesList] = await Promise.all([
+    getPublicBlogs(),
+    getPublicSeries(),
+  ]);
+  const tags: string[] = Array.from(new Set(posts.flatMap((p: { tags: string[] }) => p.tags)));
   const featured = posts[0];
   const rest = posts.slice(1);
 
@@ -20,13 +24,36 @@ export default async function BlogPage() {
     <MainLayout>
       <div className="max-w-5xl mx-auto px-6 py-24 pt-32">
         {/* Header */}
-        <div className="mb-16">
+        <div className="mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Blog</h1>
           <p className="text-lg text-muted-foreground max-w-2xl">
             Thoughts on web development, engineering practices, and lessons learned from building
             real-world applications.
           </p>
         </div>
+
+        {/* Series Section (if any) */}
+        {seriesList.length > 0 && (
+          <div className="mb-12 p-6 rounded-2xl border border-primary/20 bg-primary/5">
+            <h2 className="text-xs font-black uppercase tracking-widest text-primary mb-3 flex items-center gap-1.5">
+              <Layers className="w-4 h-4" />
+              Article Series
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {seriesList.map((s: { id: string; title: string; description: string | null; blogs: unknown[] }) => (
+                <div key={s.id} className="p-4 rounded-xl border border-border bg-card">
+                  <h3 className="font-bold text-sm text-foreground mb-1 line-clamp-1">{s.title}</h3>
+                  {s.description && (
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{s.description}</p>
+                  )}
+                  <p className="text-[11px] text-primary font-semibold">
+                    {s.blogs.length} {s.blogs.length === 1 ? 'part' : 'parts'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Tag filter (display only — filtering would need client component) */}
         <div className="flex flex-wrap gap-2 mb-12">

@@ -336,3 +336,25 @@ body {
   background-clip: text;
   animation: shimmer 3s linear infinite;
 }
+
+/* ── Page Enter Transition (replaces Framer Motion) ──────────────────────── */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.page-enter {
+  animation: page-enter 0.3s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter {
+    animation: none;
+  }
+}

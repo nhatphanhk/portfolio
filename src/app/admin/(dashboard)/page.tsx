@@ -32,11 +32,13 @@ function StatCard({ title, value, icon: Icon, description }: StatCardProps) {
 }
 
 export default async function DashboardPage() {
-  const blogs = await getAllBlogsFromDb();
-  const projects = await getAllProjectsFromDb();
-  const certifications = await getAllCertificationsFromDb();
-  const skills = await getAllSkillsFromDb();
-  const contacts = await getAllContactsFromDb();
+  const [blogs, projects, certifications, skills, contacts] = await Promise.all([
+    getAllBlogsFromDb(),
+    getAllProjectsFromDb(),
+    getAllCertificationsFromDb(),
+    getAllSkillsFromDb(),
+    getAllContactsFromDb(),
+  ]);
 
   const stats = [
     { title: 'Blog Posts', value: blogs.length, icon: FileText, description: 'Total articles' },

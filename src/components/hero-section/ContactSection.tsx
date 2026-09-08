@@ -6,8 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { Send, Mail, MapPin } from 'lucide-react';
-import * as Icons from 'lucide-react';
 import type { getProfile } from '@/lib/actions/about';
+import DynamicIcon from '@/components/ui/DynamicIcon';
 
 const contactSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -17,8 +17,6 @@ const contactSchema = z.object({
 });
 
 type ContactFormData = z.infer<typeof contactSchema>;
-
-const SOCIAL_ICON_MAP = Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
 
 interface ContactSectionProps {
   profile: Awaited<ReturnType<typeof getProfile>>;
@@ -209,7 +207,6 @@ export default function ContactSection({ profile, socialLinks }: ContactSectionP
               <h3 className="font-semibold text-foreground mb-4">Follow Me</h3>
               <div className="flex flex-wrap gap-3">
                 {socialLinks.map(social => {
-                  const Icon = social.iconName ? SOCIAL_ICON_MAP[social.iconName] || Icons.Link : Icons.Link;
                   return (
                     <a
                       key={social.platform}
@@ -219,7 +216,7 @@ export default function ContactSection({ profile, socialLinks }: ContactSectionP
                       aria-label={social.platform}
                       className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
                     >
-                      <Icon className="h-4 w-4" />
+                      <DynamicIcon name={social.iconName} className="h-4 w-4" />
                       {social.platform}
                     </a>
                   );

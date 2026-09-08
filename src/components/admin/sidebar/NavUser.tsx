@@ -7,8 +7,10 @@ import {
   LogOut,
   Sparkles,
   KeyRound,
+  ExternalLink,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
+import Link from 'next/link';
 import { useState } from 'react';
 import { ChangePasswordDialog } from '@/components/admin/ChangePasswordDialog';
 
@@ -42,6 +44,9 @@ export function NavUser({
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
 
   const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('is_admin');
+    }
     signOut({ callbackUrl: '/admin/login' });
   };
 
@@ -85,18 +90,11 @@ export function NavUser({
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Bell />
-              Notifications
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Sparkles />
-              Theme
-              <Switch />
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <BadgeCheck />
-              Language
+            <DropdownMenuItem asChild>
+              <Link href="/" target="_blank" className="cursor-pointer">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                View Public Site
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setPasswordDialogOpen(true)} className="cursor-pointer">

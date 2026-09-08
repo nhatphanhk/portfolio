@@ -1,9 +1,7 @@
 import Link from 'next/link';
 import { NAV_LINKS } from '@/lib/constants';
 import { getProfile, getSocialLinks } from '@/lib/actions/about';
-import * as Icons from 'lucide-react';
-
-const ICON_MAP = Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
+import DynamicIcon from '@/components/ui/DynamicIcon';
 
 const Footer = async () => {
   const year = new Date().getFullYear();
@@ -60,7 +58,6 @@ const Footer = async () => {
             </h4>
             <div className="flex flex-col gap-2">
               {socialLinks.map(social => {
-                const Icon = social.iconName ? ICON_MAP[social.iconName] || Icons.Link : Icons.Link;
                 return (
                   <a
                     key={social.platform}
@@ -70,7 +67,7 @@ const Footer = async () => {
                     className="inline-flex items-center gap-2 text-sm transition-colors hover:text-blue-300"
                     style={{ color: 'oklch(0.60 0.07 255)' }}
                   >
-                    <Icon className="h-4 w-4" />
+                    <DynamicIcon name={social.iconName} className="h-4 w-4" />
                     {social.platform}
                   </a>
                 );

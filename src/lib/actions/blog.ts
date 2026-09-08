@@ -1,4 +1,5 @@
 'use server';
+import { cache } from 'react';
 
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
@@ -20,6 +21,8 @@ const blogSchema = z.object({
   thumbnailUrl: z.string().url().optional().or(z.literal('')),
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']),
   tags: z.string().optional(), // comma-separated tag names
+  seriesId: z.string().optional().nullable(),
+  seriesOrder: z.coerce.number().optional().nullable(),
 });
 
 export type BlogFormData = z.infer<typeof blogSchema>;
@@ -71,7 +74,7 @@ export async function createBlog(formData: BlogFormData) {
     return { ok: false, error: parsed.error.flatten().fieldErrors };
   }
 
-  const { tags, thumbnailUrl, ...rest } = parsed.data;
+  const { tags, thumbnailUrl, seriesId, seriesOrder, ...rest } = parsed.data;
   const authorId = await ensureAdminUser();
   const tagNames = tags
     ? tags
@@ -84,6 +87,8 @@ export async function createBlog(formData: BlogFormData) {
   await prisma.blog.create({
     data: {
       ...rest,
+      seriesId: seriesId || null,
+      seriesOrder: seriesOrder != null ? Number(seriesOrder) : null,
       thumbnailUrl: thumbnailUrl || undefined,
       authorId,
       publishedAt: rest.status === 'PUBLISHED' ? new Date() : undefined,
@@ -105,7 +110,7 @@ export async function updateBlog(id: string, formData: BlogFormData) {
     return { ok: false, error: parsed.error.flatten().fieldErrors };
   }
 
-  const { tags, thumbnailUrl, ...rest } = parsed.data;
+  const { tags, thumbnailUrl, seriesId, seriesOrder, ...rest } = parsed.data;
   const tagNames = tags
     ? tags
         .split(',')
@@ -118,6 +123,8 @@ export async function updateBlog(id: string, formData: BlogFormData) {
     where: { id },
     data: {
       ...rest,
+      seriesId: seriesId || null,
+      seriesOrder: seriesOrder != null ? Number(seriesOrder) : null,
       thumbnailUrl: thumbnailUrl || undefined,
       publishedAt:
         rest.status === 'PUBLISHED'
@@ -190,7 +197,7 @@ export async function getPublicBlogs() {
   }
 }
 
-export async function getPublicBlogBySlug(slug: string) {
+export const getPublicBlogBySlug = cache(async (slug: string) => {
   try {
     const b = await prisma.blog.findUnique({
       where: { slug },
@@ -213,5 +220,5 @@ export async function getPublicBlogBySlug(slug: string) {
     console.error('Error fetching blog by slug from db:', error);
     return null;
   }
-}
+});
 

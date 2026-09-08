@@ -4,6 +4,9 @@ import { getPublicBlogBySlug, getPublicBlogs } from '@/lib/actions/blog';
 import Link from 'next/link';
 import { ArrowLeft, Clock } from 'lucide-react';
 import type { Metadata } from 'next';
+import { BlogContent, extractHeadings } from '@/components/blog/BlogContent';
+import { BlogOutline } from '@/components/blog/BlogOutline';
+import { SeriesNav } from '@/components/blog/SeriesNav';
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -49,7 +52,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   return (
     <MainLayout>
-      <div className="max-w-3xl mx-auto px-6 py-24 pt-32">
+      <div className="max-w-5xl mx-auto px-6 py-24 pt-32">
         {/* Back link */}
         <Link
           href="/blog"
@@ -59,59 +62,57 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           Back to Blog
         </Link>
 
-        {/* Article header */}
-        <article>
-          <header className="mb-10">
-            <div className="flex flex-wrap gap-2 mb-4">
-              {post.tags.map(tag => (
-                <span
-                  key={tag}
-                  className="px-2.5 py-0.5 text-xs bg-primary/10 text-primary rounded-full"
-                >
-                  {tag}
+        <div className="flex gap-8">
+          <article className="flex-1 min-w-0">
+            {/* Article header */}
+            <header className="mb-10">
+              <div className="flex flex-wrap gap-2 mb-4">
+                {post.tags.map(tag => (
+                  <span
+                    key={tag}
+                    className="px-2.5 py-0.5 text-xs bg-primary/10 text-primary rounded-full"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 leading-tight">
+                {post.title}
+              </h1>
+
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <time dateTime={post.publishedAt}>
+                  {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </time>
+                <span>·</span>
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  {post.readTime}
                 </span>
-              ))}
-            </div>
+              </div>
 
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4 leading-tight">
-              {post.title}
-            </h1>
+              <p className="mt-6 text-lg text-muted-foreground leading-relaxed">{post.excerpt}</p>
+            </header>
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <time dateTime={post.publishedAt}>
-                {new Date(post.publishedAt).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </time>
-              <span>·</span>
-              <span className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" />
-                {post.readTime}
-              </span>
-            </div>
+            {/* Divider */}
+            <hr className="border-border mb-10" />
 
-            <p className="mt-6 text-lg text-muted-foreground leading-relaxed">{post.excerpt}</p>
-          </header>
+            {/* Content */}
+            <BlogContent html={post.content} />
 
-          {/* Divider */}
-          <hr className="border-border mb-10" />
-
-          {/* Content */}
-          <div
-            className="prose prose-neutral dark:prose-invert max-w-none
-              prose-headings:font-bold prose-headings:tracking-tight
-              prose-h2:text-2xl prose-h3:text-xl
-              prose-p:text-muted-foreground prose-p:leading-relaxed
-              prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-              prose-code:text-sm prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
-              prose-pre:bg-muted prose-pre:border prose-pre:border-border
-              prose-blockquote:border-primary
-              prose-strong:text-foreground"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
-        </article>
+            {/* Series Navigation */}
+            <SeriesNav blogId={post.id} />
+          </article>
+          
+          <aside className="hidden lg:block w-64 shrink-0">
+            <BlogOutline headings={extractHeadings(post.content)} />
+          </aside>
+        </div>
 
         {/* Footer nav */}
         <div className="mt-16 pt-8 border-t border-border">
