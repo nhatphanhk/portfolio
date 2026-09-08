@@ -11,6 +11,7 @@ import {
   Mail,
   LayoutDashboard,
   LayoutTemplate,
+  Images,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -82,6 +83,11 @@ const navGroups: NavGroup[] = [
             url: '/admin/projects/dashboard',
           },
         ],
+      },
+      {
+        title: 'Media Library',
+        url: '/admin/media',
+        icon: Images,
       },
     ],
   },
