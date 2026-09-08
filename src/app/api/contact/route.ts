@@ -56,16 +56,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // In MVP: log the message
-    // In production: store in DB + send email notification
-    console.log('[Contact Form Submission]', {
-      name,
-      email,
-      subject,
-      messagePreview: message.slice(0, 100),
-      ip,
-      timestamp: new Date().toISOString(),
-    });
 
     await prisma.contact.create({
       data: {
