@@ -194,14 +194,16 @@ For modules with larger datasets (Blog, Project, Skill, Certification), also sup
 * Never expose sensitive data (password hashes, secret tokens, internal information) in responses.
 * Every mutating Server Action must call `ensureAdmin()` (`src/lib/auth-utils.ts`) first — this is the real authorization boundary, not just the `src/proxy.ts` route matcher (which is UX-layer only).
 * Sanitize input against XSS; use parameterized queries against SQL injection.
-* Apply rate limiting to endpoints prone to abuse (login, contact form, upload).
+* **Mandatory Rate Limiting:** Every Route Handler in `src/app/api/*/route.ts` (public or authenticated) MUST enforce rate limiting using `checkRateLimit()` and `RATE_LIMIT_PRESETS` from `@/lib/rate-limit.ts`.
+* **PII & Sensitive Content Protection:** Never hardcode or display cleartext personal emails or credentials where web crawlers can harvest them. Prefer interactive action buttons (`mailto:`) with accessible labels.
+* **Icon-Only UI Pattern:** For secondary links (social platforms, connect badges), prefer sleek Icon-Only buttons with explicit `aria-label` and `title` attributes over redundant text labels to keep the interface clean and space-efficient.
 * Hash passwords with bcrypt, minimum 12 rounds.
 * Use environment variables (`.env.local`) for secrets/API keys — never commit secrets to git.
 * Validate environment variables on application startup.
 * Use `dangerouslySetInnerHTML` sparingly; sanitize content beforehand if it must be used.
 * Comply with OWASP and GDPR requirements when handling contact data (cookie consent, right to data deletion).
 
-(For technical details on auth and rate limiting, see `AI_ARCHITECTURE.md` §4–§5.)
+(For technical details on auth, rate limiting, and ISR edge caching, see `AI_ARCHITECTURE.md` §4–§5.)
 
 ---
 

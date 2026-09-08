@@ -10,6 +10,8 @@ export const metadata: Metadata = {
     'Technical skills, frameworks, languages, and tools across Frontend, Backend, DevOps, and Database domains.',
 };
 
+export const revalidate = 300;
+
 const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   FRONTEND: Code2,
   BACKEND: Layers,

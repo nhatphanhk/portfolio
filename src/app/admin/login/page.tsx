@@ -99,8 +99,8 @@ export default function AdminLoginPage() {
                   placeholder="admin@example.com"
                   autoComplete="email"
                   {...register('email')}
-                  className={`w-full pl-10 pr-4 py-2.5 rounded-lg border bg-background text-foreground text-sm outline-none focus:ring-2 focus:ring-ring transition-colors ${
-                    errors.email ? 'border-destructive' : 'border-border hover:border-foreground/30'
+                  className={`w-full pl-10 pr-4 py-2.5 rounded-lg border bg-slate-50 text-foreground text-sm outline-none focus:bg-white focus:ring-2 focus:ring-ring transition-colors ${
+                    errors.email ? 'border-destructive' : 'border-slate-200 hover:border-slate-300'
                   }`}
                 />
               </div>
@@ -122,8 +122,8 @@ export default function AdminLoginPage() {
                   placeholder="••••••••"
                   autoComplete="current-password"
                   {...register('password')}
-                  className={`w-full pl-10 pr-10 py-2.5 rounded-lg border bg-background text-foreground text-sm outline-none focus:ring-2 focus:ring-ring transition-colors ${
-                    errors.password ? 'border-destructive' : 'border-border hover:border-foreground/30'
+                  className={`w-full pl-10 pr-10 py-2.5 rounded-lg border bg-slate-50 text-foreground text-sm outline-none focus:bg-white focus:ring-2 focus:ring-ring transition-colors ${
+                    errors.password ? 'border-destructive' : 'border-slate-200 hover:border-slate-300'
                   }`}
                 />
                 <button

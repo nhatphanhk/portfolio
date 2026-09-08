@@ -6,12 +6,26 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+function getNormalizedDbUrl(rawUrl: string): string {
+  try {
+    const parsed = new URL(rawUrl);
+    const sslmode = parsed.searchParams.get('sslmode');
+    if (sslmode === 'require' && !parsed.searchParams.has('uselibpqcompat')) {
+      parsed.searchParams.set('uselibpqcompat', 'true');
+      return parsed.toString();
+    }
+  } catch {
+    // Fallback if URL parsing fails
+  }
+  return rawUrl;
+}
+
 function createPrismaClient(): PrismaClient {
   const url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error('DATABASE_URL environment variable is not set');
   }
-  const pool = new Pool({ connectionString: url });
+  const pool = new Pool({ connectionString: getNormalizedDbUrl(url) });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({
     adapter,

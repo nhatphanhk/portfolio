@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
-import { checkRateLimit } from '@/lib/rate-limit';
+import { checkRateLimit, getClientIp, RATE_LIMIT_PRESETS } from '@/lib/rate-limit';
 
 const visitorSchema = z.object({
   name: z.string().min(1).max(255),
@@ -21,13 +21,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const ip =
-      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-      req.headers.get('x-real-ip') ??
-      'unknown';
+    const ip = getClientIp(req);
 
     // Rate limit: 5 requests per 10 minutes per IP
-    if (!checkRateLimit(ip, 5, 10 * 60 * 1000)) {
+    if (!checkRateLimit(`visitor:${ip}`, RATE_LIMIT_PRESETS.FORM_SUBMIT.limit, RATE_LIMIT_PRESETS.FORM_SUBMIT.windowMs)) {
       return NextResponse.json(
         { ok: false, error: 'Too many requests. Please try again later.' },
         { status: 429 }

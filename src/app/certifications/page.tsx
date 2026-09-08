@@ -9,6 +9,8 @@ export const metadata: Metadata = {
     'Professional certifications and credentials from AWS, Google Cloud, Meta, and other platforms.',
 };
 
+export const revalidate = 300;
+
 export default async function CertificationsPage() {
   const certifications = await getPublicCertifications();
   const active = certifications.filter(c => c.status === 'ACTIVE');

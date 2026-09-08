@@ -14,8 +14,6 @@ export const NAV_LINKS = [
   { name: 'Contact', href: '/contact' },
 ] as const;
 
-export const CONTACT_EMAIL = 'nhatphanhk102@example.com';
-
 /** Default OpenGraph image (place in /public/og-image.png) */
 export const OG_IMAGE = '/og-image.png';
 

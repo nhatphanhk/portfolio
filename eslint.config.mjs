@@ -30,7 +30,7 @@ const eslintConfig = [
       'react-hooks/static-components': 'off',
 
       // General rules for portfolio project
-      'no-console': 'warn',
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
       'prefer-const': 'error',
       'no-var': 'error',

@@ -65,7 +65,7 @@ export function VisitorLogsClient({ logs }: Props) {
   }, [logs, search]);
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6 max-w-6xl">
+    <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -93,7 +93,7 @@ export function VisitorLogsClient({ logs }: Props) {
               placeholder="Search by name, email, or reason..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-border bg-white shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <span className="text-sm text-muted-foreground">

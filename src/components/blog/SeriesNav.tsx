@@ -24,7 +24,9 @@ export async function SeriesNav({ blogId }: SeriesNavProps) {
       </div>
 
       <h3 className="text-lg font-bold text-foreground mb-1">
-        {seriesTitle}
+        <Link href={`/blog/series/${seriesSlug}`} className="hover:text-primary transition-colors">
+          {seriesTitle}
+        </Link>
       </h3>
       <p className="text-xs text-muted-foreground mb-4">
         Part {currentIndex + 1} of {totalParts} in this article series

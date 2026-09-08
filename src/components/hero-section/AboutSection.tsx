@@ -20,7 +20,8 @@ interface AboutSectionProps {
 
 export function AboutSection({ profile, skillsByCategory, content }: AboutSectionProps) {
   const allSkills = Object.values(skillsByCategory).flat();
-  const topSkills = allSkills.filter(s => s.level >= 4).slice(0, 10);
+  const highLevelSkills = allSkills.filter(s => s.level >= 4);
+  const topSkills = (highLevelSkills.length > 0 ? highLevelSkills : allSkills).slice(0, 10);
 
   const sectionRef = useRef<HTMLElement>(null);
   const glowOrbRef = useRef<HTMLDivElement>(null);
@@ -75,19 +76,24 @@ export function AboutSection({ profile, skillsByCategory, content }: AboutSectio
           { opacity: 0, y: 24 },
           { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' },
           '-=0.4'
-        )
-        .fromTo(
-          '[data-about="meta-item"]',
+        );
+
+      const metaItems = sectionRef.current?.querySelectorAll('[data-about="meta-item"]') ?? [];
+      if (metaItems.length > 0) {
+        leftTl.fromTo(
+          metaItems,
           { opacity: 0, x: -20 },
           { opacity: 1, x: 0, duration: 0.5, stagger: 0.1, ease: 'power2.out' },
           '-=0.4'
-        )
-        .fromTo(
-          '[data-about="cta"]',
-          { opacity: 0, y: 15 },
-          { opacity: 1, y: 0, duration: 0.6, ease: 'back.out(1.7)' },
-          '-=0.3'
         );
+      }
+
+      leftTl.fromTo(
+        '[data-about="cta"]',
+        { opacity: 0, y: 15 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'back.out(1.7)' },
+        '-=0.3'
+      );
 
       // ── Right column: Card wrapper & Skill tags stagger with elastic pop ──
       const skillsCol = sectionRef.current?.querySelector('[data-about="skills-col"]') as HTMLElement | null;
@@ -98,14 +104,16 @@ export function AboutSection({ profile, skillsByCategory, content }: AboutSectio
         },
       });
 
-      rightTl
-        .fromTo(
-          '[data-about="skills-card"]',
-          { opacity: 0, y: 40, scale: 0.95 },
-          { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: 'power3.out' }
-        )
-        .fromTo(
-          '[data-about="skill-tag"]',
+      rightTl.fromTo(
+        '[data-about="skills-card"]',
+        { opacity: 0, y: 40, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: 'power3.out' }
+      );
+
+      const skillTags = sectionRef.current?.querySelectorAll('[data-about="skill-tag"]') ?? [];
+      if (skillTags.length > 0) {
+        rightTl.fromTo(
+          skillTags,
           { opacity: 0, scale: 0.7, y: 18, rotate: -4 },
           {
             opacity: 1,
@@ -117,9 +125,13 @@ export function AboutSection({ profile, skillsByCategory, content }: AboutSectio
             ease: 'back.out(1.8)',
           },
           '-=0.5'
-        )
-        .fromTo(
-          '[data-about="stat-card"]',
+        );
+      }
+
+      const statCards = sectionRef.current?.querySelectorAll('[data-about="stat-card"]') ?? [];
+      if (statCards.length > 0) {
+        rightTl.fromTo(
+          statCards,
           { opacity: 0, y: 30, scale: 0.9 },
           {
             opacity: 1,
@@ -131,6 +143,7 @@ export function AboutSection({ profile, skillsByCategory, content }: AboutSectio
           },
           '-=0.3'
         );
+      }
 
       // ── Numbers Counter Animation ──
       const statEls = gsap.utils.toArray<HTMLElement>('[data-about="stat-number"]', sectionRef.current ?? undefined);

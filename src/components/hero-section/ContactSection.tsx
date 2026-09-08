@@ -102,8 +102,8 @@ export default function ContactSection({ profile, socialLinks }: ContactSectionP
                     type="text"
                     placeholder="Your name"
                     {...register('name')}
-                    className={`w-full px-4 py-2.5 rounded-lg border bg-background text-foreground text-sm transition-colors outline-none focus:ring-2 focus:ring-ring ${
-                      errors.name ? 'border-destructive' : 'border-border hover:border-foreground/30'
+                    className={`w-full px-4 py-2.5 rounded-lg border bg-white text-foreground text-sm shadow-xs transition-colors outline-none focus:ring-2 focus:ring-ring ${
+                      errors.name ? 'border-destructive' : 'border-border/80 hover:border-foreground/40'
                     }`}
                   />
                   {errors.name && (
@@ -121,8 +121,8 @@ export default function ContactSection({ profile, socialLinks }: ContactSectionP
                     type="email"
                     placeholder="your@email.com"
                     {...register('email')}
-                    className={`w-full px-4 py-2.5 rounded-lg border bg-background text-foreground text-sm transition-colors outline-none focus:ring-2 focus:ring-ring ${
-                      errors.email ? 'border-destructive' : 'border-border hover:border-foreground/30'
+                    className={`w-full px-4 py-2.5 rounded-lg border bg-white text-foreground text-sm shadow-xs transition-colors outline-none focus:ring-2 focus:ring-ring ${
+                      errors.email ? 'border-destructive' : 'border-border/80 hover:border-foreground/40'
                     }`}
                   />
                   {errors.email && (
@@ -141,8 +141,8 @@ export default function ContactSection({ profile, socialLinks }: ContactSectionP
                   type="text"
                   placeholder="What's this about?"
                   {...register('subject')}
-                  className={`w-full px-4 py-2.5 rounded-lg border bg-background text-foreground text-sm transition-colors outline-none focus:ring-2 focus:ring-ring ${
-                    errors.subject ? 'border-destructive' : 'border-border hover:border-foreground/30'
+                  className={`w-full px-4 py-2.5 rounded-lg border bg-white text-foreground text-sm shadow-xs transition-colors outline-none focus:ring-2 focus:ring-ring ${
+                    errors.subject ? 'border-destructive' : 'border-border/80 hover:border-foreground/40'
                   }`}
                 />
                 {errors.subject && (
@@ -160,8 +160,8 @@ export default function ContactSection({ profile, socialLinks }: ContactSectionP
                   rows={5}
                   placeholder="Tell me about your project or just say hello..."
                   {...register('message')}
-                  className={`w-full px-4 py-2.5 rounded-lg border bg-background text-foreground text-sm resize-none transition-colors outline-none focus:ring-2 focus:ring-ring ${
-                    errors.message ? 'border-destructive' : 'border-border hover:border-foreground/30'
+                  className={`w-full px-4 py-2.5 rounded-lg border bg-white text-foreground text-sm shadow-xs resize-none transition-colors outline-none focus:ring-2 focus:ring-ring ${
+                    errors.message ? 'border-destructive' : 'border-border/80 hover:border-foreground/40'
                   }`}
                 />
                 {errors.message && (
@@ -205,7 +205,7 @@ export default function ContactSection({ profile, socialLinks }: ContactSectionP
 
             <div>
               <h3 className="font-semibold text-foreground mb-4">Follow Me</h3>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2.5">
                 {socialLinks.map(social => {
                   return (
                     <a
@@ -214,10 +214,10 @@ export default function ContactSection({ profile, socialLinks }: ContactSectionP
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={social.platform}
-                      className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                      title={social.platform}
+                      className="p-3 rounded-xl border border-border bg-white text-muted-foreground hover:text-foreground hover:border-amber-500/50 hover:bg-amber-500/5 hover:scale-105 active:scale-95 transition-all shadow-xs"
                     >
-                      <DynamicIcon name={social.iconName} className="h-4 w-4" />
-                      {social.platform}
+                      <DynamicIcon name={social.iconName} className="h-5 w-5" />
                     </a>
                   );
                 })}

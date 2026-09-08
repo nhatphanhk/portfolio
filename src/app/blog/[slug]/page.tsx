@@ -4,8 +4,9 @@ import { getPublicBlogBySlug, getPublicBlogs } from '@/lib/actions/blog';
 import Link from 'next/link';
 import { ArrowLeft, Clock } from 'lucide-react';
 import type { Metadata } from 'next';
-import { BlogContent, extractHeadings } from '@/components/blog/BlogContent';
+import { BlogContent } from '@/components/blog/BlogContent';
 import { BlogOutline } from '@/components/blog/BlogOutline';
+import { extractHeadings } from '@/lib/blog-utils';
 import { SeriesNav } from '@/components/blog/SeriesNav';
 
 interface BlogPostPageProps {

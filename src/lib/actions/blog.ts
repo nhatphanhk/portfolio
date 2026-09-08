@@ -222,3 +222,42 @@ export const getPublicBlogBySlug = cache(async (slug: string) => {
   }
 });
 
+/** Create an empty draft and return its id so the editor can redirect immediately */
+export async function createBlogDraft(): Promise<{ ok: boolean; id?: string; error?: string }> {
+  await ensureAdmin();
+
+  const authorId = await ensureAdminUser();
+
+  // Generate a temporary unique slug
+  const tempSlug = `draft-${Date.now()}`;
+
+  try {
+    const blog = await prisma.blog.create({
+      data: {
+        title: 'Untitled Post',
+        slug: tempSlug,
+        content: '',
+        status: 'DRAFT',
+        authorId,
+      },
+    });
+
+    revalidatePath('/admin/blogs');
+    return { ok: true, id: blog.id };
+  } catch (err) {
+    console.error('createBlogDraft error:', err);
+    return { ok: false, error: 'Failed to create draft' };
+  }
+}
+
+/** Load a single blog by id for the full-page editor (admin only) */
+export async function getBlogById(id: string) {
+  await ensureAdmin();
+  return prisma.blog.findUnique({
+    where: { id },
+    include: {
+      tags: { include: { tag: true } },
+      series: { select: { id: true, title: true } },
+    },
+  });
+}

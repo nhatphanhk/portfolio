@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Layers, Plus, Pencil, Trash2, BookOpen } from 'lucide-react';
 import { SeriesDialog } from '@/components/admin/SeriesDialog';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
-import { deleteSeries, type SeriesFormData } from '@/lib/actions/series';
+import { deleteSeries } from '@/lib/actions/series';
 import { useRouter } from 'next/navigation';
 
 type Series = {
@@ -34,7 +34,7 @@ export function AdminSeriesClient({ initialSeries }: Props) {
   };
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6 max-w-5xl">
+    <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-5xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Blog Series</h1>

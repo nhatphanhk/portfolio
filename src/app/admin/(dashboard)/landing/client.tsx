@@ -85,7 +85,7 @@ export function AdminLandingClient({ initialItems }: Props) {
   ];
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6 max-w-5xl">
+    <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-5xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Landing Page Content</h1>
@@ -142,14 +142,14 @@ export function AdminLandingClient({ initialItems }: Props) {
                         rows={2}
                         value={items[field.key] ?? ''}
                         onChange={e => handleChange(field.key, e.target.value)}
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition resize-y"
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-white shadow-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition resize-y"
                       />
                     ) : (
                       <input
                         type={field.type === 'number' ? 'number' : 'text'}
                         value={items[field.key] ?? ''}
                         onChange={e => handleChange(field.key, e.target.value)}
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-white shadow-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
                       />
                     )}
                   </div>

@@ -85,7 +85,23 @@ rendered as JSX — if so, either hoist it out or call it as `{InnerComponent()}
 
 ---
 
-## 3. Reporting a new issue here
+## 3. Serverless In-Memory Rate Limiting Boundaries (Zero-Cost Tradeoff)
+
+**Symptom:** In a serverless environment (e.g. Vercel), rate limiting records are stored in Node.js process memory (`src/lib/rate-limit.ts`). If multiple lambda instances scale out simultaneously, an attacker could theoretically make a few requests across different instances before hitting the threshold on one.
+
+**Cause:** Serverless lambdas do not share memory across instances or across cold restarts.
+
+**The mitigation in place:**
+- Memory auto-cleanup garbage collection (`cleanupExpiredRecords`) ensures no memory leakage.
+- Next.js ISR Edge Caching (`export const revalidate = 300`) absorbs 99%+ of read traffic at the CDN level, so public lambdas are rarely spawned.
+- All mutating API endpoints (`/api/contact`, `/api/visitor`, `/api/upload`, `/api/resume/parse-pdf`, `/api/admin/create`, `/api/swagger`) enforce strict rate limits per IP.
+- Zero-cost (0đ): Perfectly suitable for normal personal portfolio traffic (< 1,000 req/day).
+
+**Rule:** ✅ If the portfolio ever transitions to a massive enterprise scale with thousands of requests per second, plug in Upstash Redis via distributed key-value store, or configure Cloudflare WAF at the DNS edge.
+
+---
+
+## 4. Reporting a new issue here
 
 If you hit another framework-level gotcha (not an ordinary bug in this codebase's own
 logic, but a Next.js/React/Prisma/NextAuth behavior that's non-obvious and could easily be

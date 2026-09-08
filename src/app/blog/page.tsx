@@ -11,6 +11,8 @@ export const metadata: Metadata = {
     'Articles on web development, TypeScript, React, Next.js, system design, and engineering best practices.',
 };
 
+export const revalidate = 300;
+
 export default async function BlogPage() {
   const [posts, seriesList] = await Promise.all([
     getPublicBlogs(),

@@ -31,10 +31,10 @@ export default async function AdminLayout({
   const userEmail = session.user.email;
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-svh max-h-svh overflow-hidden">
       <AppSidebar userEmail={userEmail} />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b">
+      <SidebarInset className="flex flex-col h-svh max-h-svh overflow-hidden bg-background">
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-card/75 backdrop-blur-md z-20">
           <div className="flex items-center gap-2 px-4 w-full">
             <SidebarTrigger className="-ml-1" />
             <Separator
@@ -54,7 +54,9 @@ export default async function AdminLayout({
             </Breadcrumb>
           </div>
         </header>
-        {children}
+        <div className="flex-1 min-h-0 w-full overflow-y-auto flex flex-col">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

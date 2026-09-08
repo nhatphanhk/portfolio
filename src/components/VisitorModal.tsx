@@ -19,8 +19,10 @@ import {
   ArrowRight,
   Lock,
   Loader2,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { SITE_NAME } from '@/lib/constants';
 
 const schema = z.object({
   name: z.string().min(2, 'Please enter your name'),
@@ -115,20 +117,30 @@ export function VisitorModal() {
     <Dialog
       open={open}
       onOpenChange={(val) => {
-        // Required modal: Prevent closing via outside interactions until submitted
-        if (!val && !sessionStorage.getItem('visitor_logged')) {
-          return;
-        }
         setOpen(val);
+        if (!val) {
+          sessionStorage.setItem('visitor_logged', 'true');
+        }
       }}
     >
       <DialogContent
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-        className="max-w-md p-0 overflow-hidden border border-amber-500/20 bg-white/95 backdrop-blur-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] rounded-3xl [&>button]:hidden sm:rounded-3xl"
+        className="max-w-md p-0 overflow-hidden border border-amber-500/20 bg-white/95 backdrop-blur-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] rounded-3xl sm:rounded-3xl"
       >
         {/* Top Decorative Ambient Header */}
         <div className="relative pt-8 pb-6 px-6 sm:px-8 bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-transparent border-b border-amber-500/10 text-center">
+          {/* Dismiss button */}
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              sessionStorage.setItem('visitor_logged', 'true');
+            }}
+            aria-label="Close dialog"
+            className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-black/5 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
           {/* Glowing Avatar / Sparkle Icon */}
           <div className="relative mx-auto w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/25 mb-4 group">
             <div
@@ -150,7 +162,7 @@ export function VisitorModal() {
           <DialogHeader className="space-y-1.5 text-center sm:text-center">
             <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">
               Welcome to{' '}
-              <span className="text-gold-shimmer font-black">nhatphanhk102&apos;s</span>{' '}
+              <span className="text-gold-shimmer font-black">{SITE_NAME}&apos;s</span>{' '}
               Portfolio
             </DialogTitle>
             <DialogDescription className="text-xs sm:text-sm text-slate-600 font-medium max-w-sm mx-auto leading-relaxed">
@@ -174,10 +186,10 @@ export function VisitorModal() {
                 {...register('name')}
                 placeholder="e.g. Alex Morgan"
                 disabled={isSubmitting}
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-slate-50/70 text-slate-900 text-sm font-medium placeholder:text-slate-400 focus:bg-white focus:outline-none transition-all ${
+                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-slate-100 text-slate-900 text-sm font-medium placeholder:text-slate-400 focus:bg-white focus:outline-none transition-all ${
                   errors.name
                     ? 'border-red-400 focus:ring-2 focus:ring-red-400/20'
-                    : 'border-slate-200 focus:border-amber-400 focus:ring-3 focus:ring-amber-400/15'
+                    : 'border-slate-300/80 hover:border-slate-400 focus:border-amber-400 focus:ring-3 focus:ring-amber-400/15'
                 }`}
               />
             </div>
@@ -202,10 +214,10 @@ export function VisitorModal() {
                 type="email"
                 placeholder="alex@company.com"
                 disabled={isSubmitting}
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-slate-50/70 text-slate-900 text-sm font-medium placeholder:text-slate-400 focus:bg-white focus:outline-none transition-all ${
+                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-slate-100 text-slate-900 text-sm font-medium placeholder:text-slate-400 focus:bg-white focus:outline-none transition-all ${
                   errors.email
                     ? 'border-red-400 focus:ring-2 focus:ring-red-400/20'
-                    : 'border-slate-200 focus:border-amber-400 focus:ring-3 focus:ring-amber-400/15'
+                    : 'border-slate-300/80 hover:border-slate-400 focus:border-amber-400 focus:ring-3 focus:ring-amber-400/15'
                 }`}
               />
             </div>
@@ -230,10 +242,10 @@ export function VisitorModal() {
                 rows={3}
                 placeholder="e.g. Exploring potential hire, reviewing projects, collaboration..."
                 disabled={isSubmitting}
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-slate-50/70 text-slate-900 text-sm font-medium placeholder:text-slate-400 focus:bg-white focus:outline-none transition-all resize-none ${
+                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-slate-100 text-slate-900 text-sm font-medium placeholder:text-slate-400 focus:bg-white focus:outline-none transition-all resize-none ${
                   errors.reason
                     ? 'border-red-400 focus:ring-2 focus:ring-red-400/20'
-                    : 'border-slate-200 focus:border-amber-400 focus:ring-3 focus:ring-amber-400/15'
+                    : 'border-slate-300/80 hover:border-slate-400 focus:border-amber-400 focus:ring-3 focus:ring-amber-400/15'
                 }`}
               />
             </div>

@@ -53,7 +53,7 @@ export default async function DashboardPage() {
   const recentProjects = projects.slice(0, 3);
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6 max-w-6xl">
+    <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-6xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
         <p className="text-sm text-muted-foreground">Overview of your portfolio content</p>

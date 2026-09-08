@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { checkRateLimit, getClientIp, RATE_LIMIT_PRESETS } from '@/lib/rate-limit';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
@@ -52,6 +53,14 @@ const createAdminSchema = z.object({
  */
 export async function POST(req: Request) {
   try {
+    const ip = getClientIp(req);
+    if (!checkRateLimit(`admin-create:${ip}`, RATE_LIMIT_PRESETS.ADMIN_SETUP.limit, RATE_LIMIT_PRESETS.ADMIN_SETUP.windowMs)) {
+      return NextResponse.json(
+        { error: 'Too many admin creation attempts. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     const apiKey = req.headers.get('x-api-key');
     const expectedKey = process.env.ADMIN_SETUP_KEY;
 
