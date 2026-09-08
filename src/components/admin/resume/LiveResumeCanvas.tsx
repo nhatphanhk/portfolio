@@ -251,7 +251,7 @@ export function LiveResumeCanvas({
                 <div>
                   {/* ── HEADER ──────────────────────────────────────────────── */}
                   {page.pageNumber === 1 ? (
-                    <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 border-b-2 border-gray-900 mb-8">
+                    <header id="section-profile" className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 border-b-2 border-gray-900 mb-8 scroll-mt-6">
                       <div className="flex-1">
                         <InlineEditable
                           as="h2"
@@ -272,7 +272,7 @@ export function LiveResumeCanvas({
                       </div>
 
                       {/* Contact & Social Links */}
-                      <div className="flex flex-col gap-1.5 text-sm text-gray-500 sm:text-right shrink-0">
+                      <div id="section-social" className="flex flex-col gap-1.5 text-sm text-gray-500 sm:text-right shrink-0 scroll-mt-6">
                         {/* Location */}
                         <div className="flex sm:justify-end items-center gap-1.5">
                           <MapPin className="w-3.5 h-3.5 shrink-0 text-gray-400" />
@@ -374,7 +374,7 @@ export function LiveResumeCanvas({
                     <div className="flex flex-col gap-7">
                       {/* Bio & Career Objective (Page 1 Only) */}
                       {page.pageNumber === 1 && (
-                        <section className="group/profile relative">
+                        <section id="section-bio" className="group/profile relative scroll-mt-6">
                           <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Profile</h3>
                           <InlineEditable
                             as="p"
@@ -406,7 +406,7 @@ export function LiveResumeCanvas({
 
                       {/* Experience Section */}
                       {(page.left.experiences.length > 0 || isEditMode) && (
-                        <section>
+                        <section id="section-experience" className="scroll-mt-6">
                           <div className="flex items-center justify-between mb-4">
                             <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400">
                               {page.pageNumber === 1 ? 'Experience' : 'Experience (Continued)'}
@@ -635,7 +635,7 @@ export function LiveResumeCanvas({
 
                       {/* Education Section */}
                       {(page.left.education.length > 0 || isEditMode) && (
-                        <section>
+                        <section id="section-education" className="scroll-mt-6">
                           <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">
                             {page.pageNumber === 1 && page.left.experiences.length > 0
                               ? 'Education'
@@ -792,7 +792,7 @@ export function LiveResumeCanvas({
                     <div className="flex flex-col gap-6">
                       {/* Skills by Category */}
                       {page.right.skillCats.length > 0 && (
-                        <div>
+                        <div id="section-skills" className="scroll-mt-6">
                           <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
                             Technical Skills
                           </h3>
@@ -850,7 +850,7 @@ export function LiveResumeCanvas({
 
                       {/* Soft Skills */}
                       {(page.right.showSoftSkills || isEditMode) && (
-                        <div>
+                        <div id="section-softskills" className="scroll-mt-6">
                           <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
                             Soft Skills
                           </h3>
@@ -868,7 +868,7 @@ export function LiveResumeCanvas({
 
                       {/* Spoken Languages */}
                       {(page.right.spokenLanguages.length > 0 || isEditMode) && (
-                        <div>
+                        <div id="section-languages" className="scroll-mt-6">
                           <div className="flex items-center justify-between mb-2">
                             <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400">Languages</h3>
                             {isEditMode && (
@@ -919,7 +919,7 @@ export function LiveResumeCanvas({
 
                       {/* Achievements */}
                       {(page.right.achievements.length > 0 || isEditMode) && (
-                        <div>
+                        <div id="section-achievements" className="scroll-mt-6">
                           <div className="flex items-center justify-between mb-2">
                             <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400">
                               Honors & Awards
@@ -990,7 +990,7 @@ export function LiveResumeCanvas({
 
                       {/* Activities */}
                       {(page.right.activities.length > 0 || isEditMode) && (
-                        <div>
+                        <div id="section-activities" className="scroll-mt-6">
                           <div className="flex items-center justify-between mb-2">
                             <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400">Activities</h3>
                             {isEditMode && (

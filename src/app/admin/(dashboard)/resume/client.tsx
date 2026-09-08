@@ -4,6 +4,7 @@ import React, { useState, useTransition, useCallback } from 'react';
 import { toast } from 'sonner';
 import { ResumeToolbar } from '@/components/admin/resume/ResumeToolbar';
 import { LiveResumeCanvas } from '@/components/admin/resume/LiveResumeCanvas';
+import { ResumeSectionSidebar } from '@/components/admin/resume/ResumeSectionSidebar';
 import { ResumeItemDialog, ItemType } from '@/components/admin/resume/ResumeItemDialog';
 import {
   updateProfile,
@@ -59,11 +60,19 @@ export function AdminResumeClient({
 
   // ── UI Controls State ──────────────────────────────────────
   const [isEditMode, setIsEditMode] = useState(true);
+  const [isSectionSidebarOpen, setIsSectionSidebarOpen] = useState(true);
   const [viewMode, setViewMode] = useState<'stack' | 'paged'>('stack');
   const [activePage, setActivePage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, startSavingTransition] = useTransition();
+
+  const handleScrollToSection = useCallback((sectionId: string) => {
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
 
   // ── Modal Dialog State ─────────────────────────────────────
   const [dialogState, setDialogState] = useState<{
@@ -470,7 +479,7 @@ export function AdminResumeClient({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20 pb-20">
+    <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-muted/20">
       {/* ── Top Sticky WYSIWYG Toolbar ── */}
       <ResumeToolbar
         isEditMode={isEditMode}
@@ -485,57 +494,80 @@ export function AdminResumeClient({
         viewMode={viewMode}
         onToggleViewMode={setViewMode}
         resumeUrl={profile.resumeUrl}
+        isSectionSidebarOpen={isSectionSidebarOpen}
+        onToggleSectionSidebar={() => setIsSectionSidebarOpen(prev => !prev)}
       />
 
-      {/* ── Visual Helper Banner (only in Edit Mode) ── */}
-      {isEditMode && (
-        <div className="max-w-5xl mx-auto px-4 pt-4">
-          <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 text-xs text-primary">
-            <div className="flex items-center gap-2">
-              <span className="flex h-2 w-2 rounded-full bg-primary animate-ping" />
-              <span className="font-semibold">
-                Chế độ Tương tác Trực tiếp (WYSIWYG Live Canvas):
-              </span>
-              <span className="hidden sm:inline opacity-90">
-                Nhấp vào bất kỳ chữ nào để sửa trực tiếp, hover vào các mục để sửa/xóa/đổi vị trí.
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsEditMode(false)}
-              className="text-[11px] font-bold underline hover:opacity-80 shrink-0"
-            >
-              Tắt hướng dẫn
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Main Live Canvas ── */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6">
-        <LiveResumeCanvas
-          profile={profile}
-          experiences={experiences}
-          education={education}
-          socialLinks={socialLinks}
-          achievements={achievements}
-          spokenLanguages={spokenLanguages}
-          activities={activities}
-          skillsByCategory={skillsByCategory}
-          isEditMode={isEditMode}
-          activePage={activePage}
-          viewMode={viewMode}
-          onUpdateProfile={handleUpdateProfile}
+      {/* ── Workspace Area: Section Sidebar on Left + Dedicated Canvas on Right ── */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Left: Section Toolbox Sidebar */}
+        <ResumeSectionSidebar
+          isOpen={isSectionSidebarOpen}
+          onToggle={() => setIsSectionSidebarOpen(prev => !prev)}
+          experienceCount={experiences.length}
+          educationCount={education.length}
+          skillsCount={Object.values(skillsByCategory).reduce((acc, arr) => acc + arr.length, 0)}
+          socialCount={socialLinks.length}
+          languageCount={spokenLanguages.length}
+          achievementCount={achievements.length}
+          activityCount={activities.length}
           onOpenDialog={handleOpenDialog}
-          onDeleteItem={handleDeleteItem}
-          onMoveItem={handleMoveItem}
-          onUpdateExperienceAchievements={handleUpdateExperienceAchievements}
-          onUpdateExperienceTechStack={handleUpdateExperienceTechStack}
-          onQuickAddSkill={handleQuickAddSkill}
-          onDeleteSkill={handleDeleteSkill}
-          onSetTotalPages={setTotalPages}
+          onScrollToSection={handleScrollToSection}
         />
-      </main>
+
+        {/* Right: Isolated Scrollable Canvas Viewport */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 flex flex-col items-center scroll-smooth bg-muted/30">
+          {/* Visual Helper Banner */}
+          {isEditMode && (
+            <div className="w-full max-w-5xl mb-6">
+              <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 text-xs text-primary shadow-2xs">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-2 w-2 rounded-full bg-primary animate-ping" />
+                  <span className="font-semibold">
+                    Studio Canvas Tương tác:
+                  </span>
+                  <span className="hidden sm:inline opacity-90">
+                    Dùng thanh Section bên trái để thêm/nhảy mục nhanh. Nhấp trực tiếp vào bất kỳ chữ nào trên giấy CV để sửa.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEditMode(false)}
+                  className="text-[11px] font-bold underline hover:opacity-80 shrink-0"
+                >
+                  Ẩn hướng dẫn
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Main Live Canvas (Centered) */}
+          <main className="w-full max-w-5xl">
+            <LiveResumeCanvas
+              profile={profile}
+              experiences={experiences}
+              education={education}
+              socialLinks={socialLinks}
+              achievements={achievements}
+              spokenLanguages={spokenLanguages}
+              activities={activities}
+              skillsByCategory={skillsByCategory}
+              isEditMode={isEditMode}
+              activePage={activePage}
+              viewMode={viewMode}
+              onUpdateProfile={handleUpdateProfile}
+              onOpenDialog={handleOpenDialog}
+              onDeleteItem={handleDeleteItem}
+              onMoveItem={handleMoveItem}
+              onUpdateExperienceAchievements={handleUpdateExperienceAchievements}
+              onUpdateExperienceTechStack={handleUpdateExperienceTechStack}
+              onQuickAddSkill={handleQuickAddSkill}
+              onDeleteSkill={handleDeleteSkill}
+              onSetTotalPages={setTotalPages}
+            />
+          </main>
+        </div>
+      </div>
 
       {/* ── Detailed Edit Modal Dialog ── */}
       <ResumeItemDialog

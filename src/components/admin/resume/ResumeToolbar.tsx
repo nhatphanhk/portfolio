@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Layers,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -29,6 +30,8 @@ interface ResumeToolbarProps {
   viewMode: 'stack' | 'paged';
   onToggleViewMode: (mode: 'stack' | 'paged') => void;
   resumeUrl?: string | null;
+  isSectionSidebarOpen?: boolean;
+  onToggleSectionSidebar?: () => void;
 }
 
 export function ResumeToolbar({
@@ -44,12 +47,28 @@ export function ResumeToolbar({
   viewMode,
   onToggleViewMode,
   resumeUrl,
+  isSectionSidebarOpen,
+  onToggleSectionSidebar,
 }: ResumeToolbarProps) {
   return (
-    <div className="sticky top-0 z-30 w-full bg-card/90 backdrop-blur-md border-b border-border shadow-xs px-4 py-3">
-      <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
-        {/* Left: Mode toggle & Document navigation */}
+    <div className="w-full bg-card/95 backdrop-blur-md border-b border-border shadow-2xs px-4 py-2.5 z-10 shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* Left: Section Sidebar toggle, Mode toggle & Document navigation */}
         <div className="flex items-center flex-wrap gap-2.5">
+          {onToggleSectionSidebar && (
+            <Button
+              type="button"
+              variant={isSectionSidebarOpen ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={onToggleSectionSidebar}
+              className="text-xs h-8 gap-1.5 font-medium border-border"
+              title="Đóng / Mở thanh Sections"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
+              <span className="hidden sm:inline">Sections</span>
+            </Button>
+          )}
+
           {/* Edit / Preview Mode toggle */}
           <div className="flex items-center bg-muted/80 p-1 rounded-xl border border-border/60 text-xs font-semibold">
             <button

@@ -127,18 +127,18 @@ export function AppSidebar({
       className="border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-md"
       {...props}
     >
-      <SidebarHeader className="border-b border-sidebar-border/80 pb-3 pt-3">
-        <div className="flex items-center justify-between px-3 py-1">
+      <SidebarHeader className="border-b border-sidebar-border/80 pb-3 pt-3 overflow-hidden">
+        <div className="flex items-center justify-between px-3 py-1 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
           <Link
             href="/admin"
-            className="flex items-center gap-2.5 font-bold text-sidebar-foreground hover:opacity-90 transition"
+            className="flex items-center gap-2.5 font-bold text-sidebar-foreground hover:opacity-90 transition min-w-0"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl overflow-hidden border border-sidebar-border/80 shadow-xs bg-sidebar-accent">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden border border-sidebar-border/80 shadow-xs bg-sidebar-accent">
               <Image src="/icon.png" alt="nhatphanhk102" width={32} height={32} className="h-full w-full object-cover" />
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-extrabold tracking-tight text-sidebar-foreground">nhatphanhk102</span>
-              <span className="text-[10px] text-sidebar-foreground/60 font-medium">Admin CMS Hub</span>
+            <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden transition-all duration-200">
+              <span className="text-sm font-extrabold tracking-tight text-sidebar-foreground truncate">nhatphanhk102</span>
+              <span className="text-[10px] text-sidebar-foreground/60 font-medium truncate">Admin CMS Hub</span>
             </div>
           </Link>
         </div>

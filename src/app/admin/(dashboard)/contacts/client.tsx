@@ -109,7 +109,7 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
   );
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6 max-w-5xl">
+    <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-5xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-foreground mb-1">Contacts & Visitors</h1>
         <p className="text-sm text-muted-foreground">Manage messages and portfolio visitor logs</p>

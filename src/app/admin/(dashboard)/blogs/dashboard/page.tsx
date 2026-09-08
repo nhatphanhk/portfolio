@@ -80,7 +80,7 @@ export default async function BlogDashboardPage() {
   const recent = [...blogs].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 5);
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6 max-w-6xl">
+    <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-6xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Blog Dashboard</h1>

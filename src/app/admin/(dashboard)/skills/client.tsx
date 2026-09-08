@@ -21,7 +21,7 @@ export function AdminSkillsClient({ skills }: { skills: Skill[] }) {
   const [deleteTarget, setDeleteTarget] = useState<Skill | null>(null);
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6 max-w-5xl">
+    <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-5xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Skills</h1>

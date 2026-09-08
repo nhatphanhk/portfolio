@@ -65,7 +65,7 @@ export function VisitorLogsClient({ logs }: Props) {
   }, [logs, search]);
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6 max-w-6xl">
+    <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
