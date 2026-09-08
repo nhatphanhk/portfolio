@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { ResumeCard3D } from '@/components/ui/ResumeCard3D';
 import { MapPin, Mail, Layers, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import DynamicIcon from '@/components/ui/DynamicIcon';
+import { SectionId, parseSectionLayout } from '@/lib/resume-layout';
 
 const CATEGORY_LABELS: Record<string, string> = {
   LANGUAGE: 'Programming Languages',
@@ -50,33 +51,34 @@ export interface EducationData {
   institution: string;
   degree: string;
   fieldOfStudy?: string | null;
+  description?: string | null;
   startDate: Date | string;
   endDate?: Date | string | null;
   isCurrent: boolean;
-  description?: string | null;
-}
-
-export interface SocialLinkData {
-  id: string;
-  platform: string;
-  url: string;
-  iconName?: string | null;
+  gpa?: string | null;
 }
 
 export interface SkillItem {
   id: string;
   name: string;
-  level: number | null;
+  category: string;
 }
 
 export type SkillsByCategoryData = Record<string, SkillItem[]>;
+
+export interface SocialLinkData {
+  id: string;
+  platform: string;
+  url: string;
+  icon?: string | null;
+  iconName?: string | null;
+}
 
 export interface AchievementData {
   id: string;
   title: string;
   description?: string | null;
   date?: Date | string | null;
-  category?: string | null;
 }
 
 export interface SpokenLanguageData {
@@ -125,147 +127,34 @@ function estimateEducationWeight(edu: EducationData): number {
 }
 
 function estimateSkillCatWeight(skills: SkillItem[]): number {
-  // Tag-cloud layout: roughly 2-3 skills per row
   const rows = Math.ceil(skills.length / 2.5);
   return 40 + rows * 26;
 }
 
-type LeftPageGroup = { experiences: ExperienceData[]; education: EducationData[] };
-type RightPageGroup = {
+interface ColumnPageData {
+  sections: SectionId[];
+  experiences: ExperienceData[];
+  education: EducationData[];
   skillCats: string[];
-  showSoftSkills: boolean;
   spokenLanguages: SpokenLanguageData[];
   achievements: AchievementData[];
   activities: ActivityData[];
-};
+  showBio: boolean;
+  showSoftSkills: boolean;
+}
 
-function newRightGroup(): RightPageGroup {
+function emptyColPage(): ColumnPageData {
   return {
+    sections: [],
+    experiences: [],
+    education: [],
     skillCats: [],
-    showSoftSkills: false,
     spokenLanguages: [],
     achievements: [],
     activities: [],
+    showBio: false,
+    showSoftSkills: false,
   };
-}
-
-/**
- * Core pagination logic.
- * Ensures content is APPENDED to new pages instead of overwriting existing ones.
- */
-function paginateContent(
-  experiences: ExperienceData[],
-  education: EducationData[],
-  skillsByCategory: SkillsByCategoryData,
-  profile: ProfileData,
-  spokenLanguages: SpokenLanguageData[],
-  achievements: AchievementData[],
-  activities: ActivityData[],
-) {
-  const PAGE1_LEFT = 500;
-  const PAGE1_RIGHT = 540;
-  const EXTRA_LIMIT = 860;
-
-  // ── LEFT COLUMN ──────────────────────────────────────────────────────────
-  const leftGroups: LeftPageGroup[] = [{ experiences: [], education: [] }];
-  let lPage = 0;
-  let lWeight = 0;
-
-  for (const exp of experiences) {
-    const w = estimateExperienceWeight(exp);
-    const limit = lPage === 0 ? PAGE1_LEFT : EXTRA_LIMIT;
-    const hasContent = leftGroups[lPage].experiences.length > 0 || leftGroups[lPage].education.length > 0;
-    if (lWeight + w > limit && hasContent) {
-      lPage++;
-      lWeight = 0;
-      leftGroups.push({ experiences: [], education: [] });
-    }
-    leftGroups[lPage].experiences.push(exp);
-    lWeight += w;
-  }
-
-  for (const edu of education) {
-    const w = estimateEducationWeight(edu);
-    const limit = lPage === 0 ? PAGE1_LEFT : EXTRA_LIMIT;
-    const hasContent = leftGroups[lPage].experiences.length > 0 || leftGroups[lPage].education.length > 0;
-    if (lWeight + w > limit && hasContent) {
-      lPage++;
-      lWeight = 0;
-      leftGroups.push({ experiences: [], education: [] });
-    }
-    leftGroups[lPage].education.push(edu);
-    lWeight += w;
-  }
-
-  // ── RIGHT COLUMN ─────────────────────────────────────────────────────────
-  const rightGroups: RightPageGroup[] = [newRightGroup()];
-  let rPage = 0;
-  let rWeight = 0;
-
-  // Helper: ensure right page exists and bump if overflowing
-  function ensureRightSpace(needed: number) {
-    const limit = rPage === 0 ? PAGE1_RIGHT : EXTRA_LIMIT;
-    const hasContent =
-      rightGroups[rPage].skillCats.length > 0 ||
-      rightGroups[rPage].showSoftSkills ||
-      rightGroups[rPage].spokenLanguages.length > 0 ||
-      rightGroups[rPage].achievements.length > 0 ||
-      rightGroups[rPage].activities.length > 0;
-
-    if (rWeight + needed > limit && hasContent) {
-      rPage++;
-      rWeight = 0;
-      rightGroups.push(newRightGroup());
-    }
-  }
-
-  // Skills
-  for (const cat of Object.keys(skillsByCategory)) {
-    const skills = skillsByCategory[cat] ?? [];
-    const w = estimateSkillCatWeight(skills);
-    ensureRightSpace(w);
-    rightGroups[rPage].skillCats.push(cat);
-    rWeight += w;
-  }
-
-  // Soft skills
-  if (profile.softSkills) {
-    ensureRightSpace(65);
-    rightGroups[rPage].showSoftSkills = true;
-    rWeight += 65;
-  }
-
-  // Spoken languages — FIX: assign to the CURRENT page after ensuring space
-  if (spokenLanguages.length > 0) {
-    const w = 48 + spokenLanguages.length * 22;
-    ensureRightSpace(w);
-    rightGroups[rPage].spokenLanguages = spokenLanguages;
-    rWeight += w;
-  }
-
-  // Achievements
-  if (achievements.length > 0) {
-    const w = 48 + achievements.length * 42;
-    ensureRightSpace(w);
-    rightGroups[rPage].achievements = achievements;
-    rWeight += w;
-  }
-
-  // Activities
-  if (activities.length > 0) {
-    const w = 48 + activities.length * 42;
-    ensureRightSpace(w);
-    rightGroups[rPage].activities = activities;
-    rWeight += w;
-  }
-
-  const totalPages = Math.max(leftGroups.length, rightGroups.length, 1);
-
-  return Array.from({ length: totalPages }, (_, i) => ({
-    pageNumber: i + 1,
-    left: leftGroups[i] ?? { experiences: [], education: [] },
-    right: rightGroups[i] ?? newRightGroup(),
-  }));
 }
 
 /**
@@ -285,21 +174,389 @@ export function ResumeMultiPage({
   const [activePageTab, setActivePageTab] = useState<number>(1);
   const [viewMode, setViewMode] = useState<'stack' | 'paged'>('stack');
 
-  const pages = useMemo(
-    () =>
-      paginateContent(
-        experiences,
-        education,
-        skillsByCategory,
-        profile,
-        spokenLanguages,
-        achievements,
-        activities,
-      ),
-    [experiences, education, skillsByCategory, profile, spokenLanguages, achievements, activities],
+  const sectionLayout = useMemo(
+    () => parseSectionLayout(profile.interests),
+    [profile.interests]
   );
 
+  const pages = useMemo(() => {
+    const PAGE1_LEFT = 500;
+    const PAGE1_RIGHT = 540;
+    const EXTRA_LIMIT = 860;
+
+    const paginateCol = (col: 'left' | 'right'): ColumnPageData[] => {
+      const colSections = (col === 'left' ? sectionLayout.left : sectionLayout.right).filter(
+        id => !sectionLayout.hidden.includes(id)
+      );
+
+      const colPages: ColumnPageData[] = [emptyColPage()];
+      let currentPage = 0;
+      let currentWeight = 0;
+
+      const ensureSpace = (weightNeeded: number) => {
+        const limit = currentPage === 0 ? (col === 'left' ? PAGE1_LEFT : PAGE1_RIGHT) : EXTRA_LIMIT;
+        const hasContent = colPages[currentPage].sections.length > 0;
+        if (currentWeight + weightNeeded > limit && hasContent) {
+          currentPage++;
+          currentWeight = 0;
+          colPages.push(emptyColPage());
+        }
+      };
+
+      for (const id of colSections) {
+        switch (id) {
+          case 'bio': {
+            if (profile.bio || profile.careerObjective) {
+              ensureSpace(85);
+              colPages[currentPage].showBio = true;
+              if (!colPages[currentPage].sections.includes('bio')) {
+                colPages[currentPage].sections.push('bio');
+              }
+              currentWeight += 85;
+            }
+            break;
+          }
+
+          case 'experience': {
+            for (const exp of experiences) {
+              const w = estimateExperienceWeight(exp);
+              ensureSpace(w);
+              if (!colPages[currentPage].sections.includes('experience')) {
+                colPages[currentPage].sections.push('experience');
+              }
+              colPages[currentPage].experiences.push(exp);
+              currentWeight += w;
+            }
+            break;
+          }
+
+          case 'education': {
+            for (const edu of education) {
+              const w = estimateEducationWeight(edu);
+              ensureSpace(w);
+              if (!colPages[currentPage].sections.includes('education')) {
+                colPages[currentPage].sections.push('education');
+              }
+              colPages[currentPage].education.push(edu);
+              currentWeight += w;
+            }
+            break;
+          }
+
+          case 'skills': {
+            const cats = Object.keys(skillsByCategory);
+            for (const cat of cats) {
+              const skills = skillsByCategory[cat] ?? [];
+              const w = estimateSkillCatWeight(skills);
+              ensureSpace(w);
+              if (!colPages[currentPage].sections.includes('skills')) {
+                colPages[currentPage].sections.push('skills');
+              }
+              colPages[currentPage].skillCats.push(cat);
+              currentWeight += w;
+            }
+            break;
+          }
+
+          case 'softSkills': {
+            if (profile.softSkills) {
+              ensureSpace(65);
+              colPages[currentPage].showSoftSkills = true;
+              if (!colPages[currentPage].sections.includes('softSkills')) {
+                colPages[currentPage].sections.push('softSkills');
+              }
+              currentWeight += 65;
+            }
+            break;
+          }
+
+          case 'languages': {
+            if (spokenLanguages.length > 0) {
+              const w = 48 + spokenLanguages.length * 22;
+              ensureSpace(w);
+              colPages[currentPage].spokenLanguages = spokenLanguages;
+              if (!colPages[currentPage].sections.includes('languages')) {
+                colPages[currentPage].sections.push('languages');
+              }
+              currentWeight += w;
+            }
+            break;
+          }
+
+          case 'achievements': {
+            if (achievements.length > 0) {
+              const w = 48 + achievements.length * 42;
+              ensureSpace(w);
+              colPages[currentPage].achievements = achievements;
+              if (!colPages[currentPage].sections.includes('achievements')) {
+                colPages[currentPage].sections.push('achievements');
+              }
+              currentWeight += w;
+            }
+            break;
+          }
+
+          case 'activities': {
+            if (activities.length > 0) {
+              const w = 48 + activities.length * 42;
+              ensureSpace(w);
+              colPages[currentPage].activities = activities;
+              if (!colPages[currentPage].sections.includes('activities')) {
+                colPages[currentPage].sections.push('activities');
+              }
+              currentWeight += w;
+            }
+            break;
+          }
+        }
+      }
+
+      return colPages;
+    };
+
+    const leftPages = paginateCol('left');
+    const rightPages = paginateCol('right');
+    const total = Math.max(leftPages.length, rightPages.length, 1);
+
+    return Array.from({ length: total }, (_, i) => ({
+      pageNumber: i + 1,
+      left: leftPages[i] ?? emptyColPage(),
+      right: rightPages[i] ?? emptyColPage(),
+    }));
+  }, [
+    sectionLayout,
+    experiences,
+    education,
+    skillsByCategory,
+    profile,
+    spokenLanguages,
+    achievements,
+    activities,
+  ]);
+
   const totalPages = pages.length;
+
+  const renderSection = (
+    sectionId: SectionId,
+    _col: 'left' | 'right',
+    pageColData: ColumnPageData,
+    pageNumber: number
+  ) => {
+    switch (sectionId) {
+      case 'bio': {
+        if (!pageColData.showBio || (!profile.bio && !profile.careerObjective)) return null;
+        return (
+          <section key="bio">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Profile</h3>
+            {profile.bio && <p className="text-sm text-gray-600 leading-relaxed">{profile.bio}</p>}
+            {profile.careerObjective && (
+              <p className="text-sm text-gray-600 leading-relaxed mt-2 italic">{profile.careerObjective}</p>
+            )}
+          </section>
+        );
+      }
+
+      case 'experience': {
+        if (pageColData.experiences.length === 0) return null;
+        return (
+          <section key="experience">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">
+              {pageNumber === 1 ? 'Experience' : 'Experience (Continued)'}
+            </h3>
+            <div className="space-y-5">
+              {pageColData.experiences.map(exp => (
+                <div
+                  key={exp.id}
+                  className="relative pl-4 border-l-2 border-gray-200 hover:border-blue-400 transition-colors"
+                >
+                  <div className="flex flex-wrap justify-between items-baseline gap-2 mb-0.5">
+                    <h4 className="font-bold text-gray-900 text-sm">{exp.position}</h4>
+                    <span className="text-xs text-gray-400 font-mono">
+                      {new Date(exp.startDate).getFullYear()} –{' '}
+                      {exp.isCurrent ? 'Present' : exp.endDate ? new Date(exp.endDate).getFullYear() : ''}
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold text-blue-600 mb-1.5">{exp.company}</p>
+                  {exp.description && (
+                    <p className="text-xs text-gray-500 leading-relaxed">{exp.description}</p>
+                  )}
+                  {exp.achievements && (
+                    <ul className="mt-1.5 space-y-0.5">
+                      {exp.achievements
+                        .split('\n')
+                        .filter(Boolean)
+                        .map((a, i) => (
+                          <li key={i} className="text-xs text-gray-500 flex gap-1.5">
+                            <span className="text-blue-400 mt-0.5">•</span>
+                            <span>{a}</span>
+                          </li>
+                        ))}
+                    </ul>
+                  )}
+                  {exp.techStack && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {exp.techStack
+                        .split(',')
+                        .map(t => t.trim())
+                        .filter(Boolean)
+                        .map(t => (
+                          <span
+                            key={t}
+                            className="px-1.5 py-0.5 text-[10px] bg-gray-100 rounded text-gray-500 font-medium"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      }
+
+      case 'education': {
+        if (pageColData.education.length === 0) return null;
+        return (
+          <section key="education">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Education</h3>
+            <div className="space-y-4">
+              {pageColData.education.map(edu => (
+                <div
+                  key={edu.id}
+                  className="relative pl-4 border-l-2 border-gray-200 hover:border-blue-400 transition-colors"
+                >
+                  <div className="flex flex-wrap justify-between items-baseline gap-2 mb-0.5">
+                    <h4 className="font-bold text-gray-900 text-sm">{edu.degree}</h4>
+                    <span className="text-xs text-gray-400 font-mono">
+                      {new Date(edu.startDate).getFullYear()} –{' '}
+                      {edu.isCurrent ? 'Present' : edu.endDate ? new Date(edu.endDate).getFullYear() : ''}
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-600 font-semibold">{edu.institution}</p>
+                  {edu.fieldOfStudy && <p className="text-xs text-gray-400">{edu.fieldOfStudy}</p>}
+                  {edu.description && (
+                    <p className="text-xs text-gray-500 leading-relaxed mt-1">{edu.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      }
+
+      case 'skills': {
+        if (pageColData.skillCats.length === 0) return null;
+        return (
+          <section key="skills">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3.5">
+              {pageNumber === 1 ? 'Technical Skills' : 'Additional Skills'}
+            </h3>
+            <div className="space-y-4">
+              {pageColData.skillCats.map(cat => (
+                <div key={cat}>
+                  <h4 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2">
+                    {CATEGORY_LABELS[cat] ?? cat}
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(skillsByCategory[cat] ?? []).map(skill => (
+                      <span
+                        key={skill.id}
+                        className="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 rounded-md font-medium"
+                      >
+                        {skill.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      }
+
+      case 'softSkills': {
+        if (!pageColData.showSoftSkills || !profile.softSkills) return null;
+        return (
+          <section key="softSkills">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Soft Skills</h3>
+            <div className="flex flex-wrap gap-1.5">
+              {profile.softSkills
+                .split(',')
+                .map(s => s.trim())
+                .filter(Boolean)
+                .map(s => (
+                  <span
+                    key={s}
+                    className="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded-full font-medium"
+                  >
+                    {s}
+                  </span>
+                ))}
+            </div>
+          </section>
+        );
+      }
+
+      case 'languages': {
+        if (pageColData.spokenLanguages.length === 0) return null;
+        return (
+          <section key="languages">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Languages</h3>
+            <div className="space-y-2">
+              {pageColData.spokenLanguages.map(lang => (
+                <div key={lang.id} className="flex justify-between items-center">
+                  <span className="text-xs text-gray-700 font-semibold">{lang.language}</span>
+                  <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                    {lang.level}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      }
+
+      case 'achievements': {
+        if (pageColData.achievements.length === 0) return null;
+        return (
+          <section key="achievements">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Achievements</h3>
+            <div className="space-y-2">
+              {pageColData.achievements.map(ach => (
+                <div key={ach.id} className="text-xs">
+                  <p className="font-semibold text-gray-800">{ach.title}</p>
+                  {ach.description && (
+                    <p className="text-gray-500 text-[11px] mt-0.5">{ach.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      }
+
+      case 'activities': {
+        if (pageColData.activities.length === 0) return null;
+        return (
+          <section key="activities">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Activities</h3>
+            <div className="space-y-2">
+              {pageColData.activities.map(act => (
+                <div key={act.id} className="text-xs">
+                  <p className="font-semibold text-gray-800">{act.title}</p>
+                  {act.description && (
+                    <p className="text-gray-500 text-[11px] mt-0.5">{act.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      }
+    }
+  };
 
   return (
     <div className="w-full">
@@ -328,11 +585,11 @@ export function ResumeMultiPage({
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
-                <span>All Pages</span>
+                <span>Continuous</span>
               </button>
               <button
                 type="button"
-                onClick={() => { setViewMode('paged'); setActivePageTab(1); }}
+                onClick={() => setViewMode('paged')}
                 className={`px-2.5 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
                   viewMode === 'paged' ? 'bg-card text-foreground font-medium shadow-xs' : 'text-muted-foreground hover:text-foreground'
                 }`}
@@ -429,26 +686,25 @@ export function ResumeMultiPage({
                           {profile.email && (
                             <div className="flex sm:justify-end items-center gap-1.5">
                               <Mail className="w-3.5 h-3.5 shrink-0 text-gray-400" />
-                              <a href={`mailto:${profile.email}`} className="hover:text-blue-600 transition-colors">
-                                {profile.email}
-                              </a>
+                              <span>{profile.email}</span>
                             </div>
                           )}
-                          {socialLinks.map(social => {
-                            return (
-                              <div key={social.id} className="flex sm:justify-end items-center gap-1.5">
-                                <DynamicIcon name={social.iconName} className="w-3.5 h-3.5 shrink-0 text-gray-400" />
+                          {socialLinks.length > 0 && (
+                            <div className="flex flex-wrap sm:justify-end gap-3 mt-1">
+                              {socialLinks.map(link => (
                                 <a
-                                  href={social.url}
+                                  key={link.id}
+                                  href={link.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="hover:text-blue-600 transition-colors"
+                                  className="text-xs text-blue-600 hover:underline flex items-center gap-1"
                                 >
-                                  {social.platform}
+                                  <DynamicIcon name={link.iconName || link.icon || 'link'} className="w-3.5 h-3.5 text-gray-500" />
+                                  <span>{link.platform}</span>
                                 </a>
-                              </div>
-                            );
-                          })}
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </header>
                     ) : (
@@ -467,102 +723,9 @@ export function ResumeMultiPage({
                     {/* ── BODY ────────────────────────────────── */}
                     <div className="grid grid-cols-1 md:grid-cols-[2fr_1px_1fr] gap-8">
                       {/* LEFT COLUMN */}
-                      <div className="flex flex-col gap-7">
-                        {/* Profile Bio (Page 1 Only) */}
-                        {page.pageNumber === 1 && (profile.bio || profile.careerObjective) && (
-                          <section>
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Profile</h3>
-                            {profile.bio && <p className="text-sm text-gray-600 leading-relaxed">{profile.bio}</p>}
-                            {profile.careerObjective && (
-                              <p className="text-sm text-gray-600 leading-relaxed mt-2 italic">{profile.careerObjective}</p>
-                            )}
-                          </section>
-                        )}
-
-                        {/* Experience */}
-                        {page.left.experiences.length > 0 && (
-                          <section>
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">
-                              {page.pageNumber === 1 ? 'Experience' : 'Experience (Continued)'}
-                            </h3>
-                            <div className="space-y-5">
-                              {page.left.experiences.map(exp => (
-                                <div
-                                  key={exp.id}
-                                  className="relative pl-4 border-l-2 border-gray-200 hover:border-blue-400 transition-colors"
-                                >
-                                  <div className="flex flex-wrap justify-between items-baseline gap-2 mb-0.5">
-                                    <h4 className="font-bold text-gray-900 text-sm">{exp.position}</h4>
-                                    <span className="text-xs text-gray-400 font-mono">
-                                      {new Date(exp.startDate).getFullYear()} –{' '}
-                                      {exp.isCurrent ? 'Present' : exp.endDate ? new Date(exp.endDate).getFullYear() : ''}
-                                    </span>
-                                  </div>
-                                  <p className="text-xs font-semibold text-blue-600 mb-1.5">{exp.company}</p>
-                                  {exp.description && (
-                                    <p className="text-xs text-gray-500 leading-relaxed">{exp.description}</p>
-                                  )}
-                                  {exp.achievements && (
-                                    <ul className="mt-1.5 space-y-0.5">
-                                      {exp.achievements
-                                        .split('\n')
-                                        .filter(Boolean)
-                                        .map((a, i) => (
-                                          <li key={i} className="text-xs text-gray-500 flex gap-1.5">
-                                            <span className="text-blue-400 mt-0.5">•</span>
-                                            <span>{a}</span>
-                                          </li>
-                                        ))}
-                                    </ul>
-                                  )}
-                                  {exp.techStack && (
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                      {exp.techStack
-                                        .split(',')
-                                        .map(t => t.trim())
-                                        .filter(Boolean)
-                                        .map(t => (
-                                          <span
-                                            key={t}
-                                            className="px-1.5 py-0.5 text-[10px] bg-gray-100 rounded text-gray-500 font-medium"
-                                          >
-                                            {t}
-                                          </span>
-                                        ))}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </section>
-                        )}
-
-                        {/* Education */}
-                        {page.left.education.length > 0 && (
-                          <section>
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Education</h3>
-                            <div className="space-y-4">
-                              {page.left.education.map(edu => (
-                                <div
-                                  key={edu.id}
-                                  className="relative pl-4 border-l-2 border-gray-200 hover:border-blue-400 transition-colors"
-                                >
-                                  <div className="flex flex-wrap justify-between items-baseline gap-2 mb-0.5">
-                                    <h4 className="font-bold text-gray-900 text-sm">{edu.degree}</h4>
-                                    <span className="text-xs text-gray-400 font-mono">
-                                      {new Date(edu.startDate).getFullYear()} –{' '}
-                                      {edu.isCurrent ? 'Present' : edu.endDate ? new Date(edu.endDate).getFullYear() : ''}
-                                    </span>
-                                  </div>
-                                  <p className="text-xs text-blue-600 font-semibold">{edu.institution}</p>
-                                  {edu.fieldOfStudy && <p className="text-xs text-gray-400">{edu.fieldOfStudy}</p>}
-                                  {edu.description && (
-                                    <p className="text-xs text-gray-500 leading-relaxed mt-1">{edu.description}</p>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </section>
+                      <div className="flex flex-col gap-7 min-h-[50px]">
+                        {page.left.sections.map(secId =>
+                          renderSection(secId, 'left', page.left, page.pageNumber)
                         )}
                       </div>
 
@@ -570,105 +733,9 @@ export function ResumeMultiPage({
                       <div className="hidden md:block bg-gray-100 w-px" />
 
                       {/* RIGHT COLUMN */}
-                      <div className="flex flex-col gap-6">
-                        {/* Skills */}
-                        {page.right.skillCats.length > 0 && (
-                          <section>
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3.5">
-                              {page.pageNumber === 1 ? 'Technical Skills' : 'Additional Skills'}
-                            </h3>
-                            <div className="space-y-4">
-                              {page.right.skillCats.map(cat => (
-                                <div key={cat}>
-                                  <h4 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2">
-                                    {CATEGORY_LABELS[cat] ?? cat}
-                                  </h4>
-                                  <div className="flex flex-wrap gap-1.5">
-                                    {(skillsByCategory[cat] ?? []).map(skill => (
-                                      <span
-                                        key={skill.id}
-                                        className="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 rounded-md font-medium"
-                                      >
-                                        {skill.name}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </section>
-                        )}
-
-                        {/* Soft Skills */}
-                        {page.right.showSoftSkills && profile.softSkills && (
-                          <section>
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Soft Skills</h3>
-                            <div className="flex flex-wrap gap-1.5">
-                              {profile.softSkills
-                                .split(',')
-                                .map(s => s.trim())
-                                .filter(Boolean)
-                                .map(s => (
-                                  <span
-                                    key={s}
-                                    className="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded-full font-medium"
-                                  >
-                                    {s}
-                                  </span>
-                                ))}
-                            </div>
-                          </section>
-                        )}
-
-                        {/* Spoken Languages — always rendered when assigned to this page */}
-                        {page.right.spokenLanguages.length > 0 && (
-                          <section>
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Languages</h3>
-                            <div className="space-y-2">
-                              {page.right.spokenLanguages.map(lang => (
-                                <div key={lang.id} className="flex justify-between items-center">
-                                  <span className="text-xs text-gray-700 font-semibold">{lang.language}</span>
-                                  <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                                    {lang.level}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </section>
-                        )}
-
-                        {/* Achievements */}
-                        {page.right.achievements.length > 0 && (
-                          <section>
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Achievements</h3>
-                            <div className="space-y-2">
-                              {page.right.achievements.map(ach => (
-                                <div key={ach.id} className="text-xs">
-                                  <p className="font-semibold text-gray-800">{ach.title}</p>
-                                  {ach.description && (
-                                    <p className="text-gray-500 text-[11px] mt-0.5">{ach.description}</p>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </section>
-                        )}
-
-                        {/* Activities */}
-                        {page.right.activities.length > 0 && (
-                          <section>
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Activities</h3>
-                            <div className="space-y-2">
-                              {page.right.activities.map(act => (
-                                <div key={act.id} className="text-xs">
-                                  <p className="font-semibold text-gray-800">{act.title}</p>
-                                  {act.description && (
-                                    <p className="text-gray-500 text-[11px] mt-0.5">{act.description}</p>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </section>
+                      <div className="flex flex-col gap-6 min-h-[50px]">
+                        {page.right.sections.map(secId =>
+                          renderSection(secId, 'right', page.right, page.pageNumber)
                         )}
                       </div>
                     </div>

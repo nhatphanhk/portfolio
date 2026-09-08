@@ -7,6 +7,13 @@ import { LiveResumeCanvas } from '@/components/admin/resume/LiveResumeCanvas';
 import { ResumeSectionSidebar } from '@/components/admin/resume/ResumeSectionSidebar';
 import { ResumeItemDialog, ItemType } from '@/components/admin/resume/ResumeItemDialog';
 import {
+  SectionId,
+  ResumeSectionLayout,
+  DEFAULT_SECTION_LAYOUT,
+  SECTION_META,
+  parseSectionLayout,
+} from '@/lib/resume-layout';
+import {
   updateProfile,
   upsertSocialLink,
   createExperience,
@@ -58,6 +65,11 @@ export function AdminResumeClient({
   const [activities, setActivities] = useState(initialActivities);
   const [skillsByCategory, setSkillsByCategory] = useState(initialSkillsByCategory);
 
+  // ── Dynamic Sections Layout State ──────────────────────────
+  const [sectionLayout, setSectionLayout] = useState<ResumeSectionLayout>(() =>
+    parseSectionLayout(initialProfile.interests)
+  );
+
   // ── UI Controls State ──────────────────────────────────────
   const [isEditMode, setIsEditMode] = useState(true);
   const [isSectionSidebarOpen, setIsSectionSidebarOpen] = useState(true);
@@ -93,10 +105,95 @@ export function AdminResumeClient({
     setHasUnsavedChanges(true);
   }, []);
 
+  // ── Dynamic Sections Layout Handlers ───────────────────────
+  const handleMoveSection = useCallback((id: SectionId, direction: 'up' | 'down') => {
+    setSectionLayout(prev => {
+      const inLeft = prev.left.includes(id);
+      const inRight = prev.right.includes(id);
+      const colKey = inLeft ? 'left' : inRight ? 'right' : null;
+      if (!colKey) return prev;
+
+      const list = [...prev[colKey]];
+      const idx = list.indexOf(id);
+      if (idx === -1) return prev;
+      const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= list.length) return prev;
+
+      [list[idx], list[targetIdx]] = [list[targetIdx], list[idx]];
+      return {
+        ...prev,
+        [colKey]: list,
+      };
+    });
+    setHasUnsavedChanges(true);
+    toast.info(
+      `Đã chuyển "${SECTION_META[id]?.label || id}" ${
+        direction === 'up' ? 'lên trên' : 'xuống dưới'
+      }`
+    );
+  }, []);
+
+  const handleSwitchSectionColumn = useCallback((id: SectionId) => {
+    setSectionLayout(prev => {
+      const inLeft = prev.left.includes(id);
+      const inRight = prev.right.includes(id);
+      if (!inLeft && !inRight) return prev;
+
+      if (inLeft) {
+        return {
+          ...prev,
+          left: prev.left.filter(s => s !== id),
+          right: [...prev.right, id],
+        };
+      } else {
+        return {
+          ...prev,
+          right: prev.right.filter(s => s !== id),
+          left: [...prev.left, id],
+        };
+      }
+    });
+    setHasUnsavedChanges(true);
+    toast.info(`Đã đổi cột cho mục "${SECTION_META[id]?.label || id}"`);
+  }, []);
+
+  const handleToggleHideSection = useCallback((id: SectionId) => {
+    setSectionLayout(prev => {
+      const isHidden = prev.hidden.includes(id);
+      if (isHidden) {
+        const defCol = SECTION_META[id]?.defaultColumn || 'left';
+        return {
+          ...prev,
+          hidden: prev.hidden.filter(s => s !== id),
+          [defCol]: [...prev[defCol], id],
+        };
+      } else {
+        return {
+          ...prev,
+          left: prev.left.filter(s => s !== id),
+          right: prev.right.filter(s => s !== id),
+          hidden: [...prev.hidden, id],
+        };
+      }
+    });
+    setHasUnsavedChanges(true);
+    toast.info(`Đã cập nhật hiển thị của "${SECTION_META[id]?.label || id}"`);
+  }, []);
+
+  const handleResetLayout = useCallback(() => {
+    if (window.confirm('Khôi phục lại bố cục và thứ tự mặc định của các mục trên CV?')) {
+      setSectionLayout(DEFAULT_SECTION_LAYOUT);
+      setHasUnsavedChanges(true);
+      toast.info('Đã khôi phục bố cục mặc định.');
+    }
+  }, []);
+
   // ── Save All Uncommitted Changes ───────────────────────────
   const handleSaveAll = () => {
     startSavingTransition(async () => {
       try {
+        const layoutJson = JSON.stringify(sectionLayout);
+
         // Save profile
         const profileRes = await updateProfile({
           name: profile.name,
@@ -112,7 +209,7 @@ export function AdminResumeClient({
           resumeUrl: profile.resumeUrl || undefined,
           avatarUrl: profile.avatarUrl || undefined,
           softSkills: profile.softSkills || undefined,
-          interests: profile.interests || undefined,
+          interests: layoutJson,
         });
 
         if (!profileRes.ok) {
@@ -156,6 +253,7 @@ export function AdminResumeClient({
           }
         }
 
+        setProfile((prev: any) => ({ ...prev, interests: layoutJson }));
         setHasUnsavedChanges(false);
         toast.success('Đã lưu tất cả thay đổi trên CV thành công!');
       } catch (error) {
@@ -176,6 +274,7 @@ export function AdminResumeClient({
       setSpokenLanguages(initialSpokenLanguages);
       setActivities(initialActivities);
       setSkillsByCategory(initialSkillsByCategory);
+      setSectionLayout(parseSectionLayout(initialProfile.interests));
       setHasUnsavedChanges(false);
       toast.info('Đã khôi phục dữ liệu ban đầu.');
     }
@@ -504,6 +603,11 @@ export function AdminResumeClient({
         <ResumeSectionSidebar
           isOpen={isSectionSidebarOpen}
           onToggle={() => setIsSectionSidebarOpen(prev => !prev)}
+          sectionLayout={sectionLayout}
+          onMoveSection={handleMoveSection}
+          onSwitchSectionColumn={handleSwitchSectionColumn}
+          onToggleHideSection={handleToggleHideSection}
+          onResetLayout={handleResetLayout}
           experienceCount={experiences.length}
           educationCount={education.length}
           skillsCount={Object.values(skillsByCategory).reduce((acc, arr) => acc + arr.length, 0)}
@@ -527,7 +631,7 @@ export function AdminResumeClient({
                     Studio Canvas Tương tác:
                   </span>
                   <span className="hidden sm:inline opacity-90">
-                    Dùng thanh Section bên trái để thêm/nhảy mục nhanh. Nhấp trực tiếp vào bất kỳ chữ nào trên giấy CV để sửa.
+                    Dùng các nút [↑] [↓] [⇄] hoặc thanh Sections bên trái để đổi vị trí, chuyển cột hoặc ẩn các mục. Nhấp trực tiếp vào bất kỳ chữ nào để sửa.
                   </span>
                 </div>
                 <button
@@ -552,6 +656,10 @@ export function AdminResumeClient({
               spokenLanguages={spokenLanguages}
               activities={activities}
               skillsByCategory={skillsByCategory}
+              sectionLayout={sectionLayout}
+              onMoveSection={handleMoveSection}
+              onSwitchSectionColumn={handleSwitchSectionColumn}
+              onToggleHideSection={handleToggleHideSection}
               isEditMode={isEditMode}
               activePage={activePage}
               viewMode={viewMode}
