@@ -59,7 +59,7 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
       {groups.map((group, groupIdx) => (
         <SidebarGroup key={group.label || groupIdx} className="py-1">
           {group.label && (
-            <SidebarGroupLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70 px-3 mb-1">
+            <SidebarGroupLabel className="text-[11px] font-bold uppercase tracking-wider text-sidebar-foreground/50 px-3 mb-1">
               {group.label}
             </SidebarGroupLabel>
           )}
@@ -81,20 +81,20 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                         tooltip={item.title}
                         className={`transition-all duration-150 rounded-xl px-3 py-2 text-sm font-medium ${
                           active
-                            ? 'bg-primary text-primary-foreground font-semibold shadow-xs shadow-primary/25 hover:bg-primary hover:text-primary-foreground'
-                            : 'text-foreground/80 hover:bg-muted/80 hover:text-foreground'
+                            ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-xs shadow-sidebar-primary/25 hover:bg-sidebar-primary hover:text-sidebar-primary-foreground'
+                            : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                         }`}
                       >
                         {item.icon && (
                           <item.icon
                             className={`w-4 h-4 shrink-0 transition-colors ${
-                              active ? 'text-primary-foreground' : 'text-muted-foreground'
+                              active ? 'text-sidebar-primary-foreground' : 'text-sidebar-foreground/60'
                             }`}
                           />
                         )}
                         <span className="flex-1 text-left">{item.title}</span>
                         {item.badge != null && (
-                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/20 text-primary">
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-sidebar-primary/20 text-sidebar-primary">
                             {item.badge}
                           </span>
                         )}
@@ -102,7 +102,7 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <SidebarMenuSub className="my-1 ml-4 pl-3 border-l-2 border-border/80 space-y-0.5">
+                      <SidebarMenuSub className="my-1 ml-4 pl-3 border-l-2 border-sidebar-border space-y-0.5">
                         {item.items!.map(subItem => {
                           const subActive = isSubItemActive(subItem.url);
                           return (
@@ -112,8 +112,8 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                                   href={subItem.url}
                                   className={`block rounded-lg px-2.5 py-1.5 text-xs transition-all ${
                                     subActive
-                                      ? 'bg-primary/15 text-primary font-bold shadow-xs'
-                                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                                      ? 'bg-sidebar-primary/20 text-sidebar-primary font-bold shadow-xs'
+                                      : 'text-sidebar-foreground/65 hover:text-sidebar-foreground hover:bg-sidebar-accent'
                                   }`}
                                 >
                                   <span>{subItem.title}</span>
@@ -133,14 +133,14 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                       href={item.url}
                       className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-all duration-150 ${
                         active
-                          ? 'bg-primary text-primary-foreground font-semibold shadow-xs shadow-primary/25 hover:bg-primary hover:text-primary-foreground'
-                          : 'text-foreground/80 hover:bg-muted/80 hover:text-foreground'
+                          ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-xs shadow-sidebar-primary/25 hover:bg-sidebar-primary hover:text-sidebar-primary-foreground'
+                          : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                       }`}
                     >
                       {item.icon && (
                         <item.icon
                           className={`w-4 h-4 shrink-0 transition-colors ${
-                            active ? 'text-primary-foreground' : 'text-muted-foreground'
+                            active ? 'text-sidebar-primary-foreground' : 'text-sidebar-foreground/60'
                           }`}
                         />
                       )}
@@ -149,8 +149,8 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                         <span
                           className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                             active
-                              ? 'bg-primary-foreground text-primary'
-                              : 'bg-primary/20 text-primary'
+                              ? 'bg-sidebar-primary-foreground text-sidebar-primary'
+                              : 'bg-sidebar-primary/20 text-sidebar-primary'
                           }`}
                         >
                           {item.badge}

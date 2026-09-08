@@ -12,7 +12,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { createSeries, updateSeries, type SeriesFormData } from '@/lib/actions/series';
+import { createSeries, updateSeries } from '@/lib/actions/series';
 
 const schema = z.object({
   title: z.string().min(2, 'Title required').max(255),

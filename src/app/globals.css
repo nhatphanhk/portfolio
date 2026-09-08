@@ -104,8 +104,8 @@ body {
 
   --destructive: oklch(0.577 0.245 27.325);
 
-  --border: oklch(0.88 0.03 80);
-  --input: oklch(0.92 0.02 80);
+  --border: oklch(0.85 0.025 80);
+  --input: oklch(0.86 0.025 80);
   --ring: oklch(0.72 0.18 78);
 
   --gold: oklch(0.72 0.18 78);
@@ -119,14 +119,15 @@ body {
   --chart-4: oklch(0.65 0.2 320);
   --chart-5: oklch(0.68 0.18 40);
 
-  --sidebar: oklch(0.96 0.015 80);
-  --sidebar-foreground: oklch(0.16 0.04 255);
-  --sidebar-primary: oklch(0.72 0.18 78);
+  /* Deep Cosmic Navy Sidebar (Option 1) */
+  --sidebar: oklch(0.16 0.055 255);
+  --sidebar-foreground: oklch(0.95 0.02 250);
+  --sidebar-primary: oklch(0.74 0.18 78);
   --sidebar-primary-foreground: oklch(0.12 0.04 255);
-  --sidebar-accent: oklch(0.42 0.22 255);
-  --sidebar-accent-foreground: oklch(0.99 0 0);
-  --sidebar-border: oklch(0.88 0.03 80);
-  --sidebar-ring: oklch(0.72 0.18 78);
+  --sidebar-accent: oklch(0.24 0.05 255);
+  --sidebar-accent-foreground: oklch(0.99 0.01 250);
+  --sidebar-border: oklch(0.25 0.04 255);
+  --sidebar-ring: oklch(0.74 0.18 78);
 }
 
 @layer base {

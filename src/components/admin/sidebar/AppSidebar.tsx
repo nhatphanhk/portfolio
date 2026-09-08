@@ -11,7 +11,6 @@ import {
   Mail,
   LayoutDashboard,
   LayoutTemplate,
-  ShieldCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -125,21 +124,21 @@ export function AppSidebar({
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r border-border/80 bg-sidebar-background text-sidebar-foreground shadow-xs"
+      className="border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-md"
       {...props}
     >
-      <SidebarHeader className="border-b border-border/60 pb-3 pt-3">
+      <SidebarHeader className="border-b border-sidebar-border/80 pb-3 pt-3">
         <div className="flex items-center justify-between px-3 py-1">
           <Link
             href="/admin"
-            className="flex items-center gap-2.5 font-bold text-foreground hover:opacity-90 transition"
+            className="flex items-center gap-2.5 font-bold text-sidebar-foreground hover:opacity-90 transition"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl overflow-hidden border border-border/80 shadow-xs bg-[#ece5dc]">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl overflow-hidden border border-sidebar-border/80 shadow-xs bg-sidebar-accent">
               <Image src="/icon.png" alt="nhatphanhk102" width={32} height={32} className="h-full w-full object-cover" />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-extrabold tracking-tight">nhatphanhk102</span>
-              <span className="text-[10px] text-muted-foreground font-medium">Admin CMS Hub</span>
+              <span className="text-sm font-extrabold tracking-tight text-sidebar-foreground">nhatphanhk102</span>
+              <span className="text-[10px] text-sidebar-foreground/60 font-medium">Admin CMS Hub</span>
             </div>
           </Link>
         </div>
@@ -149,7 +148,7 @@ export function AppSidebar({
         <NavMain groups={navGroups} />
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border/60 pt-2">
+      <SidebarFooter className="border-t border-sidebar-border/80 pt-2">
         <NavUser user={{ name: 'Administrator', email: userEmail, avatar: '' }} />
       </SidebarFooter>
 

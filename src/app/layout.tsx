@@ -6,7 +6,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
-import { SITE_NAME, SITE_DESCRIPTION, SITE_URL, OG_IMAGE } from '@/lib/constants';
+import { SITE_DESCRIPTION, SITE_URL, OG_IMAGE } from '@/lib/constants';
 
 const inter = Inter({
   variable: '--font-inter',

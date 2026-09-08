@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Layers, Plus, Pencil, Trash2, BookOpen } from 'lucide-react';
 import { SeriesDialog } from '@/components/admin/SeriesDialog';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
-import { deleteSeries, type SeriesFormData } from '@/lib/actions/series';
+import { deleteSeries } from '@/lib/actions/series';
 import { useRouter } from 'next/navigation';
 
 type Series = {
