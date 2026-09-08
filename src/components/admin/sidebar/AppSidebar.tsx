@@ -14,6 +14,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 import { NavMain, type NavGroup } from './NavMain';
 import { NavUser } from './NavUser';
@@ -133,12 +134,12 @@ export function AppSidebar({
             href="/admin"
             className="flex items-center gap-2.5 font-bold text-foreground hover:opacity-90 transition"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs shadow-primary/30">
-              <ShieldCheck className="h-4 w-4" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl overflow-hidden border border-border/80 shadow-xs bg-[#ece5dc]">
+              <Image src="/icon.png" alt="nhatphanhk102" width={32} height={32} className="h-full w-full object-cover" />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-extrabold tracking-tight">Admin CMS</span>
-              <span className="text-[10px] text-muted-foreground font-medium">Portfolio Hub</span>
+              <span className="text-sm font-extrabold tracking-tight">nhatphanhk102</span>
+              <span className="text-[10px] text-muted-foreground font-medium">Admin CMS Hub</span>
             </div>
           </Link>
         </div>

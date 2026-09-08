@@ -4,7 +4,7 @@
 // Not the source of truth once the admin has saved real content in the database.
 
 export const PROFILE = {
-  name: 'Nhat Phan',
+  name: 'nhatphanhk102',
   handle: 'nhatphanhk102',
   title: 'Full-Stack Developer',
   tagline: 'Building modern web experiences with clean code and great UX.',
@@ -15,7 +15,7 @@ export const PROFILE = {
   bio2: `When I'm not coding, you'll find me exploring new technologies, contributing 
     to open-source projects, or sharing what I've learned through writing.`,
   location: 'Ho Chi Minh City, Vietnam',
-  email: 'nhatphan@example.com',
+  email: 'nhatphanhk102@example.com',
   resumeUrl: '/resume.pdf',
   avatarUrl: '/avatar.jpg',
   socialLinks: [

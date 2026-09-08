@@ -12,7 +12,9 @@ import { getPublicSkillsByCategory } from '@/lib/actions/skill';
 import { getSiteContentRecord } from '@/lib/actions/site-content';
 
 export const metadata: Metadata = {
-  title: 'Nhat Phan — Full-Stack Developer',
+  title: {
+    absolute: 'nhatphanhk102',
+  },
   description: SITE_DESCRIPTION,
 };
 
