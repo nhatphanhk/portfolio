@@ -27,7 +27,7 @@ const LANGUAGES = [
   { label: 'Docker', value: 'dockerfile' },
 ];
 
-export function CodeBlockComponent({ node, updateAttributes, extension }: NodeViewProps) {
+export function CodeBlockComponent({ node, updateAttributes }: NodeViewProps) {
   const language = node.attrs.language as string || '';
   const [copied, setCopied] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);

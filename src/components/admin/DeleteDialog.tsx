@@ -1,6 +1,7 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -15,15 +16,27 @@ interface DeleteDialogProps {
 
 export function DeleteDialog({ open, onOpenChange, title, description, onConfirm }: DeleteDialogProps) {
   const [isPending, startTransition] = useTransition();
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleDelete = () => {
+    if (isLoading || isPending) return;
+    setIsLoading(true);
     startTransition(async () => {
-      const result = await onConfirm();
-      if (result.ok) {
-        toast.success('Deleted successfully.');
-        onOpenChange(false);
-      } else {
+      try {
+        const result = await onConfirm();
+        if (result?.ok) {
+          toast.success('Deleted successfully.');
+          onOpenChange(false);
+          router.refresh();
+        } else {
+          toast.error('Failed to delete. Please try again.');
+        }
+      } catch (err) {
+        console.error('Delete error:', err);
         toast.error('Failed to delete. Please try again.');
+      } finally {
+        setIsLoading(false);
       }
     });
   };
@@ -47,18 +60,19 @@ export function DeleteDialog({ open, onOpenChange, title, description, onConfirm
         <DialogFooter className="gap-2">
           <button
             type="button"
+            disabled={isPending || isLoading}
             onClick={() => onOpenChange(false)}
-            className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="button"
-            disabled={isPending}
+            disabled={isPending || isLoading}
             onClick={handleDelete}
             className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium hover:bg-destructive/90 disabled:opacity-60 transition-colors"
           >
-            {isPending ? 'Deleting…' : 'Delete'}
+            {isPending || isLoading ? 'Deleting…' : 'Delete'}
           </button>
         </DialogFooter>
       </DialogContent>
