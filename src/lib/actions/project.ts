@@ -117,12 +117,26 @@ export async function updateProject(id: string, formData: ProjectFormData) {
 }
 
 export async function deleteProject(id: string) {
-  await ensureAdmin();
-  const project = await prisma.project.delete({ where: { id } });
-  revalidatePath('/admin/projects');
-  revalidatePath('/project');
-  revalidatePath(`/project/${project.slug}`);
-  return { ok: true };
+  try {
+    await ensureAdmin();
+    const project = await prisma.project.findUnique({
+      where: { id },
+      select: { slug: true },
+    });
+    if (!project) {
+      revalidatePath('/admin/projects');
+      revalidatePath('/project');
+      return { ok: true };
+    }
+    await prisma.project.delete({ where: { id } });
+    revalidatePath('/admin/projects');
+    revalidatePath('/project');
+    revalidatePath(`/project/${project.slug}`);
+    return { ok: true };
+  } catch (error) {
+    console.error('Error deleting project:', error);
+    return { ok: false, error: 'Failed to delete project' };
+  }
 }
 
 export async function getAllProjectsFromDb() {

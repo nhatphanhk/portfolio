@@ -2,14 +2,7 @@ import React from 'react';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { AppSidebar } from '@/components/admin/sidebar/AppSidebar';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
+import { AdminBreadcrumb } from '@/components/admin/AdminBreadcrumb';
 import { Separator } from '@/components/ui/separator';
 import {
   SidebarInset,
@@ -41,17 +34,7 @@ export default async function AdminLayout({
               orientation="vertical"
               className="mr-2 data-[orientation=vertical]:h-4"
             />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/admin">Dashboard</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Admin</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+            <AdminBreadcrumb />
           </div>
         </header>
         <div className="flex-1 min-h-0 w-full overflow-y-auto flex flex-col">

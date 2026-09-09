@@ -149,12 +149,26 @@ export async function updateBlog(id: string, formData: BlogFormData) {
 }
 
 export async function deleteBlog(id: string) {
-  await ensureAdmin();
-  const blog = await prisma.blog.delete({ where: { id } });
-  revalidatePath('/admin/blogs');
-  revalidatePath('/blog');
-  revalidatePath(`/blog/${blog.slug}`);
-  return { ok: true };
+  try {
+    await ensureAdmin();
+    const blog = await prisma.blog.findUnique({
+      where: { id },
+      select: { slug: true },
+    });
+    if (!blog) {
+      revalidatePath('/admin/blogs');
+      revalidatePath('/blog');
+      return { ok: true };
+    }
+    await prisma.blog.delete({ where: { id } });
+    revalidatePath('/admin/blogs');
+    revalidatePath('/blog');
+    revalidatePath(`/blog/${blog.slug}`);
+    return { ok: true };
+  } catch (error) {
+    console.error('Error deleting blog:', error);
+    return { ok: false, error: 'Failed to delete blog' };
+  }
 }
 
 export async function getAllBlogsFromDb() {

@@ -21,13 +21,14 @@ type ContactFormData = z.infer<typeof contactSchema>;
 interface ContactSectionProps {
   profile: Awaited<ReturnType<typeof getProfile>>;
   socialLinks: Array<{ platform: string; url: string; iconName?: string | null }>;
+  hideHeader?: boolean;
 }
 
 /**
  * ContactSection with validated form that submits to the /api/contact endpoint.
  * Uses react-hook-form + zod for validation, sonner for toast notifications.
  */
-export default function ContactSection({ profile, socialLinks }: ContactSectionProps) {
+export default function ContactSection({ profile, socialLinks, hideHeader = false }: ContactSectionProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -65,26 +66,10 @@ export default function ContactSection({ profile, socialLinks }: ContactSectionP
     }
   };
 
-  return (
-    <section id="contact" className="py-24 bg-muted/30">
-      <div className="max-w-5xl mx-auto px-6">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <p className="text-sm font-semibold uppercase tracking-widest text-primary mb-3">
-            Contact
-          </p>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Let&apos;s Work Together
-          </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Have a project in mind or just want to say hello? Send me a message and I&apos;ll get
-            back to you as soon as possible.
-          </p>
-        </div>
-
-        <div className="grid lg:grid-cols-5 gap-12">
-          {/* Form — 3 columns */}
-          <div className="lg:col-span-3">
+  const formAndInfo = (
+    <div className="grid lg:grid-cols-5 gap-12">
+      {/* Form — 3 columns */}
+      <div className="lg:col-span-3">
             <form
               id="contact-form"
               onSubmit={handleSubmit(onSubmit)}
@@ -233,6 +218,28 @@ export default function ContactSection({ profile, socialLinks }: ContactSectionP
             </div>
           </div>
         </div>
+  );
+
+  if (hideHeader) {
+    return <div id="contact" className="w-full">{formAndInfo}</div>;
+  }
+
+  return (
+    <section id="contact" className="py-24 bg-muted/30">
+      <div className="max-w-5xl mx-auto px-6">
+        <div className="text-center mb-16">
+          <p className="text-sm font-semibold uppercase tracking-widest text-primary mb-3">
+            Contact
+          </p>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Let&apos;s Work Together
+          </h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            Have a project in mind or just want to say hello? Send me a message and I&apos;ll get
+            back to you as soon as possible.
+          </p>
+        </div>
+        {formAndInfo}
       </div>
     </section>
   );

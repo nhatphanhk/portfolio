@@ -1,4 +1,5 @@
 import { MainLayout } from '@/components';
+import { UserBreadcrumb } from '@/components/UserBreadcrumb';
 import { getPublicCertifications } from '@/lib/actions/certification';
 import { ExternalLink, Calendar, CheckCircle, XCircle } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -18,7 +19,8 @@ export default async function CertificationsPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-5xl mx-auto px-6 py-24 pt-32">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 pt-32">
+        <UserBreadcrumb items={[{ label: 'Certifications' }]} className="mb-6" />
         {/* Header */}
         <div className="mb-16">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Certifications</h1>

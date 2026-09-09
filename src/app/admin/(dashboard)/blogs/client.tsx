@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { FileText, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { useState, useTransition, useMemo } from 'react';
+import { FileText, Plus, Pencil, Trash2, Loader2, Search, Filter, Link as LinkIcon, ChevronDown } from 'lucide-react';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
+import { PaginationControl } from '@/components/ui/PaginationControl';
 import { deleteBlog, createBlogDraft } from '@/lib/actions/blog';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -20,17 +21,37 @@ type Blog = {
   tags: { tag: { name: string } }[];
 };
 
+const ITEMS_PER_PAGE = 10;
+
 interface AdminBlogsClientProps {
   blogs: Blog[];
 }
 
 export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
   const router = useRouter();
+  const [isCreating, startCreateTransition] = useTransition();
   const [deleteTarget, setDeleteTarget] = useState<Blog | null>(null);
-  const [isCreating, startCreating] = useTransition();
+
+  const [search, setSearch] = useState('');
+  const [slugFilter, setSlugFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [tagFilter, setTagFilter] = useState<string>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Extract all unique tags
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    blogs.forEach(b => b.tags.forEach(t => set.add(t.tag.name)));
+    return Array.from(set).sort();
+  }, [blogs]);
+
+  // Extract all unique slugs for selection
+  const allSlugs = useMemo(() => {
+    return Array.from(new Set(blogs.map(b => b.slug).filter(Boolean))).sort();
+  }, [blogs]);
 
   const handleNewPost = () => {
-    startCreating(async () => {
+    startCreateTransition(async () => {
       const result = await createBlogDraft();
       if (result.ok && result.id) {
         router.push(`/admin/blogs/editor/${result.id}`);
@@ -40,9 +61,32 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
     });
   };
 
+  const filtered = useMemo(() => {
+    return blogs.filter(blog => {
+      if (statusFilter !== 'ALL' && blog.status !== statusFilter) return false;
+      if (tagFilter !== 'ALL' && !blog.tags.some(t => t.tag.name === tagFilter)) return false;
+      if (slugFilter && blog.slug !== slugFilter) return false;
+      if (search.trim()) {
+        const q = search.toLowerCase().trim();
+        const matchTitle = blog.title.toLowerCase().includes(q);
+        const matchSlug = blog.slug.toLowerCase().includes(q);
+        const matchExcerpt = (blog.excerpt ?? '').toLowerCase().includes(q);
+        const matchTag = blog.tags.some(t => t.tag.name.toLowerCase().includes(q));
+        if (!matchTitle && !matchSlug && !matchExcerpt && !matchTag) return false;
+      }
+      return true;
+    });
+  }, [blogs, statusFilter, tagFilter, slugFilter, search]);
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filtered.slice(start, start + ITEMS_PER_PAGE);
+  }, [filtered, currentPage]);
+
   return (
     <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-5xl mx-auto">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Blog Posts</h1>
           <p className="text-sm text-muted-foreground">{blogs.length} posts total</p>
@@ -52,92 +96,204 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
           type="button"
           onClick={handleNewPost}
           disabled={isCreating}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/90 disabled:opacity-60 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/90 disabled:opacity-60 transition-colors self-start sm:self-auto"
         >
           {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           {isCreating ? 'Creating…' : 'New Post'}
         </button>
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl border border-border overflow-hidden">
-        {blogs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+      {/* Search & Filter Bar */}
+      <div className="flex flex-col sm:flex-row items-center gap-3">
+        {/* Search input with clean white background */}
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search blogs by title, excerpt, tag..."
+            value={search}
+            onChange={e => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-border bg-white shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+
+        {/* Slug filter select dropdown */}
+        <div className="relative w-full sm:w-52">
+          <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <select
+            value={slugFilter}
+            onChange={e => {
+              setSlugFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full pl-8 pr-7 py-2 text-xs rounded-xl border border-border bg-white shadow-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 font-mono appearance-none cursor-pointer truncate"
+          >
+            <option value="">All Slugs ({allSlugs.length})</option>
+            {allSlugs.map(slug => (
+              <option key={slug} value={slug}>
+                /{slug}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          {/* Status filter */}
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-white shadow-xs text-xs text-muted-foreground">
+            <Filter className="h-3.5 w-3.5" />
+            <span className="font-medium">Status:</span>
+            <select
+              value={statusFilter}
+              onChange={e => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-transparent text-foreground outline-none font-medium cursor-pointer"
+            >
+              <option value="ALL">All</option>
+              <option value="PUBLISHED">Published</option>
+              <option value="DRAFT">Draft</option>
+              <option value="ARCHIVED">Archived</option>
+            </select>
+          </div>
+
+          {/* Tag filter */}
+          {allTags.length > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-white shadow-xs text-xs text-muted-foreground">
+              <span className="font-medium">Tag:</span>
+              <select
+                value={tagFilter}
+                onChange={e => {
+                  setTagFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-transparent text-foreground outline-none font-medium cursor-pointer max-w-[120px] truncate"
+              >
+                <option value="ALL">All Tags</option>
+                {allTags.map(tag => (
+                  <option key={tag} value={tag}>
+                    {tag}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Table Card Container */}
+      <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
+        {paginated.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground bg-card">
             <FileText className="h-10 w-10 mb-3 opacity-30" />
-            <p>No blog posts yet</p>
-            <p className="text-sm opacity-60 mt-1">Click &quot;New Post&quot; to create your first article</p>
+            <p className="font-medium text-foreground">No blog posts found</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {search || slugFilter || statusFilter !== 'ALL' || tagFilter !== 'ALL'
+                ? 'Try adjusting your search or filters'
+                : 'Click "New Post" to create your first article'}
+            </p>
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Title</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Tags</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Published</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {blogs.map(blog => (
-                <tr key={blog.id} className="bg-card hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className="font-medium text-foreground line-clamp-1">{blog.title}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell">
-                    <div className="flex flex-wrap gap-1">
-                      {blog.tags.slice(0, 3).map(t => (
-                        <span key={t.tag.name} className="px-2 py-0.5 text-xs bg-muted rounded text-muted-foreground">
-                          {t.tag.name}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
-                    {blog.publishedAt
-                      ? new Date(blog.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                      : '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`px-2 py-0.5 text-xs rounded-full ${
-                        blog.status === 'PUBLISHED'
-                          ? 'bg-green-500/10 text-green-600 dark:text-green-400'
-                          : blog.status === 'DRAFT'
-                            ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400'
-                            : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {blog.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1 justify-end">
-                      {/* Edit → redirect to full-page editor */}
-                      <Link
-                        href={`/admin/blogs/editor/${blog.id}`}
-                        aria-label={`Edit ${blog.title}`}
-                        className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Link>
-                      <button
-                        type="button"
-                        aria-label={`Delete ${blog.title}`}
-                        onClick={() => setDeleteTarget(blog)}
-                        className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-md hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/60 border-b border-border">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Title & Slug</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Tags</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Published</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+                  <th className="px-4 py-3" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border bg-card">
+                {paginated.map(blog => (
+                  <tr key={blog.id} className="hover:bg-muted/40 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <FileText className="h-4 w-4 text-primary shrink-0" />
+                        <div>
+                          <span className="font-medium text-foreground line-clamp-1">{blog.title}</span>
+                          <span className="font-mono text-xs text-muted-foreground block mt-0.5">
+                            /{blog.slug}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      <div className="flex flex-wrap gap-1">
+                        {blog.tags.slice(0, 3).map(t => (
+                          <span
+                            key={t.tag.name}
+                            className="px-2 py-0.5 text-xs bg-muted rounded-md font-medium text-muted-foreground border border-border/50"
+                          >
+                            {t.tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
+                      {blog.publishedAt
+                        ? new Date(blog.publishedAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })
+                        : '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-2 py-0.5 text-xs rounded-full font-medium ${
+                          blog.status === 'PUBLISHED'
+                            ? 'bg-green-500/10 text-green-700'
+                            : blog.status === 'DRAFT'
+                              ? 'bg-amber-500/10 text-amber-700'
+                              : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {blog.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1 justify-end">
+                        {/* Edit → redirect to full-page editor */}
+                        <Link
+                          href={`/admin/blogs/editor/${blog.id}`}
+                          aria-label={`Edit ${blog.title}`}
+                          className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Link>
+                        <button
+                          type="button"
+                          aria-label={`Delete ${blog.title}`}
+                          onClick={() => setDeleteTarget(blog)}
+                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {filtered.length > 0 && (
+          <div className="p-4 bg-card">
+            <PaginationControl
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filtered.length}
+              pageSize={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
+            />
+          </div>
         )}
       </div>
 

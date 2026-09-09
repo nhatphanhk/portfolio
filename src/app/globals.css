@@ -83,7 +83,7 @@ body {
 :root {
   --radius: 0.625rem;
 
-  --background: oklch(0.97 0.012 85);
+  --background: oklch(0.958 0.010 85);
   --foreground: oklch(0.16 0.04 255);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.16 0.04 255);
@@ -93,10 +93,10 @@ body {
   --primary: oklch(0.72 0.18 78);
   --primary-foreground: oklch(0.12 0.04 255);
 
-  --secondary: oklch(0.94 0.03 255);
+  --secondary: oklch(0.93 0.025 255);
   --secondary-foreground: oklch(0.3 0.16 255);
 
-  --muted: oklch(0.95 0.015 80);
+  --muted: oklch(0.94 0.012 80);
   --muted-foreground: oklch(0.48 0.05 255);
 
   --accent: oklch(0.42 0.22 255);
