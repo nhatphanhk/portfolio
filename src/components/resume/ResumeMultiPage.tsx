@@ -5,6 +5,7 @@ import { ResumeCard3D } from '@/components/ui/ResumeCard3D';
 import { MapPin, Mail, Phone, Layers, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import DynamicIcon from '@/components/ui/DynamicIcon';
 import { SectionId, parseSectionLayout, DEFAULT_HARVARD_ORDER } from '@/lib/resume-layout';
+import { useLanguage } from '@/lib/i18n/context';
 
 const CATEGORY_LABELS: Record<string, string> = {
   LANGUAGE: 'Programming Languages',
@@ -44,6 +45,14 @@ export interface ProfileData {
   resumeUrl?: string | null;
   softSkills?: string | null;
   interests?: string | null;
+  translations?: {
+    en?: {
+      title?: string;
+      bio?: string;
+      careerObjective?: string;
+      softSkills?: string;
+    };
+  };
 }
 
 export interface ExperienceData {
@@ -56,6 +65,13 @@ export interface ExperienceData {
   startDate: Date | string;
   endDate?: Date | string | null;
   isCurrent: boolean;
+  translations?: {
+    en?: {
+      position?: string;
+      description?: string;
+      achievements?: string;
+    };
+  };
 }
 
 export interface EducationData {
@@ -190,8 +206,8 @@ interface HarvardPageData {
 }
 
 export function ResumeMultiPage({
-  profile,
-  experiences,
+  profile: rawProfile,
+  experiences: rawExperiences,
   socialLinks,
   education,
   skillsByCategory,
@@ -199,6 +215,34 @@ export function ResumeMultiPage({
   spokenLanguages = [],
   activities = [],
 }: ResumeMultiPageProps) {
+  const { isEn } = useLanguage();
+
+  const profile = useMemo(() => {
+    if (!isEn || !rawProfile.translations?.en) return rawProfile;
+    const en = rawProfile.translations.en;
+    return {
+      ...rawProfile,
+      title: en.title || rawProfile.title,
+      bio: en.bio || rawProfile.bio,
+      careerObjective: en.careerObjective || rawProfile.careerObjective,
+      softSkills: en.softSkills || rawProfile.softSkills,
+    };
+  }, [rawProfile, isEn]);
+
+  const experiences = useMemo(() => {
+    if (!isEn) return rawExperiences;
+    return rawExperiences.map(exp => {
+      const en = exp.translations?.en;
+      if (!en) return exp;
+      return {
+        ...exp,
+        position: en.position || exp.position,
+        description: en.description ?? exp.description,
+        achievements: en.achievements ?? exp.achievements,
+      };
+    });
+  }, [rawExperiences, isEn]);
+
   const [activePageTab, setActivePageTab] = useState<number>(1);
   const [viewMode, setViewMode] = useState<'stack' | 'paged'>('stack');
 

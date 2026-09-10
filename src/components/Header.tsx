@@ -39,6 +39,7 @@ const Header = () => {
   const pathname = usePathname();
   const { t } = useLanguage();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const getNavLabel = (name: string): string => {
@@ -59,9 +60,28 @@ const Header = () => {
   const isDarkHero = isHome && !isScrolled;
 
   useEffect(() => {
+    let lastY = window.scrollY;
+
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 40);
+      const currentY = window.scrollY;
+      const atTop = currentY < 80;
+
+      setIsScrolled(!atTop);
+
+      if (atTop) {
+        // Always show at the very top
+        setIsHidden(false);
+      } else if (currentY > lastY + 4) {
+        // Scrolling DOWN — hide header
+        setIsHidden(true);
+      } else if (currentY < lastY - 4) {
+        // Scrolling UP — show header
+        setIsHidden(false);
+      }
+
+      lastY = currentY;
     };
+
     handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
@@ -88,15 +108,17 @@ const Header = () => {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
+        isHidden ? '-translate-y-full' : 'translate-y-0'
+      } ${
         isDarkHero
           ? 'bg-transparent'
-          : 'bg-white/90 backdrop-blur-md border-b border-border/80 shadow-xs'
+          : 'backdrop-blur-md border-b border-border/80 shadow-sm'
       }`}
       style={
         isDarkHero
           ? {}
           : {
-              background: 'oklch(0.98 0.01 85 / 90%)',
+              background: 'oklch(0.98 0.01 85 / 93%)',
               borderColor: 'oklch(0.88 0.03 80 / 80%)',
             }
       }
@@ -137,9 +159,8 @@ const Header = () => {
             {/* Eye-Catching Name Typography */}
             <div className="flex items-center gap-1.5">
               <span
-                className={`text-lg font-black tracking-tight transition-colors ${
-                  isDarkHero ? 'text-white' : 'text-slate-900'
-                }`}
+                className={`text-lg font-black tracking-tight transition-colors ${isDarkHero ? 'text-white' : 'text-slate-900'
+                  }`}
                 style={{
                   textShadow: isDarkHero
                     ? '0 2px 16px rgba(0,0,0,0.8), 0 0 20px rgba(251,191,36,0.2)'
@@ -171,26 +192,24 @@ const Header = () => {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold tracking-wide rounded-full transition-all duration-200 ${
-                    isActive
-                      ? isDarkHero
-                        ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 shadow-[0_4px_16px_rgba(245,158,11,0.4)] scale-105'
-                        : 'bg-primary text-primary-foreground shadow-sm scale-105'
-                      : isDarkHero
+                  className={`group relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold tracking-wide rounded-full transition-all duration-200 ${isActive
+                    ? isDarkHero
+                      ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 shadow-[0_4px_16px_rgba(245,158,11,0.4)] scale-105'
+                      : 'bg-primary text-primary-foreground shadow-sm scale-105'
+                    : isDarkHero
                       ? 'text-white/80 hover:text-white hover:bg-white/10 hover:scale-105'
                       : 'text-slate-600 hover:text-slate-950 hover:bg-black/5 hover:scale-105'
-                  }`}
+                    }`}
                 >
                   <Icon
-                    className={`w-3.5 h-3.5 transition-transform duration-200 group-hover:rotate-6 ${
-                      isActive
-                        ? isDarkHero
-                          ? 'text-slate-950'
-                          : 'text-primary-foreground'
-                        : isDarkHero
+                    className={`w-3.5 h-3.5 transition-transform duration-200 group-hover:rotate-6 ${isActive
+                      ? isDarkHero
+                        ? 'text-slate-950'
+                        : 'text-primary-foreground'
+                      : isDarkHero
                         ? 'text-amber-300/90 group-hover:text-amber-300'
                         : 'text-amber-600 group-hover:text-amber-500'
-                    }`}
+                      }`}
                   />
                   <span>{getNavLabel(item.name)}</span>
                 </Link>
@@ -208,11 +227,10 @@ const Header = () => {
               id="mobile-menu-toggle"
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className={`p-2 rounded-xl border transition-all duration-200 ${
-                isDarkHero
-                  ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
-                  : 'bg-black/5 border-black/10 text-gray-900 hover:bg-black/10'
-              }`}
+              className={`p-2 rounded-xl border transition-all duration-200 ${isDarkHero
+                ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                : 'bg-black/5 border-black/10 text-gray-900 hover:bg-black/10'
+                }`}
               aria-label="Toggle navigation menu"
               aria-expanded={isMobileMenuOpen}
             >
@@ -227,18 +245,16 @@ const Header = () => {
 
         {/* ── Mobile Navigation Drawer ── */}
         <div
-          className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${
-            isMobileMenuOpen
-              ? 'max-h-[32rem] opacity-100 pb-4'
-              : 'max-h-0 opacity-0 pointer-events-none'
-          }`}
+          className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${isMobileMenuOpen
+            ? 'max-h-[32rem] opacity-100 pb-4'
+            : 'max-h-0 opacity-0 pointer-events-none'
+            }`}
         >
           <div
-            className={`p-3 rounded-2xl border shadow-2xl flex flex-col gap-1.5 ${
-              isDarkHero
-                ? 'bg-slate-950/95 backdrop-blur-2xl border-white/20 text-white shadow-[0_12px_40px_rgba(0,0,0,0.8)]'
-                : 'bg-white/95 backdrop-blur-2xl border-black/10 text-gray-900 shadow-xl'
-            }`}
+            className={`p-3 rounded-2xl border shadow-2xl flex flex-col gap-1.5 ${isDarkHero
+              ? 'bg-slate-950/95 backdrop-blur-2xl border-white/20 text-white shadow-[0_12px_40px_rgba(0,0,0,0.8)]'
+              : 'bg-white/95 backdrop-blur-2xl border-black/10 text-gray-900 shadow-xl'
+              }`}
           >
             {NAV_LINKS.map(item => {
               const isActive = isItemActive(item.href);
@@ -248,35 +264,32 @@ const Header = () => {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center justify-between px-4 py-2.5 text-xs font-bold rounded-xl transition-all ${
-                    isActive
-                      ? isDarkHero
-                        ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 shadow-md'
-                        : 'bg-primary text-primary-foreground shadow-sm'
-                      : isDarkHero
+                  className={`flex items-center justify-between px-4 py-2.5 text-xs font-bold rounded-xl transition-all ${isActive
+                    ? isDarkHero
+                      ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 shadow-md'
+                      : 'bg-primary text-primary-foreground shadow-sm'
+                    : isDarkHero
                       ? 'text-white/80 hover:text-white hover:bg-white/10'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-black/5'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <Icon
-                      className={`w-4 h-4 ${
-                        isActive
-                          ? isDarkHero
-                            ? 'text-slate-950'
-                            : 'text-primary-foreground'
-                          : isDarkHero
+                      className={`w-4 h-4 ${isActive
+                        ? isDarkHero
+                          ? 'text-slate-950'
+                          : 'text-primary-foreground'
+                        : isDarkHero
                           ? 'text-amber-400'
                           : 'text-amber-600'
-                      }`}
+                        }`}
                     />
                     <span>{getNavLabel(item.name)}</span>
                   </div>
                   {isActive && (
                     <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        isDarkHero ? 'bg-slate-950' : 'bg-primary-foreground'
-                      }`}
+                      className={`w-1.5 h-1.5 rounded-full ${isDarkHero ? 'bg-slate-950' : 'bg-primary-foreground'
+                        }`}
                     />
                   )}
                 </Link>

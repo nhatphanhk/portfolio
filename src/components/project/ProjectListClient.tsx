@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ExternalLink, Github, Search, FolderCode } from 'lucide-react';
 import { PaginationControl } from '@/components/ui/PaginationControl';
+import { useLanguage } from '@/lib/i18n/context';
 
 export type PublicProject = {
   id: string;
@@ -18,6 +19,13 @@ export type PublicProject = {
   featured: boolean;
   technologies: string[];
   publishedAt: string;
+  translations?: {
+    en?: {
+      title?: string;
+      description?: string;
+      content?: string;
+    };
+  };
 };
 
 const ITEMS_PER_PAGE = 6;
@@ -27,6 +35,7 @@ interface ProjectListClientProps {
 }
 
 export function ProjectListClient({ projects }: ProjectListClientProps) {
+  const { isEn } = useLanguage();
   const [search, setSearch] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,12 +55,17 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
         return false;
       }
 
-      // Search query (matches title, slug, description, or technologies)
+      // Search query (matches title, slug, description, or technologies, in both VI and EN)
       if (search.trim()) {
         const q = search.toLowerCase().trim();
-        const matchTitle = project.title.toLowerCase().includes(q);
+        const transEn = project.translations?.en;
+        const matchTitle =
+          project.title.toLowerCase().includes(q) ||
+          (transEn?.title ? transEn.title.toLowerCase().includes(q) : false);
         const matchSlug = project.slug.toLowerCase().includes(q);
-        const matchDesc = (project.description ?? '').toLowerCase().includes(q);
+        const matchDesc =
+          (project.description ?? '').toLowerCase().includes(q) ||
+          (transEn?.description ? transEn.description.toLowerCase().includes(q) : false);
         const matchTech = project.technologies.some(t => t.toLowerCase().includes(q));
         if (!matchTitle && !matchSlug && !matchDesc && !matchTech) return false;
       }
@@ -177,60 +191,70 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-6">
-          {paginatedProjects.map(project => (
-            <article
-              key={project.id}
-              className="group flex flex-col justify-between p-7 rounded-2xl border border-border bg-card hover:border-foreground/20 hover:shadow-md transition-all duration-200"
-            >
-              <div>
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Link
-                      href={`/project/${project.slug}`}
-                      className="text-xl font-semibold text-foreground hover:text-primary transition-colors line-clamp-1"
-                    >
-                      {project.title}
-                    </Link>
-                    {project.featured && (
-                      <span className="px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider rounded-full bg-primary/10 text-primary border border-primary/20">
-                        ★ Featured
-                      </span>
-                    )}
+          {paginatedProjects.map(project => {
+            const projectTitle =
+              isEn && project.translations?.en?.title
+                ? project.translations.en.title
+                : project.title;
+            const projectDesc =
+              isEn && project.translations?.en?.description !== undefined
+                ? project.translations.en.description
+                : project.description;
+
+            return (
+              <article
+                key={project.id}
+                className="group flex flex-col justify-between p-7 rounded-2xl border border-border bg-card hover:border-foreground/20 hover:shadow-md transition-all duration-200"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Link
+                        href={`/project/${project.slug}`}
+                        className="text-xl font-semibold text-foreground hover:text-primary transition-colors line-clamp-1"
+                      >
+                        {projectTitle}
+                      </Link>
+                      {project.featured && (
+                        <span className="px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider rounded-full bg-primary/10 text-primary border border-primary/20">
+                          ★ Featured
+                        </span>
+                      )}
+                    </div>
+
+                    {/* External links */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {project.repoUrl && (
+                        <a
+                          href={project.repoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="GitHub repository"
+                          className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
+                        >
+                          <Github className="h-4 w-4" />
+                        </a>
+                      )}
+                      {project.demoUrl && (
+                        <a
+                          href={project.demoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Live demo"
+                          className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
                   </div>
 
-                  {/* External links */}
-                  <div className="flex items-center gap-1 shrink-0">
-                    {project.repoUrl && (
-                      <a
-                        href={project.repoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="GitHub repository"
-                        className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
-                      >
-                        <Github className="h-4 w-4" />
-                      </a>
-                    )}
-                    {project.demoUrl && (
-                      <a
-                        href={project.demoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="Live demo"
-                        className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    )}
-                  </div>
+                  {projectDesc && (
+                    <p className="text-muted-foreground mb-6 leading-relaxed text-xs line-clamp-2">
+                      {projectDesc}
+                    </p>
+                  )}
                 </div>
-
-                {project.description && (
-                  <p className="text-muted-foreground mb-6 leading-relaxed text-xs line-clamp-2">
-                    {project.description}
-                  </p>
-                )}
-              </div>
 
               <div>
                 {/* Tech tags */}
@@ -261,7 +285,8 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
                 </div>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       )}
 

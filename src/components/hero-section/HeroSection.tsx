@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Download, ArrowRight, ChevronDown } from 'lucide-react';
 import gsap from 'gsap';
 import DynamicIcon from '@/components/ui/DynamicIcon';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface HeroSectionProps {
   profile: {
@@ -13,14 +14,23 @@ interface HeroSectionProps {
     tagline?: string;
     resumeUrl?: string;
     avatarUrl?: string;
+    translations?: {
+      en?: {
+        title?: string;
+        bio?: string;
+      };
+    };
   };
   socialLinks: Array<{ platform: string; url: string; iconName?: string | null }>;
   content?: Record<string, string>;
 }
 
 export function HeroSection({ profile, socialLinks, content }: HeroSectionProps) {
+  const { isEn } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
+
+  const displayTitle = isEn && profile.translations?.en?.title ? profile.translations.en.title : profile.title;
 
   // ── Three.js Cosmic Starfield with Soft Circular Sprites ──────────────────
   useEffect(() => {
@@ -242,7 +252,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
               textShadow: '0 2px 20px rgba(0, 0, 0, 0.7)',
             }}
           >
-            {profile.title}
+            {displayTitle}
           </p>
 
           {/* Divider accent line */}

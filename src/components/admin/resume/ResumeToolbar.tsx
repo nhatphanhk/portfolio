@@ -15,6 +15,7 @@ import {
   SlidersHorizontal,
   FileUp,
   Sparkles,
+  Languages,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -38,6 +39,7 @@ interface ResumeToolbarProps {
   onToggleSectionSidebar?: () => void;
   onOpenPdfDialog?: () => void;
   onOpenConvertDialog?: () => void;
+  onOpenTranslateDialog?: () => void;
   templateStyle?: ResumeTemplateStyle;
   onSelectTemplateStyle?: (style: ResumeTemplateStyle) => void;
 }
@@ -59,6 +61,7 @@ export function ResumeToolbar({
   onToggleSectionSidebar,
   onOpenPdfDialog,
   onOpenConvertDialog,
+  onOpenTranslateDialog,
   templateStyle = 'harvard',
   onSelectTemplateStyle,
 }: ResumeToolbarProps) {
@@ -235,6 +238,21 @@ export function ResumeToolbar({
           </Button>
 
           <div className="hidden md:block h-5 w-px bg-border/80 mx-1" />
+
+          {/* AI Translation Dialog Button */}
+          {onOpenTranslateDialog && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onOpenTranslateDialog}
+              className="text-xs h-8 gap-1.5 border-primary/30 text-primary hover:bg-primary/10 font-semibold transition-all"
+              title="Quản lý và tạo bản dịch Tiếng Anh (EN) cho CV / Resume"
+            >
+              <Languages className="w-3.5 h-3.5" />
+              <span>Dịch AI (EN)</span>
+            </Button>
+          )}
 
           {/* Convert PDF to CV Button */}
           {onOpenConvertDialog && (

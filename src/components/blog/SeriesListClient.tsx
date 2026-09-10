@@ -12,6 +12,12 @@ export interface SeriesListItem {
   slug: string;
   description: string | null;
   coverUrl?: string | null;
+  translations?: {
+    en?: {
+      title?: string;
+      description?: string;
+    };
+  };
   blogs: {
     id: string;
     title: string;
@@ -25,17 +31,22 @@ interface SeriesListClientProps {
 }
 
 export function SeriesListClient({ seriesList }: SeriesListClientProps) {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const [search, setSearch] = useState('');
 
   const filteredSeries = useMemo(() => {
     if (!search.trim()) return seriesList;
     const q = search.toLowerCase().trim();
-    return seriesList.filter(
-      s =>
+    return seriesList.filter(s => {
+      const transEn = s.translations?.en;
+      const matchTitle =
         s.title.toLowerCase().includes(q) ||
-        (s.description && s.description.toLowerCase().includes(q))
-    );
+        (transEn?.title ? transEn.title.toLowerCase().includes(q) : false);
+      const matchDesc =
+        (s.description && s.description.toLowerCase().includes(q)) ||
+        (transEn?.description ? transEn.description.toLowerCase().includes(q) : false);
+      return matchTitle || matchDesc;
+    });
   }, [seriesList, search]);
 
   return (
@@ -91,15 +102,29 @@ export function SeriesListClient({ seriesList }: SeriesListClientProps) {
                 {/* Series Content */}
                 <div className="p-6 sm:p-7 flex-1 flex flex-col justify-between">
                   <div>
-                    <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1">
-                      {series.title}
-                    </h2>
+                    {(() => {
+                      const seriesTitle =
+                        isEn && series.translations?.en?.title
+                          ? series.translations.en.title
+                          : series.title;
+                      const seriesDesc =
+                        isEn && series.translations?.en?.description !== undefined
+                          ? series.translations.en.description
+                          : series.description;
+                      return (
+                        <>
+                          <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1">
+                            {seriesTitle}
+                          </h2>
 
-                    {series.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-6">
-                        {series.description}
-                      </p>
-                    )}
+                          {seriesDesc && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-6">
+                              {seriesDesc}
+                            </p>
+                          )}
+                        </>
+                      );
+                    })()}
 
                     {/* Preview of Parts */}
                     {series.blogs.length > 0 && (

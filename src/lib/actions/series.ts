@@ -137,9 +137,9 @@ export async function getAllSeries() {
   }
 }
 
-export const getPublicSeries = cache(async () => {
+export const getPublicSeries = cache(async (locale: 'vi' | 'en' = 'vi') => {
   try {
-    return await prisma.blogSeries.findMany({
+    const seriesList = await prisma.blogSeries.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
         blogs: {
@@ -153,13 +153,36 @@ export const getPublicSeries = cache(async () => {
         },
       },
     });
+
+    const { getBatchEntityTranslationsFromDb } = await import('@/lib/gemini-translate');
+    const translationMap = await getBatchEntityTranslationsFromDb(
+      'series',
+      seriesList.map(s => s.id),
+      'en'
+    );
+
+    const isEn = locale === 'en';
+    return seriesList.map(s => {
+      const trans = translationMap.get(s.id);
+      return {
+        ...s,
+        title: isEn && trans?.title ? trans.title : s.title,
+        description: isEn && trans?.description !== undefined ? trans.description : s.description,
+        translations: trans ? {
+          en: {
+            title: trans.title || undefined,
+            description: trans.description ?? undefined,
+          },
+        } : undefined,
+      };
+    });
   } catch (error) {
     console.error('Error fetching public series:', error);
     return [];
   }
 });
 
-export const getSeriesForBlog = cache(async (blogId: string) => {
+export const getSeriesForBlog = cache(async (blogId: string, locale: 'vi' | 'en' = 'vi') => {
   try {
     const blog = await prisma.blog.findUnique({
       where: { id: blogId },
@@ -190,8 +213,17 @@ export const getSeriesForBlog = cache(async (blogId: string) => {
 
     if (!blog?.series) return null;
 
+    let seriesTitle = blog.series.title;
+    if (locale === 'en' && blog.seriesId) {
+      const { getEntityTranslationFromDb } = await import('@/lib/gemini-translate');
+      const trans = await getEntityTranslationFromDb('series', blog.seriesId, 'en');
+      if (trans?.title) {
+        seriesTitle = trans.title;
+      }
+    }
+
     return {
-      seriesTitle: blog.series.title,
+      seriesTitle,
       seriesSlug: blog.series.slug,
       currentBlogId: blogId,
       currentIndex: blog.series.blogs.findIndex(b => b.id === blogId),
@@ -204,7 +236,7 @@ export const getSeriesForBlog = cache(async (blogId: string) => {
   }
 });
 
-export const getPublicSeriesBySlug = cache(async (slug: string) => {
+export const getPublicSeriesBySlug = cache(async (slug: string, locale: 'vi' | 'en' = 'vi') => {
   try {
     const series = await prisma.blogSeries.findUnique({
       where: { slug },
@@ -225,14 +257,27 @@ export const getPublicSeriesBySlug = cache(async (slug: string) => {
 
     if (!series) return null;
 
+    const { getEntityTranslationFromDb } = await import('@/lib/gemini-translate');
+    const trans = await getEntityTranslationFromDb('series', series.id, 'en');
+
+    const isEn = locale === 'en';
+    const title = isEn && trans?.title ? trans.title : series.title;
+    const description = isEn && trans?.description !== undefined ? trans.description : series.description;
+
     return {
       id: series.id,
-      title: series.title,
+      title,
       slug: series.slug,
-      description: series.description,
+      description,
       coverUrl: series.coverUrl,
       createdAt: series.createdAt.toISOString(),
       updatedAt: series.updatedAt.toISOString(),
+      translations: trans ? {
+        en: {
+          title: trans.title || undefined,
+          description: trans.description ?? undefined,
+        },
+      } : undefined,
       blogs: series.blogs.map(b => ({
         id: b.id,
         title: b.title,
@@ -392,4 +437,75 @@ export async function compactSeriesOrders(seriesId: string, excludeBlogId?: stri
     await Promise.all(updates);
   }
 }
+
+/** Action to preview/translate a series using Gemini AI */
+export async function previewTranslateSeriesAction(
+  seriesId: string,
+  targetLocale: 'vi' | 'en' = 'en',
+  currentContent?: { title: string; description?: string | null },
+  customApiKey?: string
+): Promise<{ ok: boolean; data?: { title: string; description: string }; error?: string }> {
+  await ensureAdmin();
+  try {
+    let sourceData = currentContent;
+    if (!sourceData || !sourceData.title) {
+      const series = await prisma.blogSeries.findUnique({
+        where: { id: seriesId },
+        select: { title: true, description: true },
+      });
+      if (!series) {
+        return { ok: false, error: 'Series not found' };
+      }
+      sourceData = series;
+    }
+
+    const { generateSeriesTranslationWithDetails } = await import('@/lib/gemini-translate');
+    const result = await generateSeriesTranslationWithDetails(sourceData, targetLocale, customApiKey);
+
+    if (!result.ok || !result.data) {
+      return { ok: false, error: result.error || 'Series translation failed' };
+    }
+
+    return { ok: true, data: result.data };
+  } catch (error: any) {
+    console.error('previewTranslateSeriesAction error:', error);
+    return { ok: false, error: error?.message || 'Error translating series' };
+  }
+}
+
+/** Action to save series translation to PostgreSQL DB */
+export async function saveSeriesTranslationAction(
+  seriesId: string,
+  data: { title: string; description?: string },
+  targetLocale: 'vi' | 'en' = 'en'
+): Promise<{ ok: boolean; error?: string }> {
+  await ensureAdmin();
+  try {
+    const { saveEntityTranslationToDb } = await import('@/lib/gemini-translate');
+    const success = await saveEntityTranslationToDb('series', seriesId, data, targetLocale);
+    if (!success) {
+      return { ok: false, error: 'Failed to save series translation' };
+    }
+
+    revalidatePath('/blog/series');
+    revalidatePath('/admin/blogs/series');
+    return { ok: true };
+  } catch (error) {
+    console.error('saveSeriesTranslationAction error:', error);
+    return { ok: false, error: 'Failed to save series translation' };
+  }
+}
+
+/** Get all saved translations for a series */
+export async function getSeriesTranslations(seriesId: string) {
+  try {
+    return await prisma.contentTranslation.findMany({
+      where: { entityType: 'series', entityId: seriesId },
+    });
+  } catch (err) {
+    console.error('getSeriesTranslations error:', err);
+    return [];
+  }
+}
+
 

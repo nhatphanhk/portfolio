@@ -34,6 +34,12 @@ export interface SeriesDetailData {
   coverUrl?: string | null;
   createdAt: string;
   updatedAt: string;
+  translations?: {
+    en?: {
+      title?: string;
+      description?: string;
+    };
+  };
   blogs: SeriesDetailPost[];
 }
 
@@ -42,7 +48,17 @@ interface SeriesDetailClientProps {
 }
 
 export function SeriesDetailClient({ series }: SeriesDetailClientProps) {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
+
+  const title =
+    isEn && series.translations?.en?.title
+      ? series.translations.en.title
+      : series.title;
+
+  const description =
+    isEn && series.translations?.en?.description !== undefined
+      ? series.translations.en.description
+      : series.description;
 
   // Compute total read time in minutes
   const totalMinutes = series.blogs.reduce((acc, b) => {
@@ -61,7 +77,7 @@ export function SeriesDetailClient({ series }: SeriesDetailClientProps) {
           <div className="relative h-64 sm:h-80 w-full overflow-hidden">
             <Image
               src={series.coverUrl}
-              alt={series.title}
+              alt={title}
               fill
               priority
               className="object-cover"
@@ -69,30 +85,30 @@ export function SeriesDetailClient({ series }: SeriesDetailClientProps) {
             <div className="absolute inset-0 bg-gradient-to-t from-card via-card/75 to-transparent" />
           </div>
         ) : (
-          <div className="h-28 sm:h-36 w-full bg-gradient-to-r from-primary/20 via-amber-500/10 to-primary/5 border-b border-border/50" />
+          <div className="h-28 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent" />
         )}
 
         {/* Hero Content */}
-        <div className="relative p-6 sm:p-10 -mt-10 sm:-mt-16 z-10">
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-xs">
+        <div className="p-6 sm:p-10 -mt-12 relative z-10">
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-primary/15 text-primary border border-primary/20">
               <Layers className="w-3.5 h-3.5" />
               {series.blogs.length}{' '}
               {series.blogs.length === 1 ? t('common.part') : t('common.parts')}
             </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-              <Clock className="w-3 h-3" />
+            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" />
               ~{totalMinutes} {t('common.readingTime')}
             </span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground tracking-tight mb-4 leading-tight">
-            {series.title}
+            {title}
           </h1>
 
-          {series.description && (
+          {description && (
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-3xl mb-8">
-              {series.description}
+              {description}
             </p>
           )}
 
