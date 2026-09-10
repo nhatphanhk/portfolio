@@ -113,7 +113,7 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
               {...register('title')}
               onBlur={onTitleBlur}
               placeholder="Full-Stack Web Development Series"
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
             {errors.title && <p className="text-xs text-destructive mt-1">{errors.title.message}</p>}
           </div>
@@ -123,7 +123,7 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
             <input
               {...register('tags')}
               placeholder="React, Next.js, Architecture (comma separated)"
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
             <p className="text-[11px] text-muted-foreground mt-1">
               Used for organizing and filtering series by technology or topic.
@@ -136,7 +136,7 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
               {...register('description')}
               rows={3}
               placeholder="A comprehensive guide to building modern full-stack web applications..."
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
             />
             {errors.description && (
               <p className="text-xs text-destructive mt-1">{errors.description.message}</p>
@@ -148,7 +148,7 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
             <input
               {...register('coverUrl')}
               placeholder="https://..."
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
             {errors.coverUrl && (
               <p className="text-xs text-destructive mt-1">{errors.coverUrl.message}</p>

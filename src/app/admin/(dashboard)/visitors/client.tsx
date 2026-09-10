@@ -178,11 +178,11 @@ export function VisitorLogsClient({ logs }: Props) {
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-border bg-background shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
+            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-border bg-card shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
           />
         </div>
 
-        <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-background shadow-xs text-xs text-muted-foreground w-full sm:w-auto transition-colors">
+        <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-card shadow-xs text-xs text-muted-foreground w-full sm:w-auto transition-colors">
           <Filter className="h-3.5 w-3.5" />
           <span className="font-medium">Filter Time:</span>
           <select

@@ -432,7 +432,7 @@ export function ResumeItemDialog({
                 <select
                   value={formData.level || 'Fluent'}
                   onChange={e => setFormData({ ...formData, level: e.target.value })}
-                  className="w-full h-9 px-3 text-sm rounded-md border border-input bg-background text-foreground shadow-xs focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+                  className="w-full h-9 px-3 text-sm rounded-md border border-input bg-card text-foreground shadow-xs focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
                 >
                   <option value="Native">Bản ngữ (Native)</option>
                   <option value="Fluent">Thành thạo (Fluent / C1-C2)</option>
@@ -506,7 +506,7 @@ export function ResumeItemDialog({
                   <select
                     value={formData.category || 'FRAMEWORK'}
                     onChange={e => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full h-9 px-3 text-sm rounded-md border border-input bg-background text-foreground shadow-xs focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
+                    className="w-full h-9 px-3 text-sm rounded-md border border-input bg-card text-foreground shadow-xs focus:ring-2 focus:ring-primary/25 focus:border-primary transition"
                   >
                     {SKILL_CATEGORIES.map(cat => (
                       <option key={cat} value={cat}>

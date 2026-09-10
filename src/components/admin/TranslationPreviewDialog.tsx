@@ -381,7 +381,7 @@ export function TranslationPreviewDialog({
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     placeholder="Tìm từ khóa..."
-                    className="w-36 lg:w-44 pl-7 pr-2 py-1 text-xs rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs transition-colors"
+                    className="w-36 lg:w-44 pl-7 pr-2 py-1 text-xs rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs transition-colors"
                   />
                   {searchQuery && (
                     <button

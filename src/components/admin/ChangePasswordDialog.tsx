@@ -71,7 +71,7 @@ export function ChangePasswordDialog({ open, onOpenChange }: { open: boolean, on
               <input
                 type={showCurrent ? 'text' : 'password'}
                 {...register('currentPassword')}
-                className="w-full pl-3 pr-10 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full pl-3 pr-10 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                 {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -86,7 +86,7 @@ export function ChangePasswordDialog({ open, onOpenChange }: { open: boolean, on
               <input
                 type={showNew ? 'text' : 'password'}
                 {...register('newPassword')}
-                className="w-full pl-3 pr-10 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full pl-3 pr-10 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                 {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -100,7 +100,7 @@ export function ChangePasswordDialog({ open, onOpenChange }: { open: boolean, on
             <input
               type={showNew ? 'text' : 'password'}
               {...register('confirmPassword')}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
             {errors.confirmPassword && <p className="text-xs text-destructive mt-1">{errors.confirmPassword.message}</p>}
           </div>

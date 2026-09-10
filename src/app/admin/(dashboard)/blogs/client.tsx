@@ -130,7 +130,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-border bg-background shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
+            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-border bg-card shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
           />
         </div>
 
@@ -143,7 +143,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
               setSeriesFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-8 pr-7 py-2 text-xs rounded-xl border border-border bg-background shadow-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 appearance-none cursor-pointer truncate transition-colors"
+            className="w-full pl-8 pr-7 py-2 text-xs rounded-xl border border-border bg-card shadow-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 appearance-none cursor-pointer truncate transition-colors"
           >
             <option value="ALL">All Series ({allSeries.length})</option>
             <option value="NONE">No Series (Standalone)</option>
@@ -158,7 +158,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
 
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {/* Status filter */}
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-background shadow-xs text-xs text-muted-foreground transition-colors">
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-card shadow-xs text-xs text-muted-foreground transition-colors">
             <Filter className="h-3.5 w-3.5" />
             <span className="font-medium">Status:</span>
             <select
@@ -178,7 +178,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
 
           {/* Tag filter */}
           {allTags.length > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-background shadow-xs text-xs text-muted-foreground transition-colors">
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-card shadow-xs text-xs text-muted-foreground transition-colors">
               <span className="font-medium">Tag:</span>
               <select
                 value={tagFilter}

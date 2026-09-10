@@ -85,19 +85,19 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Title *</label>
-              <input {...register('title')} onBlur={onTitleBlur} placeholder="My Project" className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <input {...register('title')} onBlur={onTitleBlur} placeholder="My Project" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               {errors.title && <p className="text-xs text-destructive mt-1">{errors.title.message}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Slug *</label>
-              <input {...register('slug')} placeholder="my-project" className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <input {...register('slug')} placeholder="my-project" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               {errors.slug && <p className="text-xs text-destructive mt-1">{errors.slug.message}</p>}
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Description</label>
-            <textarea {...register('description')} rows={3} placeholder="Short description..." className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+            <textarea {...register('description')} rows={3} placeholder="Short description..." className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
           </div>
 
           <div>
@@ -112,12 +112,12 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Demo URL</label>
-              <input {...register('demoUrl')} placeholder="https://demo.example.com" className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <input {...register('demoUrl')} placeholder="https://demo.example.com" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               {errors.demoUrl && <p className="text-xs text-destructive mt-1">{errors.demoUrl.message}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Repo URL</label>
-              <input {...register('repoUrl')} placeholder="https://github.com/..." className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <input {...register('repoUrl')} placeholder="https://github.com/..." className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               {errors.repoUrl && <p className="text-xs text-destructive mt-1">{errors.repoUrl.message}</p>}
             </div>
           </div>
@@ -125,12 +125,12 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Tags</label>
-              <input {...register('tags')} placeholder="react, nextjs, typescript" className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <input {...register('tags')} placeholder="react, nextjs, typescript" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               <p className="text-xs text-muted-foreground mt-0.5">Comma-separated</p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Status</label>
-              <select {...register('status')} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              <select {...register('status')} className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring">
                 <option value="DRAFT">Draft</option>
                 <option value="PUBLISHED">Published</option>
                 <option value="ARCHIVED">Archived</option>

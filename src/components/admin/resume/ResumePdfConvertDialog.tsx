@@ -299,7 +299,7 @@ export function ResumePdfConvertDialog({
                       placeholder="Dán Gemini API Key (ví dụ: AIzaSy...)"
                       value={apiKey}
                       onChange={e => setApiKey(e.target.value)}
-                      className="w-full px-2.5 py-1 text-xs rounded-lg border border-border bg-background text-foreground shadow-xs focus:outline-primary"
+                      className="w-full px-2.5 py-1 text-xs rounded-lg border border-border bg-card text-foreground shadow-xs focus:outline-primary"
                     />
                   )}
                 </div>

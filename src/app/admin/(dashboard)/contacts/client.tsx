@@ -146,12 +146,12 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
             placeholder="Search by name, email, subject, or message..."
             value={search}
             onChange={e => handleSearchChange(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-border bg-background shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
+            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-border bg-card shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
           />
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-border bg-background shadow-xs text-xs text-muted-foreground transition-colors">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-border bg-card shadow-xs text-xs text-muted-foreground transition-colors">
             <Filter className="h-3.5 w-3.5" />
             <span className="font-medium">Status:</span>
             <select
