@@ -85,12 +85,12 @@ export function AdminProjectsClient({ projects }: { projects: Project[] }) {
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-border bg-white dark:bg-slate-900 shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-border bg-background shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
           />
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-white dark:bg-slate-900 shadow-xs text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-background shadow-xs text-xs text-muted-foreground transition-colors">
             <Filter className="h-3.5 w-3.5" />
             <span className="font-medium">Status:</span>
             <select
@@ -117,7 +117,7 @@ export function AdminProjectsClient({ projects }: { projects: Project[] }) {
             className={`px-3 py-2 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
               featuredOnly
                 ? 'bg-primary/10 border-primary text-primary font-semibold'
-                : 'border-border bg-white dark:bg-slate-900 text-muted-foreground hover:text-foreground shadow-xs'
+                : 'border-border bg-background text-muted-foreground hover:text-foreground shadow-xs'
             }`}
           >
             ★ Featured Only

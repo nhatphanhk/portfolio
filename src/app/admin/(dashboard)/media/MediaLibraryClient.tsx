@@ -133,7 +133,7 @@ export function MediaLibraryClient({ media: initialMedia }: MediaLibraryClientPr
                   setSearch(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-border bg-white dark:bg-slate-900 shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-border bg-background shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
               />
             </div>
 

@@ -48,7 +48,7 @@ export function SeriesListClient({ seriesList }: SeriesListClientProps) {
           placeholder={t('seriesPage.searchPlaceholder') || 'Search series by title or topic...'}
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full pl-11 pr-4 py-3 text-sm rounded-2xl border border-border/80 bg-card text-foreground placeholder:text-muted-foreground shadow-xs focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+          className="w-full pl-11 pr-4 py-3 text-sm rounded-2xl border border-border/80 bg-background text-foreground placeholder:text-muted-foreground shadow-xs focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
         />
       </div>
 

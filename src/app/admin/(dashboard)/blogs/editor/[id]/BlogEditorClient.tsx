@@ -447,7 +447,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
                         min={1}
                         max={99}
                         {...register('seriesOrder', { valueAsNumber: true })}
-                        className="w-20 px-2 py-1.5 rounded-lg border border-border bg-card text-foreground font-bold text-center text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-20 px-2 py-1.5 rounded-lg border border-border bg-background text-foreground font-bold text-center text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 shadow-2xs transition-colors"
                       />
                     </div>
                     <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 text-[11px] text-foreground leading-relaxed">

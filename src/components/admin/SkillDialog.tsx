@@ -88,7 +88,7 @@ export function SkillDialog({ mode, open, onOpenChange, initialData }: SkillDial
             <input
               {...register('name')}
               placeholder="React, TypeScript, Docker..."
-              className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
             {errors.name && <p className="text-xs text-destructive mt-1">{errors.name.message}</p>}
           </div>
@@ -98,7 +98,7 @@ export function SkillDialog({ mode, open, onOpenChange, initialData }: SkillDial
               <label className="block text-sm font-medium mb-1">Category</label>
               <select
                 {...register('category')}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 {Object.entries(CATEGORY_LABELS).map(([val, label]) => (
                   <option key={val} value={val}>{label}</option>
@@ -111,7 +111,7 @@ export function SkillDialog({ mode, open, onOpenChange, initialData }: SkillDial
                 type="number"
                 {...register('order', { valueAsNumber: true })}
                 min={0}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
           </div>
@@ -121,7 +121,7 @@ export function SkillDialog({ mode, open, onOpenChange, initialData }: SkillDial
             <input
               {...register('iconUrl')}
               placeholder="https://..."
-              className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
             {errors.iconUrl && <p className="text-xs text-destructive mt-1">{errors.iconUrl.message}</p>}
           </div>
