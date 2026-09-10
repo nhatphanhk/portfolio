@@ -112,7 +112,12 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
   const handleAiTranslate = async (localeToUse: 'vi' | 'en' = targetLocale) => {
     setIsTranslating(true);
     const targetLabel = localeToUse === 'vi' ? 'Tiếng Việt' : 'Tiếng Anh';
-    toast.info(`AI đang chuyển ngữ sang ${targetLabel}...`);
+    const contentLen = (getValues('content') || blog.content || '').length;
+    if (contentLen > 3000) {
+      toast.info(`AI đang phân tích & chuyển ngữ bài viết dài sang ${targetLabel}... Vui lòng đợi trong giây lát (~15-30s).`);
+    } else {
+      toast.info(`AI đang chuyển ngữ sang ${targetLabel}...`);
+    }
     try {
       const currentPayload = {
         title: getValues('title') || blog.title || 'Untitled Post',

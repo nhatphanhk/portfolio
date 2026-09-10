@@ -13,15 +13,15 @@ export interface TranslationResult {
 }
 
 const CANDIDATE_MODELS = [
-  'gemini-flash-latest',
   'gemini-3.6-flash',
+  'gemini-flash-latest',
   'gemini-flash-lite-latest',
   'gemini-3.5-flash',
 ];
 
 /**
- * Translates blog content using Google Gemini REST API with candidate models and timeout protection.
- * Returns detailed success or error information for display in the admin preview dialog.
+ * Translates blog content using Google Gemini REST API with candidate models,
+ * adaptive timeout, and maxOutputTokens protection for long articles.
  */
 export async function generateBlogTranslationWithDetails(
   sourceData: { title: string; excerpt?: string | null; content: string },
@@ -42,17 +42,25 @@ export async function generateBlogTranslationWithDetails(
   const textOnly = rawContent.replace(/<[^>]*>/g, '').trim();
   const hasContent = textOnly.length > 0;
 
+  // Adaptive timeout based on content length:
+  // Short posts: 15s. Long articles (4000+ chars): up to 60-75s to allow full generation without premature cutoff.
+  const timeoutMs = Math.max(
+    15000,
+    Math.min(75000, Math.round(15000 + (textOnly.length / 100) * 800))
+  );
+
   const targetLangName = targetLocale === 'vi' ? 'Vietnamese (Tiếng Việt)' : 'English';
 
   const prompt = `You are a professional software engineering translator and technical writer.
 Translate the following blog post into natural, idiomatic, high-quality ${targetLangName}.
 
 CRITICAL REQUIREMENTS:
-1. Preserve technical terminology naturally (e.g., React, TypeScript, Docker, API, Backend, Frontend, Next.js, Cloud, etc.).
+1. Preserve technical terminology naturally (e.g., React, TypeScript, Docker, API, Backend, Frontend, Next.js, Cloud, Prisma, PostgreSQL, etc.).
 2. For HTML content: PRESERVE ALL HTML tags, attributes, class names, and code syntax intact. ONLY translate the readable human text between the tags.
 3. Keep code blocks and inline code (<pre>, <code>) completely untranslated, keeping the original code intact.
-4. If content is empty, return empty string for content.
-5. Return ONLY a valid JSON object matching this schema:
+4. Translate the ENTIRE content without summarizing, truncating, or skipping any sections or paragraphs.
+5. If content is empty, return empty string for content.
+6. Return ONLY a valid JSON object matching this schema:
 {
   "title": "Translated title",
   "excerpt": "Translated excerpt / summary",
@@ -78,10 +86,11 @@ ${hasContent ? rawContent : '(No content)'}
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.2,
+            maxOutputTokens: 8192,
             responseMimeType: 'application/json',
           },
         }),
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(timeoutMs),
       });
 
       const data = await res.json();
@@ -107,10 +116,10 @@ ${hasContent ? rawContent : '(No content)'}
       try {
         parsed = JSON.parse(cleaned);
       } catch (_parseErr) {
-        // Fallback simple extraction if JSON had formatting quirks
-        const titleMatch = cleaned.match(/"title"\s*:\s*"([^"]+)"/);
-        const excerptMatch = cleaned.match(/"excerpt"\s*:\s*"([^"]*)"/);
-        const contentMatch = cleaned.match(/"content"\s*:\s*"([\s\S]*)"/);
+        // Resilient fallback regex extraction for large payloads with escaped characters
+        const titleMatch = cleaned.match(/"title"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/);
+        const excerptMatch = cleaned.match(/"excerpt"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/);
+        const contentMatch = cleaned.match(/"content"\s*:\s*"([\s\S]*?)"\s*}/);
         parsed = {
           title: titleMatch ? titleMatch[1] : undefined,
           excerpt: excerptMatch ? excerptMatch[1] : undefined,
