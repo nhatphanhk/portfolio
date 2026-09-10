@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useTransition, useEffect } from 'react';
+import { useState, useCallback, useTransition, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,6 +21,7 @@ import {
   AlignLeft,
   Settings,
   Sparkles,
+  Layers,
 } from 'lucide-react';
 
 const schema = z.object({
@@ -37,9 +38,21 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+interface SeriesBlogItem {
+  id: string;
+  title: string;
+  seriesOrder: number | null;
+}
+
+interface SeriesItem {
+  id: string;
+  title: string;
+  blogs?: SeriesBlogItem[];
+}
+
 interface BlogEditorClientProps {
   blog: FormData & { id: string };
-  seriesList: { id: string; title: string }[];
+  seriesList: SeriesItem[];
 }
 
 function SidebarSection({
@@ -111,10 +124,11 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
   const {
     register,
     handleSubmit,
-    watch,
     setValue,
-    formState: { errors, isDirty },
+    watch,
+    getValues,
     reset,
+    formState: { errors, isDirty },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -126,12 +140,26 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
       status: blog.status,
       tags: blog.tags,
       seriesId: blog.seriesId ?? '',
-      seriesOrder: blog.seriesOrder ?? 0,
+      seriesOrder: blog.seriesOrder && blog.seriesOrder > 0 ? blog.seriesOrder : null,
     },
   });
 
   const watchedTitle = watch('title');
   const watchedStatus = watch('status');
+  const watchedSeriesId = watch('seriesId');
+  const watchedSeriesOrder = watch('seriesOrder');
+
+  const [orderMode, setOrderMode] = useState<'auto' | 'custom'>(
+    blog.seriesOrder && blog.seriesOrder > 0 ? 'custom' : 'auto'
+  );
+
+  const activeSeries = useMemo(() => {
+    return seriesList.find(s => s.id === watchedSeriesId);
+  }, [seriesList, watchedSeriesId]);
+
+  const activeSeriesBlogs = useMemo(() => {
+    return activeSeries?.blogs || [];
+  }, [activeSeries]);
 
   // Auto-generate slug from title (only for draft-* slugs i.e. freshly created drafts)
   const onTitleBlur = useCallback(
@@ -150,17 +178,25 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
   const doSave = useCallback(
     (data: FormData) => {
       startTransition(async () => {
-        const result = await updateBlog(blog.id, data);
+        const payload: FormData = {
+          ...data,
+          seriesId: data.seriesId || null,
+          seriesOrder:
+            data.seriesId && orderMode === 'custom' && data.seriesOrder && data.seriesOrder > 0
+              ? Number(data.seriesOrder)
+              : null,
+        };
+        const result = await updateBlog(blog.id, payload);
         if (result.ok) {
           setLastSaved(new Date());
-          reset(data); // mark form as clean
+          reset(payload); // mark form as clean
           toast.success('Saved ✓');
         } else {
           toast.error('Save failed');
         }
       });
     },
-    [blog.id, reset]
+    [blog.id, reset, orderMode]
   );
 
   // Auto-save on content change (debounce 3s)
@@ -255,20 +291,120 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
             </Field>
             <Field label="Series">
               <select {...register('seriesId')} className={inputCls}>
-                <option value="">— None —</option>
+                <option value="">— None (Standalone) —</option>
                 {seriesList.map(s => (
-                  <option key={s.id} value={s.id}>{s.title}</option>
+                  <option key={s.id} value={s.id}>
+                    {s.title} {s.blogs?.length ? `(${s.blogs.length} articles)` : ''}
+                  </option>
                 ))}
               </select>
             </Field>
-            <Field label="Series Order">
-              <input
-                type="number"
-                {...register('seriesOrder', { valueAsNumber: true })}
-                placeholder="1"
-                className={inputCls}
-              />
-            </Field>
+
+            {watchedSeriesId && (
+              <div className="space-y-3 p-3 rounded-xl border border-border/80 bg-muted/40">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-primary" />
+                    <span>Series Ordering</span>
+                  </span>
+                  <span className="text-[10px] font-semibold text-primary px-2 py-0.5 rounded-full bg-primary/10">
+                    Smart Order
+                  </span>
+                </div>
+
+                {/* Mode Selector */}
+                <div className="grid grid-cols-2 gap-1.5 p-1 rounded-lg bg-background/80 border border-border">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOrderMode('auto');
+                      setValue('seriesOrder', null, { shouldValidate: true });
+                    }}
+                    className={`px-2.5 py-1.5 rounded-md text-xs font-semibold text-center transition-all cursor-pointer ${
+                      orderMode === 'auto'
+                        ? 'bg-foreground text-background shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Auto (End)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOrderMode('custom');
+                      const current = getValues('seriesOrder');
+                      const defaultPos = current && current > 0 ? current : (activeSeriesBlogs.length + 1);
+                      setValue('seriesOrder', defaultPos, { shouldValidate: true });
+                    }}
+                    className={`px-2.5 py-1.5 rounded-md text-xs font-semibold text-center transition-all cursor-pointer ${
+                      orderMode === 'custom'
+                        ? 'bg-primary text-primary-foreground shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Custom Order
+                  </button>
+                </div>
+
+                {orderMode === 'custom' ? (
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Insert as Part #:
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={99}
+                        {...register('seriesOrder', { valueAsNumber: true })}
+                        className="w-20 px-2 py-1.5 rounded-lg border border-border bg-card text-foreground font-bold text-center text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      />
+                    </div>
+                    <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 text-[11px] text-foreground leading-relaxed">
+                      ⚡ <strong>Smart Insertion:</strong> This article will be placed at Part #{watchedSeriesOrder || 1}. Any existing articles at this position or higher will automatically shift back (+1).
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-2 rounded-lg bg-card border border-border text-[11px] text-muted-foreground leading-relaxed">
+                    💡 <strong>Auto / Unordered:</strong> This article requires no fixed position and will automatically be placed at the end of the series after all ordered articles.
+                  </div>
+                )}
+
+                {/* Series Articles Preview */}
+                {activeSeriesBlogs.length > 0 && (
+                  <div className="pt-2 border-t border-border/60">
+                    <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">
+                      Articles in this series ({activeSeriesBlogs.length}):
+                    </p>
+                    <div className="max-h-32 overflow-y-auto space-y-1 pr-1">
+                      {activeSeriesBlogs.map((b: SeriesBlogItem, idx: number) => {
+                        const isCurrentEditing = b.id === blog.id;
+                        return (
+                          <div
+                            key={b.id}
+                            className={`flex items-center gap-1.5 px-2 py-1 rounded text-[11px] ${
+                              isCurrentEditing
+                                ? 'bg-primary/15 text-primary font-bold border border-primary/20'
+                                : 'bg-card text-foreground/80'
+                            }`}
+                          >
+                            <span className="w-4 h-4 rounded bg-muted text-muted-foreground flex items-center justify-center text-[10px] shrink-0 font-bold">
+                              {b.seriesOrder ?? (idx + 1)}
+                            </span>
+                            <span className="truncate">{b.title}</span>
+                            {isCurrentEditing && (
+                              <span className="ml-auto text-[9px] text-primary shrink-0 uppercase tracking-wider font-bold">
+                                (Current)
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </SidebarSection>
         </form>
 

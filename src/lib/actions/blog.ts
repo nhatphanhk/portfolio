@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import { ensureAdmin } from '@/lib/auth-utils';
+import { smartReorderSeriesBlogs, compactSeriesOrders } from '@/lib/actions/series';
 
 const blogSchema = z.object({
   title: z.string().min(3).max(255),
@@ -84,11 +85,15 @@ export async function createBlog(formData: BlogFormData) {
     : [];
   const tagIds = await syncTags(tagNames);
 
-  await prisma.blog.create({
+  const parsedSeriesOrder =
+    seriesOrder != null && Number(seriesOrder) > 0 ? Number(seriesOrder) : null;
+  const targetSeriesId = seriesId || null;
+
+  const newBlog = await prisma.blog.create({
     data: {
       ...rest,
-      seriesId: seriesId || null,
-      seriesOrder: seriesOrder != null ? Number(seriesOrder) : null,
+      seriesId: targetSeriesId,
+      seriesOrder: parsedSeriesOrder,
       thumbnailUrl: thumbnailUrl || undefined,
       authorId,
       publishedAt: rest.status === 'PUBLISHED' ? new Date() : undefined,
@@ -98,8 +103,17 @@ export async function createBlog(formData: BlogFormData) {
     },
   });
 
+  if (targetSeriesId) {
+    await smartReorderSeriesBlogs({
+      seriesId: targetSeriesId,
+      targetBlogId: newBlog.id,
+      desiredOrder: parsedSeriesOrder,
+    });
+  }
+
   revalidatePath('/admin/blogs');
   revalidatePath('/blog');
+  revalidatePath('/blog/series');
   return { ok: true };
 }
 
@@ -119,12 +133,21 @@ export async function updateBlog(id: string, formData: BlogFormData) {
     : [];
   const tagIds = await syncTags(tagNames);
 
+  const oldBlog = await prisma.blog.findUnique({
+    where: { id },
+    select: { seriesId: true, seriesOrder: true, slug: true },
+  });
+
+  const parsedSeriesOrder =
+    seriesOrder != null && Number(seriesOrder) > 0 ? Number(seriesOrder) : null;
+  const targetSeriesId = seriesId || null;
+
   await prisma.blog.update({
     where: { id },
     data: {
       ...rest,
-      seriesId: seriesId || null,
-      seriesOrder: seriesOrder != null ? Number(seriesOrder) : null,
+      seriesId: targetSeriesId,
+      seriesOrder: parsedSeriesOrder,
       thumbnailUrl: thumbnailUrl || undefined,
       publishedAt:
         rest.status === 'PUBLISHED'
@@ -142,8 +165,19 @@ export async function updateBlog(id: string, formData: BlogFormData) {
     },
   });
 
+  // Smart series insertion & reordering
+  if (targetSeriesId || oldBlog?.seriesId) {
+    await smartReorderSeriesBlogs({
+      seriesId: targetSeriesId,
+      targetBlogId: id,
+      desiredOrder: parsedSeriesOrder,
+      previousSeriesId: oldBlog?.seriesId,
+    });
+  }
+
   revalidatePath('/admin/blogs');
   revalidatePath('/blog');
+  revalidatePath('/blog/series');
   revalidatePath(`/blog/${rest.slug}`);
   return { ok: true };
 }
@@ -153,16 +187,23 @@ export async function deleteBlog(id: string) {
     await ensureAdmin();
     const blog = await prisma.blog.findUnique({
       where: { id },
-      select: { slug: true },
+      select: { slug: true, seriesId: true },
     });
     if (!blog) {
       revalidatePath('/admin/blogs');
       revalidatePath('/blog');
+      revalidatePath('/blog/series');
       return { ok: true };
     }
+
+    if (blog.seriesId) {
+      await compactSeriesOrders(blog.seriesId, id);
+    }
+
     await prisma.blog.delete({ where: { id } });
     revalidatePath('/admin/blogs');
     revalidatePath('/blog');
+    revalidatePath('/blog/series');
     revalidatePath(`/blog/${blog.slug}`);
     return { ok: true };
   } catch (error) {

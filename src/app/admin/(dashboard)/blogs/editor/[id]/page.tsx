@@ -36,7 +36,17 @@ export default async function BlogEditorPage({ params }: EditorPageProps) {
         seriesId: blog.seriesId ?? '',
         seriesOrder: blog.seriesOrder ?? 0,
       }}
-      seriesList={seriesList.map((s: { id: string; title: string }) => ({ id: s.id, title: s.title }))}
+      seriesList={seriesList.map(s => ({
+        id: s.id,
+        title: s.title,
+        blogs: s.blogs
+          ? s.blogs.map(b => ({
+              id: b.id,
+              title: b.title,
+              seriesOrder: b.seriesOrder,
+            }))
+          : [],
+      }))}
     />
   );
 }
