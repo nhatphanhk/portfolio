@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ArrowRight, Clock, Layers, Search, BookOpen, FileText } from 'lucide-react';
+import { ArrowRight, Clock, Layers, Search, FileText } from 'lucide-react';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { useLanguage } from '@/lib/i18n/context';
 
@@ -143,61 +143,6 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
 
   return (
     <div className="space-y-12">
-      {/* Series Section (if any) */}
-      {seriesList.length > 0 && (
-        <div className="p-6 rounded-2xl border border-primary/20 bg-primary/5">
-          <h2 className="text-xs font-black uppercase tracking-widest text-primary mb-3 flex items-center gap-1.5">
-            <Layers className="w-4 h-4" />
-            {t('blog.articleSeries')}
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {seriesList.map(s => {
-              const isSelected = selectedSeriesSlug === (s.slug || s.id);
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => handleSeriesClick(s.slug || s.id)}
-                  className={`text-left p-4 rounded-xl border transition-all duration-200 shadow-xs group flex flex-col justify-between cursor-pointer ${
-                    isSelected
-                      ? 'border-primary bg-primary/10 shadow-sm ring-2 ring-primary/30'
-                      : 'border-border bg-card hover:border-primary/40 hover:shadow-md'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                        {s.title}
-                      </h3>
-                      {isSelected && (
-                        <span className="text-[10px] bg-primary text-primary-foreground font-bold px-1.5 py-0.5 rounded-full shrink-0">
-                          Active
-                        </span>
-                      )}
-                    </div>
-                    {s.description && (
-                      <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-                        {s.description}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/40">
-                    <p className="text-[11px] text-primary font-semibold flex items-center gap-1">
-                      <BookOpen className="w-3 h-3" />
-                      {s.blogs.length} {s.blogs.length === 1 ? t('common.part') : t('common.parts')}
-                    </p>
-                    <span className="text-[11px] text-muted-foreground group-hover:text-primary flex items-center gap-0.5 transition-colors font-medium">
-                      {isSelected ? 'Selected' : 'Filter series'}
-                      <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Search & Series / Tag Filter Bar */}
       <div className="space-y-4 p-5 rounded-2xl border border-border bg-card shadow-xs">
         {/* Search Input */}
