@@ -1,0 +1,87 @@
+name: CD - Deployment Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Required for OIDC authentication
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run Prisma Database Migrations
+        if: ${{ env.DIRECT_URL != '' || env.DATABASE_URL != '' }}
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL || secrets.DATABASE_URL }}
+
+      # -------------------------------------------------------------
+      # 1. DEPLOY TO PRISMA COMPUTE (nếu dùng Prisma Compute)
+      # -------------------------------------------------------------
+      - name: Deploy to Prisma Compute
+        if: ${{ secrets.PRISMA_TOKEN != '' }}
+        run: |
+          echo "Deploying to Prisma Compute..."
+          npx prisma compute deploy
+        env:
+          PRISMA_TOKEN: ${{ secrets.PRISMA_TOKEN }}
+
+      # -------------------------------------------------------------
+      # 2. DEPLOY TO VERCEL (nếu dùng Vercel)
+      # -------------------------------------------------------------
+      - name: Deploy to Vercel
+        if: ${{ secrets.VERCEL_TOKEN != '' }}
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "Deploying to Vercel Production..."
+            npx vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
+          else
+            echo "Deploying to Vercel Preview..."
+            npx vercel --token=${{ secrets.VERCEL_TOKEN }}
+          fi
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deployment Notice
+        if: ${{ secrets.PRISMA_TOKEN == '' && secrets.VERCEL_TOKEN == '' }}
+        run: |
+          echo "::warning::Chưa thiết lập PRISMA_TOKEN hoặc VERCEL_TOKEN trong GitHub Secrets."
+          echo "Hãy vào GitHub Repo -> Settings -> Secrets and variables -> Actions để thêm Token."
