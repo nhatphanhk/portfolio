@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
@@ -114,9 +115,9 @@ export function TranslationPreviewDialog({
                 <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
                   Bản xem trước bản dịch AI (AI Translation Preview)
                 </DialogTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                   Xem lại, tinh chỉnh bản dịch trước khi áp dụng vào bài viết hoặc lưu vào CSDL song ngữ.
-                </p>
+                </DialogDescription>
               </div>
             </div>
 

@@ -120,13 +120,43 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
         content: getValues('content') || blog.content || '',
       };
 
-      const res = await previewTranslateBlogAction(blog.id, localeToUse, currentPayload);
-      if (res.ok && res.data) {
-        setTranslatedResult(res.data);
+      let resData: TranslatedData | null = null;
+      let errorMsg: string | null = null;
+
+      // 1. Try standard REST API endpoint first (immune to Server Action hash mismatch)
+      try {
+        const apiRes = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'preview',
+            blogId: blog.id,
+            ...currentPayload,
+            targetLocale: localeToUse,
+          }),
+        });
+        const json = await apiRes.json();
+        if (json.ok && json.data) {
+          resData = json.data;
+        } else {
+          errorMsg = json.error;
+        }
+      } catch (fetchErr: any) {
+        // 2. Fallback to Server Action if fetch fails
+        const saRes = await previewTranslateBlogAction(blog.id, localeToUse, currentPayload);
+        if (saRes.ok && saRes.data) {
+          resData = saRes.data;
+        } else {
+          errorMsg = saRes.error || fetchErr.message;
+        }
+      }
+
+      if (resData) {
+        setTranslatedResult(resData);
         setPreviewOpen(true);
         toast.success(`AI đã chuyển ngữ sang ${targetLabel}! Hãy xem trước bản dịch.`);
       } else {
-        toast.error(res.error || 'Chuyển ngữ AI thất bại');
+        toast.error(errorMsg || 'Chuyển ngữ AI thất bại');
       }
     } catch (err: any) {
       toast.error('Lỗi khi gọi AI chuyển ngữ: ' + (err?.message || 'Lỗi không xác định'));
@@ -143,6 +173,26 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
   };
 
   const handleSaveToDb = async (data: TranslatedData) => {
+    try {
+      const apiRes = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'save',
+          blogId: blog.id,
+          ...data,
+          targetLocale,
+        }),
+      });
+      const json = await apiRes.json();
+      if (json.ok) {
+        toast.success(`Đã lưu bản dịch (${targetLocale.toUpperCase()}) vào CSDL song ngữ thành công!`);
+        return;
+      }
+    } catch {
+      // fallback to server action
+    }
+
     const res = await saveBlogTranslationAction(blog.id, data, targetLocale);
     if (res.ok) {
       toast.success(`Đã lưu bản dịch (${targetLocale.toUpperCase()}) vào CSDL song ngữ thành công!`);
