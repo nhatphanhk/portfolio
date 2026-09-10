@@ -153,46 +153,70 @@ export async function getAllProjectsFromDb() {
   }
 }
 
-export async function getPublicProjects() {
+export async function getPublicProjects(locale: 'vi' | 'en' = 'vi') {
   try {
     const projects = await prisma.project.findMany({
       where: { status: 'PUBLISHED' },
       orderBy: { createdAt: 'desc' },
       include: { tags: { include: { tag: true } } },
     });
-    return projects.map(p => ({
-      id: p.id,
-      title: p.title,
-      slug: p.slug,
-      description: p.description,
-      content: p.content || '',
-      thumbnailUrl: p.thumbnailUrl || undefined,
-      demoUrl: p.demoUrl || undefined,
-      repoUrl: p.repoUrl || undefined,
-      status: p.status === 'PUBLISHED' ? 'active' : 'archived',
-      featured: p.featured,
-      technologies: p.tags.map(t => t.tag.name),
-      publishedAt: p.createdAt.toISOString(),
-    }));
+
+    const { getBatchEntityTranslationsFromDb } = await import('@/lib/gemini-translate');
+    const translationMap = await getBatchEntityTranslationsFromDb(
+      'project',
+      projects.map(p => p.id),
+      'en'
+    );
+
+    return projects.map(p => {
+      const trans = translationMap.get(p.id);
+      const isEn = locale === 'en';
+      return {
+        id: p.id,
+        title: isEn && trans?.title ? trans.title : p.title,
+        slug: p.slug,
+        description: isEn && trans?.description !== undefined ? trans.description : p.description,
+        content: isEn && trans?.content ? trans.content : p.content ?? '',
+        thumbnailUrl: p.thumbnailUrl || undefined,
+        demoUrl: p.demoUrl || undefined,
+        repoUrl: p.repoUrl || undefined,
+        status: p.status === 'PUBLISHED' ? 'active' : 'archived',
+        featured: p.featured,
+        technologies: p.tags.map(t => t.tag.name),
+        publishedAt: p.createdAt.toISOString(),
+        translations: trans ? {
+          en: {
+            title: trans.title || undefined,
+            description: trans.description ?? undefined,
+            content: trans.content ?? undefined,
+          },
+        } : undefined,
+      };
+    });
   } catch (error) {
     console.error('Error fetching public projects from db:', error);
     return [];
   }
 }
 
-export const getPublicProjectBySlug = cache(async (slug: string) => {
+export const getPublicProjectBySlug = cache(async (slug: string, locale: 'vi' | 'en' = 'vi') => {
   try {
     const p = await prisma.project.findUnique({
       where: { slug },
       include: { tags: { include: { tag: true } } },
     });
     if (!p || p.status !== 'PUBLISHED') return null;
+
+    const { getEntityTranslationFromDb } = await import('@/lib/gemini-translate');
+    const trans = await getEntityTranslationFromDb('project', p.id, 'en');
+
+    const isEn = locale === 'en';
     return {
       id: p.id,
-      title: p.title,
+      title: isEn && trans?.title ? trans.title : p.title,
       slug: p.slug,
-      description: p.description,
-      content: p.content || '',
+      description: isEn && trans?.description !== undefined ? trans.description : p.description,
+      content: isEn && trans?.content ? trans.content : p.content ?? '',
       thumbnailUrl: p.thumbnailUrl || undefined,
       demoUrl: p.demoUrl || undefined,
       repoUrl: p.repoUrl || undefined,
@@ -200,10 +224,88 @@ export const getPublicProjectBySlug = cache(async (slug: string) => {
       featured: p.featured,
       technologies: p.tags.map(t => t.tag.name),
       publishedAt: p.createdAt.toISOString(),
+      translations: trans ? {
+        en: {
+          title: trans.title || undefined,
+          description: trans.description ?? undefined,
+          content: trans.content ?? undefined,
+        },
+      } : undefined,
     };
   } catch (error) {
     console.error('Error fetching project by slug from db:', error);
     return null;
   }
 });
+
+/** Action to preview/translate a project using Gemini AI */
+export async function previewTranslateProjectAction(
+  projectId: string,
+  targetLocale: 'vi' | 'en' = 'en',
+  currentContent?: { title: string; description?: string | null; content?: string | null },
+  customApiKey?: string
+): Promise<{ ok: boolean; data?: { title: string; description: string; content: string }; error?: string }> {
+  await ensureAdmin();
+  try {
+    let sourceData = currentContent;
+    if (!sourceData || !sourceData.title) {
+      const proj = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: { title: true, description: true, content: true },
+      });
+      if (!proj) {
+        return { ok: false, error: 'Project not found' };
+      }
+      sourceData = proj;
+    }
+
+    const { generateProjectTranslationWithDetails } = await import('@/lib/gemini-translate');
+    const result = await generateProjectTranslationWithDetails(sourceData, targetLocale, customApiKey);
+
+    if (!result.ok || !result.data) {
+      return { ok: false, error: result.error || 'Project translation failed' };
+    }
+
+    return { ok: true, data: result.data };
+  } catch (error: any) {
+    console.error('previewTranslateProjectAction error:', error);
+    return { ok: false, error: error?.message || 'Error translating project' };
+  }
+}
+
+/** Action to save project translation to PostgreSQL DB */
+export async function saveProjectTranslationAction(
+  projectId: string,
+  data: { title: string; description?: string; content?: string },
+  targetLocale: 'vi' | 'en' = 'en'
+): Promise<{ ok: boolean; error?: string }> {
+  await ensureAdmin();
+  try {
+    const { saveEntityTranslationToDb } = await import('@/lib/gemini-translate');
+    const success = await saveEntityTranslationToDb('project', projectId, data, targetLocale);
+    if (!success) {
+      return { ok: false, error: 'Failed to save project translation' };
+    }
+
+    revalidatePath('/project');
+    revalidatePath('/admin/projects');
+    return { ok: true };
+  } catch (error) {
+    console.error('saveProjectTranslationAction error:', error);
+    return { ok: false, error: 'Failed to save project translation' };
+  }
+}
+
+/** Get all saved translations for a project */
+export async function getProjectTranslations(projectId: string) {
+  try {
+    return await prisma.contentTranslation.findMany({
+      where: { entityType: 'project', entityId: projectId },
+    });
+  } catch (err) {
+    console.error('getProjectTranslations error:', err);
+    return [];
+  }
+}
+
 

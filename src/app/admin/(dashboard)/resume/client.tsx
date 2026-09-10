@@ -8,6 +8,7 @@ import { ResumeSectionSidebar } from '@/components/admin/resume/ResumeSectionSid
 import { ResumeItemDialog, ItemType } from '@/components/admin/resume/ResumeItemDialog';
 import { ResumePdfDialog } from '@/components/admin/resume/ResumePdfDialog';
 import { ResumePdfConvertDialog } from '@/components/admin/resume/ResumePdfConvertDialog';
+import { ResumeTranslateDialog } from '@/components/admin/resume/ResumeTranslateDialog';
 import { ParsedResumeData } from '@/lib/pdf-resume-parser';
 import {
   SectionId,
@@ -80,6 +81,7 @@ export function AdminResumeClient({
   const [isSectionSidebarOpen, setIsSectionSidebarOpen] = useState(true);
   const [isPdfDialogOpen, setIsPdfDialogOpen] = useState(false);
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
+  const [isTranslateDialogOpen, setIsTranslateDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'stack' | 'paged'>('stack');
   const [activePage, setActivePage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -933,6 +935,7 @@ export function AdminResumeClient({
         onToggleSectionSidebar={() => setIsSectionSidebarOpen(prev => !prev)}
         onOpenPdfDialog={() => setIsPdfDialogOpen(true)}
         onOpenConvertDialog={() => setIsConvertDialogOpen(true)}
+        onOpenTranslateDialog={() => setIsTranslateDialogOpen(true)}
         templateStyle={sectionLayout.templateStyle}
         onSelectTemplateStyle={handleSelectTemplateStyle}
       />
@@ -1044,6 +1047,14 @@ export function AdminResumeClient({
         onOpenChange={setIsConvertDialogOpen}
         currentResumeUrl={profile.resumeUrl}
         onApplyParsedData={handleApplyParsedResume}
+      />
+
+      {/* ── AI English Translation Dialog ── */}
+      <ResumeTranslateDialog
+        open={isTranslateDialogOpen}
+        onOpenChange={setIsTranslateDialogOpen}
+        profile={profile}
+        experiences={experiences}
       />
     </div>
   );

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { MainLayout } from '@/components';
 import { getPublicBlogs } from '@/lib/actions/blog';
 import { getPublicSeries } from '@/lib/actions/series';
@@ -6,7 +7,7 @@ import { UserBreadcrumb } from '@/components/UserBreadcrumb';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Blog',
+  title: 'Blogs',
   description:
     'Articles on web development, TypeScript, React, Next.js, system design, and engineering best practices.',
 };
@@ -23,19 +24,21 @@ export default async function BlogPage() {
     <MainLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 pt-32">
         {/* Breadcrumb aligned with Header */}
-        <UserBreadcrumb items={[{ label: 'Blog' }]} className="mb-6" />
+        <UserBreadcrumb items={[{ label: 'Blogs' }]} className="mb-6" />
 
         {/* Header */}
         <div className="mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 tracking-tight">Blog</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 tracking-tight">Blogs</h1>
           <p className="text-lg text-muted-foreground max-w-3xl">
             Thoughts on web development, engineering practices, and lessons learned from building
             real-world applications.
           </p>
         </div>
 
-        {/* Interactive Blog List with Search, Tag Filter & Pagination */}
-        <BlogListClient posts={posts} seriesList={seriesList} />
+        {/* Interactive Blog List with Search, Series & Tag Filter & Pagination */}
+        <Suspense fallback={<div className="py-12 text-center text-muted-foreground">Loading blogs...</div>}>
+          <BlogListClient posts={posts} seriesList={seriesList} />
+        </Suspense>
       </div>
     </MainLayout>
   );

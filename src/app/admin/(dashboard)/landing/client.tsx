@@ -142,14 +142,14 @@ export function AdminLandingClient({ initialItems }: Props) {
                         rows={2}
                         value={items[field.key] ?? ''}
                         onChange={e => handleChange(field.key, e.target.value)}
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-white shadow-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition resize-y"
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-card shadow-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition resize-y"
                       />
                     ) : (
                       <input
                         type={field.type === 'number' ? 'number' : 'text'}
                         value={items[field.key] ?? ''}
                         onChange={e => handleChange(field.key, e.target.value)}
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-white shadow-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-card shadow-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
                       />
                     )}
                   </div>

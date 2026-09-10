@@ -26,10 +26,12 @@ export function TipTapEditor({ content, onChange, placeholder = 'Write something
   const [imageModalOpen, setImageModalOpen] = useState(false);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         codeBlock: false,
         heading: false,
+        link: false,
       }),
       Heading.configure({ levels: [1, 2, 3] }),
       CodeBlockLowlight.extend({
@@ -55,7 +57,7 @@ export function TipTapEditor({ content, onChange, placeholder = 'Write something
     editorProps: {
       attributes: {
         class:
-          'prose prose-sm sm:prose-base dark:prose-invert max-w-none focus:outline-none min-h-[500px] p-6 bg-background',
+          'prose prose-sm sm:prose-base dark:prose-invert max-w-none focus:outline-none min-h-[600px] p-8 sm:p-10 bg-card text-card-foreground',
       },
       handleDrop(view, event, _slice, moved) {
         if (!moved && event.dataTransfer?.files?.length) {
@@ -101,7 +103,7 @@ export function TipTapEditor({ content, onChange, placeholder = 'Write something
   };
 
   return (
-    <div className="w-full border border-border rounded-xl overflow-hidden bg-background">
+    <div className="w-full border border-border/80 rounded-2xl overflow-hidden bg-card shadow-lg shadow-slate-900/5 ring-1 ring-black/5">
       <EditorToolbar editor={editor} onInsertImage={() => setImageModalOpen(true)} />
       <EditorContent editor={editor} />
       <ImageUploadModal

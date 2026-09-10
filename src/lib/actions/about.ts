@@ -34,7 +34,7 @@ const profileSchema = z.object({
 
 export type ProfileFormData = z.infer<typeof profileSchema>;
 
-export const getProfile = cache(async () => {
+export const getProfile = cache(async (locale: 'vi' | 'en' = 'vi') => {
   let dbProfile = null;
   try {
     dbProfile = await prisma.profile.findFirst();
@@ -60,23 +60,42 @@ export const getProfile = cache(async () => {
     fromDb: false as const,
   };
   if (!dbProfile) return fallback;
+
+  const { getEntityTranslationFromDb } = await import('@/lib/gemini-translate');
+  const trans = await getEntityTranslationFromDb('profile', dbProfile.id, 'en');
+
+  const isEn = locale === 'en';
+  const title = isEn && trans?.title ? trans.title : dbProfile.title;
+  const tagline = dbProfile.tagline ?? PROFILE.tagline;
+  const bio = isEn && trans?.description ? trans.description : (dbProfile.bio ?? PROFILE.bio);
+  const careerObjective = isEn && trans?.content ? trans.content : dbProfile.careerObjective;
+  const softSkills = isEn && trans?.excerpt ? trans.excerpt : dbProfile.softSkills;
+
   return {
     id: dbProfile.id,
     name: dbProfile.name,
     handle: dbProfile.handle ?? PROFILE.handle,
-    title: dbProfile.title,
-    tagline: dbProfile.tagline ?? PROFILE.tagline,
-    bio: dbProfile.bio ?? PROFILE.bio,
+    title,
+    tagline,
+    bio,
     bio2: dbProfile.bio2 ?? PROFILE.bio2,
-    careerObjective: dbProfile.careerObjective,
+    careerObjective,
     location: dbProfile.location ?? PROFILE.location,
     email: dbProfile.email ?? PROFILE.email,
     phone: dbProfile.phone,
     resumeUrl: dbProfile.resumeUrl ?? PROFILE.resumeUrl,
     avatarUrl: dbProfile.avatarUrl ?? PROFILE.avatarUrl,
-    softSkills: dbProfile.softSkills,
+    softSkills,
     interests: dbProfile.interests,
     fromDb: true as const,
+    translations: trans ? {
+      en: {
+        title: trans.title || undefined,
+        bio: trans.description || undefined,
+        careerObjective: trans.content || undefined,
+        softSkills: trans.excerpt || undefined,
+      },
+    } : undefined,
   };
 });
 
@@ -159,10 +178,35 @@ const expSchema = z.object({
 
 export type ExperienceFormData = z.infer<typeof expSchema>;
 
-export async function getExperiences() {
+export async function getExperiences(locale: 'vi' | 'en' = 'vi') {
   try {
     const exps = await prisma.experience.findMany({ orderBy: { order: 'asc' } });
-    if (exps.length > 0) return exps;
+    if (exps.length > 0) {
+      const { getBatchEntityTranslationsFromDb } = await import('@/lib/gemini-translate');
+      const translationMap = await getBatchEntityTranslationsFromDb(
+        'experience',
+        exps.map(e => e.id),
+        'en'
+      );
+
+      const isEn = locale === 'en';
+      return exps.map(e => {
+        const trans = translationMap.get(e.id);
+        return {
+          ...e,
+          position: isEn && trans?.title ? trans.title : e.position,
+          description: isEn && trans?.description !== undefined ? trans.description : e.description,
+          achievements: isEn && trans?.content !== undefined ? trans.content : e.achievements,
+          translations: trans ? {
+            en: {
+              position: trans.title || undefined,
+              description: trans.description ?? undefined,
+              achievements: trans.content ?? undefined,
+            },
+          } : undefined,
+        };
+      });
+    }
   } catch (error) {
     console.error('Error fetching experiences from db:', error);
   }
@@ -489,3 +533,175 @@ export async function getSkillsByCategory() {
     return {};
   }
 }
+
+// ─── Profile & Resume Translations ───────────────────────────────────────────
+
+/** Action to preview/translate profile details using Gemini AI */
+export async function previewTranslateProfileAction(
+  profileId: string,
+  targetLocale: 'vi' | 'en' = 'en',
+  currentContent?: {
+    title?: string | null;
+    tagline?: string | null;
+    bio?: string | null;
+    careerObjective?: string | null;
+    softSkills?: string | null;
+  },
+  customApiKey?: string
+): Promise<{ ok: boolean; data?: any; error?: string }> {
+  await ensureAdmin();
+  try {
+    let sourceData = currentContent;
+    if (!sourceData) {
+      const p = await prisma.profile.findUnique({
+        where: { id: profileId },
+      });
+      if (!p) return { ok: false, error: 'Profile not found' };
+      sourceData = p;
+    }
+
+    const { generateProfileTranslationWithDetails } = await import('@/lib/gemini-translate');
+    const result = await generateProfileTranslationWithDetails(sourceData, targetLocale, customApiKey);
+    if (!result.ok || !result.data) {
+      return { ok: false, error: result.error || 'Profile translation failed' };
+    }
+
+    return { ok: true, data: result.data };
+  } catch (err: any) {
+    console.error('previewTranslateProfileAction error:', err);
+    return { ok: false, error: err?.message || 'Error translating profile' };
+  }
+}
+
+/** Action to save profile translation to PostgreSQL DB */
+export async function saveProfileTranslationAction(
+  profileId: string,
+  data: {
+    title?: string | null;
+    tagline?: string | null;
+    bio?: string | null;
+    careerObjective?: string | null;
+    softSkills?: string | null;
+  },
+  targetLocale: 'vi' | 'en' = 'en'
+): Promise<{ ok: boolean; error?: string }> {
+  await ensureAdmin();
+  try {
+    const { saveEntityTranslationToDb } = await import('@/lib/gemini-translate');
+    // Map: title -> title, bio -> description, careerObjective -> content, softSkills -> excerpt
+    const success = await saveEntityTranslationToDb(
+      'profile',
+      profileId,
+      {
+        title: data.title,
+        description: data.bio,
+        content: data.careerObjective,
+        excerpt: data.softSkills,
+      },
+      targetLocale
+    );
+
+    if (!success) return { ok: false, error: 'Failed to save profile translation' };
+
+    REVALIDATE();
+    return { ok: true };
+  } catch (err: any) {
+    console.error('saveProfileTranslationAction error:', err);
+    return { ok: false, error: 'Failed to save profile translation' };
+  }
+}
+
+/** Get all saved translations for profile */
+export async function getProfileTranslations(profileId: string) {
+  try {
+    return await prisma.contentTranslation.findMany({
+      where: { entityType: 'profile', entityId: profileId },
+    });
+  } catch (err) {
+    console.error('getProfileTranslations error:', err);
+    return [];
+  }
+}
+
+/** Action to preview/translate an experience entry using Gemini AI */
+export async function previewTranslateExperienceAction(
+  experienceId: string,
+  targetLocale: 'vi' | 'en' = 'en',
+  currentContent?: {
+    position: string;
+    description?: string | null;
+    achievements?: string | null;
+  },
+  customApiKey?: string
+): Promise<{ ok: boolean; data?: any; error?: string }> {
+  await ensureAdmin();
+  try {
+    let sourceData = currentContent;
+    if (!sourceData || !sourceData.position) {
+      const exp = await prisma.experience.findUnique({
+        where: { id: experienceId },
+      });
+      if (!exp) return { ok: false, error: 'Experience not found' };
+      sourceData = exp;
+    }
+
+    const { generateExperienceTranslationWithDetails } = await import('@/lib/gemini-translate');
+    const result = await generateExperienceTranslationWithDetails(sourceData, targetLocale, customApiKey);
+    if (!result.ok || !result.data) {
+      return { ok: false, error: result.error || 'Experience translation failed' };
+    }
+
+    return { ok: true, data: result.data };
+  } catch (err: any) {
+    console.error('previewTranslateExperienceAction error:', err);
+    return { ok: false, error: err?.message || 'Error translating experience' };
+  }
+}
+
+/** Action to save experience translation to PostgreSQL DB */
+export async function saveExperienceTranslationAction(
+  experienceId: string,
+  data: {
+    position: string;
+    description?: string | null;
+    achievements?: string | null;
+  },
+  targetLocale: 'vi' | 'en' = 'en'
+): Promise<{ ok: boolean; error?: string }> {
+  await ensureAdmin();
+  try {
+    const { saveEntityTranslationToDb } = await import('@/lib/gemini-translate');
+    // Map: position -> title, description -> description, achievements -> content
+    const success = await saveEntityTranslationToDb(
+      'experience',
+      experienceId,
+      {
+        title: data.position,
+        description: data.description,
+        content: data.achievements,
+      },
+      targetLocale
+    );
+
+    if (!success) return { ok: false, error: 'Failed to save experience translation' };
+
+    REVALIDATE();
+    return { ok: true };
+  } catch (err: any) {
+    console.error('saveExperienceTranslationAction error:', err);
+    return { ok: false, error: 'Failed to save experience translation' };
+  }
+}
+
+/** Get all saved translations for an experience */
+export async function getExperienceTranslations(experienceId: string) {
+  try {
+    return await prisma.contentTranslation.findMany({
+      where: { entityType: 'experience', entityId: experienceId },
+    });
+  } catch (err) {
+    console.error('getExperienceTranslations error:', err);
+    return [];
+  }
+}
+

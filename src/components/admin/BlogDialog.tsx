@@ -112,7 +112,7 @@ export function BlogDialog({ mode, open, onOpenChange, initialData, onSuccess }:
                 {...register('title')}
                 onBlur={onTitleBlur}
                 placeholder="My Awesome Post"
-                className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
               {errors.title && <p className="text-xs text-destructive mt-1">{errors.title.message}</p>}
             </div>
@@ -121,7 +121,7 @@ export function BlogDialog({ mode, open, onOpenChange, initialData, onSuccess }:
               <input
                 {...register('slug')}
                 placeholder="my-awesome-post"
-                className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
               {errors.slug && <p className="text-xs text-destructive mt-1">{errors.slug.message}</p>}
             </div>
@@ -134,7 +134,7 @@ export function BlogDialog({ mode, open, onOpenChange, initialData, onSuccess }:
               {...register('excerpt')}
               rows={2}
               placeholder="Brief summary of the post..."
-              className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
             />
           </div>
 
@@ -156,7 +156,7 @@ export function BlogDialog({ mode, open, onOpenChange, initialData, onSuccess }:
               <input
                 {...register('tags')}
                 placeholder="nextjs, typescript, react"
-                className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <p className="text-xs text-muted-foreground mt-0.5">Comma-separated</p>
             </div>
@@ -164,7 +164,7 @@ export function BlogDialog({ mode, open, onOpenChange, initialData, onSuccess }:
               <label className="block text-sm font-medium mb-1">Status</label>
               <select
                 {...register('status')}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="DRAFT">Draft</option>
                 <option value="PUBLISHED">Published</option>
@@ -178,7 +178,7 @@ export function BlogDialog({ mode, open, onOpenChange, initialData, onSuccess }:
             <input
               {...register('thumbnailUrl')}
               placeholder="https://..."
-              className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
             {errors.thumbnailUrl && <p className="text-xs text-destructive mt-1">{errors.thumbnailUrl.message}</p>}
           </div>
@@ -189,7 +189,7 @@ export function BlogDialog({ mode, open, onOpenChange, initialData, onSuccess }:
               <label className="block text-sm font-medium mb-1">Series (Optional)</label>
               <select
                 {...register('seriesId')}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="">— None (Standalone) —</option>
                 {seriesList.map(s => (
@@ -205,7 +205,7 @@ export function BlogDialog({ mode, open, onOpenChange, initialData, onSuccess }:
                 type="number"
                 {...register('seriesOrder', { valueAsNumber: true })}
                 placeholder="1"
-                className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <p className="text-xs text-muted-foreground mt-0.5">Part # in the series</p>
             </div>

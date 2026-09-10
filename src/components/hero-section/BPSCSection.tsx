@@ -6,6 +6,7 @@ import { ArrowRight, Briefcase, BookOpen, Award, ExternalLink, Calendar, Clock }
 import type { getPublicProjects } from '@/lib/actions/project';
 import type { getPublicBlogs } from '@/lib/actions/blog';
 import type { getPublicCertifications } from '@/lib/actions/certification';
+import { useLanguage } from '@/lib/i18n/context';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -21,6 +22,7 @@ interface BPSCSectionProps {
 }
 
 export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProps) {
+  const { isEn } = useLanguage();
   const featuredProjects = projects.filter(p => p.featured);
   const recentPosts = blogs.slice(0, 3);
   const certifications = certs.filter(c => c.status === 'ACTIVE').slice(0, 3);
@@ -185,7 +187,10 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
           </div>
 
           <div data-bpsc="projects-grid" className="grid md:grid-cols-2 gap-6">
-            {featuredProjects.map(project => (
+            {featuredProjects.map(project => {
+              const projectTitle = (isEn && (project as any).translations?.en?.title) || project.title;
+              const projectDesc = (isEn && (project as any).translations?.en?.description) || project.description;
+              return (
               <Link
                 data-bpsc="project-card"
                 key={project.id}
@@ -194,7 +199,7 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
               >
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-extrabold text-lg sm:text-xl text-slate-900 group-hover:text-primary transition-colors">
-                    {project.title}
+                    {projectTitle}
                   </h3>
                   <div className="p-2 rounded-full bg-slate-100 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200">
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -202,7 +207,7 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
                 </div>
 
                 <p className="text-sm text-slate-600 mb-6 line-clamp-2 leading-relaxed">
-                  {project.description}
+                  {projectDesc}
                 </p>
 
                 <div className="flex flex-wrap gap-1.5">
@@ -227,7 +232,8 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
                   )}
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </div>
 

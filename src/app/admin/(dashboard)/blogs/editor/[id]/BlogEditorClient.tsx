@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useCallback, useTransition, useEffect } from 'react';
+import { useState, useCallback, useTransition, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { TipTapEditor } from '@/components/admin/editor/TipTapEditor';
-import { updateBlog } from '@/lib/actions/blog';
+import { updateBlog, previewTranslateBlogAction, saveBlogTranslationAction } from '@/lib/actions/blog';
+import { TranslationPreviewDialog, TranslatedData } from '@/components/admin/TranslationPreviewDialog';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import {
@@ -20,6 +21,9 @@ import {
   Tag,
   AlignLeft,
   Settings,
+  Sparkles,
+  Layers,
+  Languages,
 } from 'lucide-react';
 
 const schema = z.object({
@@ -36,9 +40,21 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+interface SeriesBlogItem {
+  id: string;
+  title: string;
+  seriesOrder: number | null;
+}
+
+interface SeriesItem {
+  id: string;
+  title: string;
+  blogs?: SeriesBlogItem[];
+}
+
 interface BlogEditorClientProps {
   blog: FormData & { id: string };
-  seriesList: { id: string; title: string }[];
+  seriesList: SeriesItem[];
 }
 
 function SidebarSection({
@@ -82,20 +98,127 @@ function Field({ label, error, children }: { label: string; error?: string; chil
 }
 
 const inputCls =
-  'w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring transition-shadow';
+  'w-full px-3.5 py-2 text-sm rounded-lg border border-border/80 bg-background text-foreground placeholder:text-muted-foreground shadow-2xs hover:border-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all';
 
 export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
   const [isPending, startTransition] = useTransition();
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [translatedResult, setTranslatedResult] = useState<TranslatedData | null>(null);
+  const [targetLocale, setTargetLocale] = useState<'vi' | 'en'>('vi');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [autoSaveTimer, setAutoSaveTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleAiTranslate = async (localeToUse: 'vi' | 'en' = targetLocale) => {
+    setIsTranslating(true);
+    const targetLabel = localeToUse === 'vi' ? 'Tiếng Việt' : 'Tiếng Anh';
+    const contentLen = (getValues('content') || blog.content || '').length;
+    if (contentLen > 3000) {
+      toast.info(`AI đang phân tích & chuyển ngữ bài viết dài sang ${targetLabel}... Vui lòng đợi trong giây lát (~15-30s).`);
+    } else {
+      toast.info(`AI đang chuyển ngữ sang ${targetLabel}...`);
+    }
+    try {
+      const currentPayload = {
+        title: getValues('title') || blog.title || 'Untitled Post',
+        excerpt: getValues('excerpt') || blog.excerpt || '',
+        content: getValues('content') || blog.content || '',
+      };
+
+      let resData: TranslatedData | null = null;
+      let errorMsg: string | null = null;
+
+      // 1. Try standard REST API endpoint first (immune to Server Action hash mismatch)
+      try {
+        const apiRes = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'preview',
+            blogId: blog.id,
+            ...currentPayload,
+            targetLocale: localeToUse,
+          }),
+        });
+        const json = await apiRes.json();
+        if (json.ok && json.data) {
+          resData = json.data;
+        } else {
+          errorMsg = json.error;
+        }
+      } catch (fetchErr: any) {
+        // 2. Fallback to Server Action if fetch fails
+        const saRes = await previewTranslateBlogAction(blog.id, localeToUse, currentPayload);
+        if (saRes.ok && saRes.data) {
+          resData = saRes.data;
+        } else {
+          errorMsg = saRes.error || fetchErr.message;
+        }
+      }
+
+      if (resData) {
+        setTranslatedResult(resData);
+        setPreviewOpen(true);
+        toast.success(`AI đã chuyển ngữ sang ${targetLabel}! Hãy xem trước bản dịch.`);
+      } else {
+        toast.error(errorMsg || 'Chuyển ngữ AI thất bại');
+      }
+    } catch (err: any) {
+      toast.error('Lỗi khi gọi AI chuyển ngữ: ' + (err?.message || 'Lỗi không xác định'));
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  const handleApplyToEditor = (data: TranslatedData) => {
+    setValue('title', data.title, { shouldDirty: true });
+    setValue('excerpt', data.excerpt, { shouldDirty: true });
+    setValue('content', data.content, { shouldDirty: true });
+    toast.success('Đã áp dụng bản dịch vào trình soạn thảo!');
+  };
+
+  const handleSaveToDb = async (data: TranslatedData) => {
+    try {
+      const apiRes = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'save',
+          blogId: blog.id,
+          ...data,
+          targetLocale,
+        }),
+      });
+      const json = await apiRes.json();
+      if (json.ok) {
+        toast.success(`Đã lưu bản dịch (${targetLocale.toUpperCase()}) vào CSDL song ngữ thành công!`);
+        return;
+      }
+    } catch {
+      // fallback to server action
+    }
+
+    const res = await saveBlogTranslationAction(blog.id, data, targetLocale);
+    if (res.ok) {
+      toast.success(`Đã lưu bản dịch (${targetLocale.toUpperCase()}) vào CSDL song ngữ thành công!`);
+    } else {
+      toast.error(res.error || 'Lỗi khi lưu bản dịch vào CSDL');
+    }
+  };
+
+  const handleApplyAndSave = async (data: TranslatedData) => {
+    handleApplyToEditor(data);
+    await handleSaveToDb(data);
+  };
 
   const {
     register,
     handleSubmit,
-    watch,
     setValue,
-    formState: { errors, isDirty },
+    watch,
+    getValues,
     reset,
+    formState: { errors, isDirty },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -107,12 +230,26 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
       status: blog.status,
       tags: blog.tags,
       seriesId: blog.seriesId ?? '',
-      seriesOrder: blog.seriesOrder ?? 0,
+      seriesOrder: blog.seriesOrder && blog.seriesOrder > 0 ? blog.seriesOrder : null,
     },
   });
 
   const watchedTitle = watch('title');
   const watchedStatus = watch('status');
+  const watchedSeriesId = watch('seriesId');
+  const watchedSeriesOrder = watch('seriesOrder');
+
+  const [orderMode, setOrderMode] = useState<'auto' | 'custom'>(
+    blog.seriesOrder && blog.seriesOrder > 0 ? 'custom' : 'auto'
+  );
+
+  const activeSeries = useMemo(() => {
+    return seriesList.find(s => s.id === watchedSeriesId);
+  }, [seriesList, watchedSeriesId]);
+
+  const activeSeriesBlogs = useMemo(() => {
+    return activeSeries?.blogs || [];
+  }, [activeSeries]);
 
   // Auto-generate slug from title (only for draft-* slugs i.e. freshly created drafts)
   const onTitleBlur = useCallback(
@@ -131,17 +268,25 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
   const doSave = useCallback(
     (data: FormData) => {
       startTransition(async () => {
-        const result = await updateBlog(blog.id, data);
+        const payload: FormData = {
+          ...data,
+          seriesId: data.seriesId || null,
+          seriesOrder:
+            data.seriesId && orderMode === 'custom' && data.seriesOrder && data.seriesOrder > 0
+              ? Number(data.seriesOrder)
+              : null,
+        };
+        const result = await updateBlog(blog.id, payload);
         if (result.ok) {
           setLastSaved(new Date());
-          reset(data); // mark form as clean
+          reset(payload); // mark form as clean
           toast.success('Saved ✓');
         } else {
           toast.error('Save failed');
         }
       });
     },
-    [blog.id, reset]
+    [blog.id, reset, orderMode]
   );
 
   // Auto-save on content change (debounce 3s)
@@ -166,7 +311,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
   return (
     <div className="flex h-full overflow-hidden bg-background">
       {/* ── LEFT SIDEBAR: Meta ───────────────────────────────────── */}
-      <aside className="w-72 shrink-0 border-r border-border flex flex-col overflow-y-auto bg-card">
+      <aside className="w-80 shrink-0 border-r border-border flex flex-col overflow-y-auto bg-card shadow-xs">
         {/* Top bar */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <Link
@@ -236,20 +381,120 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
             </Field>
             <Field label="Series">
               <select {...register('seriesId')} className={inputCls}>
-                <option value="">— None —</option>
+                <option value="">— None (Standalone) —</option>
                 {seriesList.map(s => (
-                  <option key={s.id} value={s.id}>{s.title}</option>
+                  <option key={s.id} value={s.id}>
+                    {s.title} {s.blogs?.length ? `(${s.blogs.length} articles)` : ''}
+                  </option>
                 ))}
               </select>
             </Field>
-            <Field label="Series Order">
-              <input
-                type="number"
-                {...register('seriesOrder', { valueAsNumber: true })}
-                placeholder="1"
-                className={inputCls}
-              />
-            </Field>
+
+            {watchedSeriesId && (
+              <div className="space-y-3 p-3 rounded-xl border border-border/80 bg-muted/40">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-primary" />
+                    <span>Series Ordering</span>
+                  </span>
+                  <span className="text-[10px] font-semibold text-primary px-2 py-0.5 rounded-full bg-primary/10">
+                    Smart Order
+                  </span>
+                </div>
+
+                {/* Mode Selector */}
+                <div className="grid grid-cols-2 gap-1.5 p-1 rounded-lg bg-background/80 border border-border">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOrderMode('auto');
+                      setValue('seriesOrder', null, { shouldValidate: true });
+                    }}
+                    className={`px-2.5 py-1.5 rounded-md text-xs font-semibold text-center transition-all cursor-pointer ${
+                      orderMode === 'auto'
+                        ? 'bg-foreground text-background shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Auto (End)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOrderMode('custom');
+                      const current = getValues('seriesOrder');
+                      const defaultPos = current && current > 0 ? current : (activeSeriesBlogs.length + 1);
+                      setValue('seriesOrder', defaultPos, { shouldValidate: true });
+                    }}
+                    className={`px-2.5 py-1.5 rounded-md text-xs font-semibold text-center transition-all cursor-pointer ${
+                      orderMode === 'custom'
+                        ? 'bg-primary text-primary-foreground shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Custom Order
+                  </button>
+                </div>
+
+                {orderMode === 'custom' ? (
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Insert as Part #:
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={99}
+                        {...register('seriesOrder', { valueAsNumber: true })}
+                        className="w-20 px-2 py-1.5 rounded-lg border border-border bg-card text-foreground font-bold text-center text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 shadow-2xs transition-colors"
+                      />
+                    </div>
+                    <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 text-[11px] text-foreground leading-relaxed">
+                      ⚡ <strong>Smart Insertion:</strong> This article will be placed at Part #{watchedSeriesOrder || 1}. Any existing articles at this position or higher will automatically shift back (+1).
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-2 rounded-lg bg-card border border-border text-[11px] text-muted-foreground leading-relaxed">
+                    💡 <strong>Auto / Unordered:</strong> This article requires no fixed position and will automatically be placed at the end of the series after all ordered articles.
+                  </div>
+                )}
+
+                {/* Series Articles Preview */}
+                {activeSeriesBlogs.length > 0 && (
+                  <div className="pt-2 border-t border-border/60">
+                    <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">
+                      Articles in this series ({activeSeriesBlogs.length}):
+                    </p>
+                    <div className="max-h-32 overflow-y-auto space-y-1 pr-1">
+                      {activeSeriesBlogs.map((b: SeriesBlogItem, idx: number) => {
+                        const isCurrentEditing = b.id === blog.id;
+                        return (
+                          <div
+                            key={b.id}
+                            className={`flex items-center gap-1.5 px-2 py-1 rounded text-[11px] ${
+                              isCurrentEditing
+                                ? 'bg-primary/15 text-primary font-bold border border-primary/20'
+                                : 'bg-card text-foreground/80'
+                            }`}
+                          >
+                            <span className="w-4 h-4 rounded bg-muted text-muted-foreground flex items-center justify-center text-[10px] shrink-0 font-bold">
+                              {b.seriesOrder ?? (idx + 1)}
+                            </span>
+                            <span className="truncate">{b.title}</span>
+                            {isCurrentEditing && (
+                              <span className="ml-auto text-[9px] text-primary shrink-0 uppercase tracking-wider font-bold">
+                                (Current)
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </SidebarSection>
         </form>
 
@@ -269,6 +514,56 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {isPending ? 'Saving…' : 'Save'}
           </button>
+
+          {/* AI Translation Action with Target Locale Selector */}
+          <div className="space-y-1.5 p-2 rounded-xl bg-purple-500/5 border border-purple-500/20">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[11px] font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-1">
+                <Languages className="w-3.5 h-3.5" />
+                Dịch sang:
+              </span>
+              <div className="flex items-center gap-1 bg-background/80 p-0.5 rounded-lg border border-border">
+                <button
+                  type="button"
+                  onClick={() => setTargetLocale('vi')}
+                  className={`px-2 py-0.5 text-[11px] font-medium rounded-md transition-all cursor-pointer ${
+                    targetLocale === 'vi'
+                      ? 'bg-purple-600 text-white font-bold shadow-2xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  🇻🇳 Tiếng Việt
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTargetLocale('en')}
+                  className={`px-2 py-0.5 text-[11px] font-medium rounded-md transition-all cursor-pointer ${
+                    targetLocale === 'en'
+                      ? 'bg-purple-600 text-white font-bold shadow-2xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  🇬🇧 English
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleAiTranslate(targetLocale)}
+              disabled={isTranslating || isPending}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-60 transition-colors cursor-pointer"
+            >
+              {isTranslating ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="w-3.5 h-3.5" />
+              )}
+              {isTranslating
+                ? `AI đang dịch (${targetLocale.toUpperCase()})...`
+                : `Dịch AI (${targetLocale === 'vi' ? 'Tiếng Việt' : 'English'})`}
+            </button>
+          </div>
           {watchedStatus === 'DRAFT' ? (
             <button
               type="button"
@@ -300,15 +595,15 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
       </aside>
 
       {/* ── MAIN EDITOR ─────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden bg-muted/40">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card shrink-0">
-          <h1 className="text-sm font-medium text-muted-foreground truncate max-w-xs">
+        <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card shrink-0 shadow-2xs">
+          <h1 className="text-sm font-medium text-foreground truncate max-w-xs">
             {watchedTitle || 'Untitled Post'}
           </h1>
           <div className="flex items-center gap-3">
             {isDirty && !isPending && (
-              <span className="text-xs text-muted-foreground italic">Unsaved changes</span>
+              <span className="text-xs text-amber-600 dark:text-amber-400 font-medium italic">Unsaved changes</span>
             )}
             {isPending && (
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -320,7 +615,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
                 href={`/blog/${blog.slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs text-primary hover:underline"
+                className="flex items-center gap-1 text-xs text-primary hover:underline font-medium"
               >
                 <Eye className="w-3 h-3" />
                 Preview
@@ -331,7 +626,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
 
         {/* Editor area */}
         <div className="flex-1 overflow-y-auto p-6 lg:p-10">
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             <TipTapEditor
               content={watch('content')}
               onChange={html => setValue('content', html, { shouldDirty: true })}
@@ -343,6 +638,21 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
           </div>
         </div>
       </main>
+
+      <TranslationPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        original={{
+          title: getValues('title') || blog.title,
+          excerpt: getValues('excerpt') || blog.excerpt,
+          content: getValues('content') || blog.content,
+        }}
+        translated={translatedResult}
+        targetLocale={targetLocale}
+        onApplyToEditor={handleApplyToEditor}
+        onSaveToDb={handleSaveToDb}
+        onApplyAndSave={handleApplyAndSave}
+      />
     </div>
   );
 }

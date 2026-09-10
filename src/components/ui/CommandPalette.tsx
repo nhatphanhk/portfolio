@@ -12,7 +12,7 @@ import {
   CommandSeparator,
 } from '@/components/ui/command';
 import { useTheme } from 'next-themes';
-import { Home, User, Mail, FileText, Monitor, Moon, Sun, Briefcase } from 'lucide-react';
+import { Home, User, Mail, FileText, Monitor, Moon, Sun, Briefcase, Layers, Cpu, Award } from 'lucide-react';
 
 export function CommandPalette() {
   const [open, setOpen] = React.useState(false);
@@ -46,13 +46,25 @@ export function CommandPalette() {
             <Home className="mr-2 h-4 w-4" />
             <span>Home</span>
           </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => router.push('/blog'))}>
+            <FileText className="mr-2 h-4 w-4" />
+            <span>Blogs</span>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => router.push('/blog/series'))}>
+            <Layers className="mr-2 h-4 w-4" />
+            <span>Series</span>
+          </CommandItem>
           <CommandItem onSelect={() => runCommand(() => router.push('/project'))}>
             <Briefcase className="mr-2 h-4 w-4" />
             <span>Projects</span>
           </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => router.push('/blog'))}>
-            <FileText className="mr-2 h-4 w-4" />
-            <span>Blog</span>
+          <CommandItem onSelect={() => runCommand(() => router.push('/skills'))}>
+            <Cpu className="mr-2 h-4 w-4" />
+            <span>Skills</span>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => router.push('/certifications'))}>
+            <Award className="mr-2 h-4 w-4" />
+            <span>Certifications</span>
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => router.push('/resume'))}>
             <User className="mr-2 h-4 w-4" />

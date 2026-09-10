@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Clock, Layers, Search, BookOpen, FileText, Link as LinkIcon, ChevronDown } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { ArrowRight, Clock, Layers, Search, FileText } from 'lucide-react';
 import { PaginationControl } from '@/components/ui/PaginationControl';
+import { useLanguage } from '@/lib/i18n/context';
 
 export type PublicBlog = {
   id: string;
@@ -16,6 +18,9 @@ export type PublicBlog = {
   tags: string[];
   thumbnailUrl?: string;
   status: string;
+  seriesId?: string;
+  seriesOrder?: number;
+  series?: { id: string; title: string; slug: string } | null;
 };
 
 export type PublicSeries = {
@@ -34,11 +39,20 @@ interface BlogListClientProps {
 }
 
 export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
+  const { t } = useLanguage();
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState('');
-  const [slugFilter, setSlugFilter] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('ALL');
-  const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null);
+  const [selectedSeriesSlug, setSelectedSeriesSlug] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Sync with URL query param ?series=...
+  useEffect(() => {
+    const seriesParam = searchParams.get('series');
+    if (seriesParam) {
+      setSelectedSeriesSlug(seriesParam);
+    }
+  }, [searchParams]);
 
   // Extract all unique tags
   const allTags = useMemo(() => {
@@ -47,22 +61,20 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
     return Array.from(set).sort();
   }, [posts]);
 
-  // Extract all unique slugs for selection
-  const allSlugs = useMemo(() => {
-    return Array.from(new Set(posts.map(p => p.slug).filter(Boolean))).sort();
-  }, [posts]);
-
   // Filter posts
   const filteredPosts = useMemo(() => {
     return posts.filter(post => {
+      // Series filter
+      if (selectedSeriesSlug) {
+        const matchesSeries =
+          post.series?.slug === selectedSeriesSlug ||
+          post.seriesId === selectedSeriesSlug;
+        if (!matchesSeries) return false;
+      }
+
       // Tag filter
       if (selectedTag !== 'ALL' && !post.tags.includes(selectedTag)) {
         return false;
-      }
-
-      // Slug filter (exact match from selectable list)
-      if (slugFilter) {
-        if (post.slug !== slugFilter) return false;
       }
 
       // Search query
@@ -77,10 +89,10 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
 
       return true;
     });
-  }, [posts, selectedTag, slugFilter, search]);
+  }, [posts, selectedTag, selectedSeriesSlug, search]);
 
   const isFiltering =
-    search.trim() !== '' || slugFilter.trim() !== '' || selectedTag !== 'ALL' || selectedSeriesId !== null;
+    search.trim() !== '' || selectedTag !== 'ALL' || selectedSeriesSlug !== null;
 
   // If not filtering, separate into featured (first) and rest
   const featured = !isFiltering && currentPage === 1 && posts.length > 0 ? posts[0] : null;
@@ -103,104 +115,111 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
     setCurrentPage(1);
   };
 
+  const handleSeriesClick = (slugOrId: string | null) => {
+    if (selectedSeriesSlug === slugOrId) {
+      setSelectedSeriesSlug(null);
+    } else {
+      setSelectedSeriesSlug(slugOrId);
+    }
+    setCurrentPage(1);
+  };
+
   const handleSearchChange = (val: string) => {
     setSearch(val);
     setCurrentPage(1);
   };
 
-  const handleSlugFilterChange = (val: string) => {
-    setSlugFilter(val);
+  const handleClearFilters = () => {
+    setSearch('');
+    setSelectedTag('ALL');
+    setSelectedSeriesSlug(null);
     setCurrentPage(1);
   };
 
-  const handleClearFilters = () => {
-    setSearch('');
-    setSlugFilter('');
-    setSelectedTag('ALL');
-    setSelectedSeriesId(null);
-    setCurrentPage(1);
-  };
+  const selectedSeriesObject = useMemo(() => {
+    if (!selectedSeriesSlug) return null;
+    return seriesList.find(s => s.slug === selectedSeriesSlug || s.id === selectedSeriesSlug);
+  }, [seriesList, selectedSeriesSlug]);
 
   return (
     <div className="space-y-12">
-      {/* Series Section (if any) */}
-      {seriesList.length > 0 && (
-        <div className="p-6 rounded-2xl border border-primary/20 bg-primary/5">
-          <h2 className="text-xs font-black uppercase tracking-widest text-primary mb-3 flex items-center gap-1.5">
-            <Layers className="w-4 h-4" />
-            Article Series
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {seriesList.map(s => (
-              <div
-                key={s.id}
-                className="p-4 rounded-xl border border-border bg-card hover:border-primary/40 transition-colors shadow-xs"
-              >
-                <h3 className="font-bold text-sm text-foreground mb-1 line-clamp-1">{s.title}</h3>
-                {s.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{s.description}</p>
-                )}
-                <div className="flex items-center justify-between mt-auto">
-                  <p className="text-[11px] text-primary font-semibold flex items-center gap-1">
-                    <BookOpen className="w-3 h-3" />
-                    {s.blogs.length} {s.blogs.length === 1 ? 'part' : 'parts'}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Search & Tag Filter Bar */}
+      {/* Search & Series / Tag Filter Bar */}
       <div className="space-y-4 p-5 rounded-2xl border border-border bg-card shadow-xs">
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          {/* Search Input (clean white background) */}
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search articles by title, keywords, or tags..."
-              value={search}
-              onChange={e => handleSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-border bg-white text-foreground placeholder:text-muted-foreground shadow-xs focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-            />
-          </div>
-
-          {/* Slug Filter Select Dropdown */}
-          <div className="relative w-full sm:w-60">
-            <LinkIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-            <select
-              id="blog-slug-filter"
-              value={slugFilter}
-              onChange={e => handleSlugFilterChange(e.target.value)}
-              className="w-full pl-9 pr-8 py-2.5 text-xs rounded-xl border border-border bg-white text-foreground shadow-xs focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all font-mono appearance-none cursor-pointer truncate"
-            >
-              <option value="">All Slugs ({allSlugs.length})</option>
-              {allSlugs.map(slug => (
-                <option key={slug} value={slug}>
-                  /{slug}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-          </div>
+        {/* Search Input */}
+        <div className="relative w-full">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            placeholder={t('blog.searchPlaceholder')}
+            value={search}
+            onChange={e => handleSearchChange(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground shadow-xs focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+          />
         </div>
 
-        {/* Tag Pills */}
+        {/* ── 1-Row Series Tag Filter ── */}
+        {seriesList.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-border/60">
+            <span className="text-xs font-bold text-primary flex items-center gap-1 mr-1">
+              <Layers className="w-3.5 h-3.5" /> {t('blog.series')}:
+            </span>
+            <button
+              type="button"
+              onClick={() => handleSeriesClick(null)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                selectedSeriesSlug === null
+                  ? 'bg-foreground text-background shadow-xs font-semibold'
+                  : 'bg-muted/70 hover:bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {t('common.all')} ({posts.length})
+            </button>
+            {seriesList.map(s => {
+              const count = posts.filter(
+                p => p.seriesId === s.id || p.series?.slug === s.slug
+              ).length;
+              const isSelected = selectedSeriesSlug === (s.slug || s.id);
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => handleSeriesClick(s.slug || s.id)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-primary text-primary-foreground shadow-xs font-semibold ring-2 ring-primary/30'
+                      : 'bg-muted/70 hover:bg-muted text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {s.title} <span className="opacity-60 text-[10px]">({count})</span>
+                </button>
+              );
+            })}
+
+            {/* Direct Link to Series Directory */}
+            <Link
+              href="/blog/series"
+              className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline transition-colors pl-2"
+            >
+              <span>{t('seriesPage.viewAll') || 'View all series'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        )}
+
+        {/* ── Topic Tag Pills ── */}
         {allTags.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-border/60">
-            <span className="text-xs font-medium text-muted-foreground mr-1">Tags:</span>
+          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-border/40">
+            <span className="text-xs font-medium text-muted-foreground mr-1">{t('blog.tags')}:</span>
             <button
               type="button"
               onClick={() => handleTagClick('ALL')}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
                 selectedTag === 'ALL'
                   ? 'bg-foreground text-background shadow-xs font-semibold'
                   : 'bg-muted/70 hover:bg-muted text-muted-foreground hover:text-foreground'
               }`}
             >
-              All ({posts.length})
+              {t('common.all')} ({posts.length})
             </button>
             {allTags.map(tag => {
               const count = posts.filter(p => p.tags.includes(tag)).length;
@@ -209,7 +228,7 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
                   key={tag}
                   type="button"
                   onClick={() => handleTagClick(tag)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
                     selectedTag === tag
                       ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
                       : 'bg-muted/70 hover:bg-muted text-muted-foreground hover:text-foreground'
@@ -229,16 +248,21 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
           <p>
             Found <span className="font-semibold text-foreground">{filteredPosts.length}</span> matching{' '}
             {filteredPosts.length === 1 ? 'article' : 'articles'}
-            {slugFilter && (
+            {selectedSeriesObject && (
+              <span className="ml-1 text-primary font-medium">
+                in series <span className="font-bold">"{selectedSeriesObject.title}"</span>
+              </span>
+            )}
+            {selectedTag !== 'ALL' && (
               <span className="ml-1 text-primary">
-                (slug: <span className="font-mono">{slugFilter}</span>)
+                with tag <span className="font-bold">#{selectedTag}</span>
               </span>
             )}
           </p>
           <button
             type="button"
             onClick={handleClearFilters}
-            className="text-primary hover:underline font-medium"
+            className="text-primary hover:underline font-medium cursor-pointer"
           >
             Clear all filters
           </button>
@@ -249,7 +273,7 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
       {featured && (
         <div className="mb-12">
           <div className="text-xs font-semibold uppercase tracking-widest text-primary mb-4 flex items-center gap-1.5">
-            <span>Featured Article</span>
+            <span>{t('blog.featuredArticle')}</span>
           </div>
           <Link href={`/blog/${featured.slug}`} className="group block">
             <article className="p-8 rounded-2xl border border-border bg-card hover:border-foreground/20 hover:shadow-md transition-all duration-200">
@@ -290,7 +314,7 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
                   </span>
                 </div>
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-foreground group-hover:gap-2 transition-all">
-                  Read article <ArrowRight className="h-4 w-4" />
+                  {t('common.readMore')} <ArrowRight className="h-4 w-4" />
                 </span>
               </div>
             </article>

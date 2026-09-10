@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Images, Trash2, Copy, Check, Upload, Loader2, X, Search } from 'lucide-react';
 import { deleteMedia } from '@/lib/actions/media';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
+import { PaginationControl } from '@/components/ui/PaginationControl';
 import { toast } from 'sonner';
 
 type MediaItem = {
@@ -17,6 +18,8 @@ type MediaItem = {
   altText: string | null;
   createdAt: Date;
 };
+
+const ITEMS_PER_PAGE = 18;
 
 function formatBytes(bytes: number | null): string {
   if (!bytes) return '—';
@@ -32,6 +35,7 @@ interface MediaLibraryClientProps {
 export function MediaLibraryClient({ media: initialMedia }: MediaLibraryClientProps) {
   const [items, setItems] = useState<MediaItem[]>(initialMedia);
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<MediaItem | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
@@ -98,6 +102,12 @@ export function MediaLibraryClient({ media: initialMedia }: MediaLibraryClientPr
     );
   }, [items, search]);
 
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE) || 1;
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredItems.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredItems, currentPage]);
+
   return (
     <main className="flex flex-1 gap-4 p-6 overflow-hidden h-full max-w-7xl mx-auto w-full">
       {/* ── Grid card panel ── */}
@@ -119,8 +129,11 @@ export function MediaLibraryClient({ media: initialMedia }: MediaLibraryClientPr
                 type="text"
                 placeholder="Search images..."
                 value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-border bg-white shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                onChange={e => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-border bg-card shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
               />
             </div>
 
@@ -128,7 +141,7 @@ export function MediaLibraryClient({ media: initialMedia }: MediaLibraryClientPr
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={uploading}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-foreground text-background rounded-lg text-xs font-medium hover:bg-foreground/90 disabled:opacity-60 transition-colors shrink-0"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-foreground text-background rounded-lg text-xs font-medium hover:bg-foreground/90 disabled:opacity-60 transition-colors shrink-0 cursor-pointer"
             >
               {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
               {uploading ? 'Uploading…' : 'Upload Image'}
@@ -162,7 +175,7 @@ export function MediaLibraryClient({ media: initialMedia }: MediaLibraryClientPr
             </div>
           )}
 
-          {filteredItems.length === 0 ? (
+          {paginatedItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground py-16">
               <Images className="w-16 h-16 opacity-20" />
               <p className="text-lg font-medium text-foreground">
@@ -177,7 +190,7 @@ export function MediaLibraryClient({ media: initialMedia }: MediaLibraryClientPr
                 <button
                   type="button"
                   onClick={() => inputRef.current?.click()}
-                  className="mt-2 px-4 py-2 border border-border rounded-lg text-sm hover:bg-muted transition-colors font-medium text-foreground"
+                  className="mt-2 px-4 py-2 border border-border rounded-lg text-sm hover:bg-muted transition-colors font-medium text-foreground cursor-pointer"
                 >
                   Upload first image
                 </button>
@@ -185,12 +198,12 @@ export function MediaLibraryClient({ media: initialMedia }: MediaLibraryClientPr
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-              {filteredItems.map(item => (
+              {paginatedItems.map(item => (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => setSelectedItem(item)}
-                  className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all group bg-muted/20 ${
+                  className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all group bg-muted/20 cursor-pointer ${
                     selectedItem?.id === item.id
                       ? 'border-primary ring-2 ring-primary/30'
                       : 'border-border/60 hover:border-border'
@@ -214,6 +227,19 @@ export function MediaLibraryClient({ media: initialMedia }: MediaLibraryClientPr
             </div>
           )}
         </div>
+
+        {/* Pagination in footer */}
+        {filteredItems.length > 0 && (
+          <div className="p-4 bg-card border-t border-border shrink-0">
+            <PaginationControl
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredItems.length}
+              pageSize={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
       </div>
 
       {/* ── Detail sidebar ── */}

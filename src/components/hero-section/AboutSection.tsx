@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, MapPin, Mail, Sparkles, Code2 } from 'lucide-react';
 import type { getProfile } from '@/lib/actions/about';
 import type { getPublicSkillsByCategory } from '@/lib/actions/skill';
+import { useLanguage } from '@/lib/i18n/context';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -19,6 +20,7 @@ interface AboutSectionProps {
 }
 
 export function AboutSection({ profile, skillsByCategory, content }: AboutSectionProps) {
+  const { isEn } = useLanguage();
   const allSkills = Object.values(skillsByCategory).flat();
   const highLevelSkills = allSkills.filter(s => s.level >= 4);
   const topSkills = (highLevelSkills.length > 0 ? highLevelSkills : allSkills).slice(0, 10);
@@ -235,7 +237,7 @@ export function AboutSection({ profile, skillsByCategory, content }: AboutSectio
               data-about="bio"
               className="text-base sm:text-lg text-slate-700 leading-relaxed mb-6 font-normal"
             >
-              {profile.bio}
+              {(isEn && (profile as any)?.translations?.en?.bio) || profile.bio}
             </p>
 
             {/* Meta Information */}

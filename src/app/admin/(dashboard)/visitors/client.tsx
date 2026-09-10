@@ -178,11 +178,11 @@ export function VisitorLogsClient({ logs }: Props) {
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-border bg-white shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-border bg-card shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
           />
         </div>
 
-        <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-card shadow-xs text-xs text-muted-foreground w-full sm:w-auto">
+        <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-card shadow-xs text-xs text-muted-foreground w-full sm:w-auto transition-colors">
           <Filter className="h-3.5 w-3.5" />
           <span className="font-medium">Filter Time:</span>
           <select
@@ -216,26 +216,26 @@ export function VisitorLogsClient({ logs }: Props) {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-100/90 border-b border-border text-xs uppercase tracking-wider text-slate-700">
+              <thead className="bg-slate-100/90 dark:bg-slate-800/90 border-b border-border text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300 font-semibold">
                 <tr>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700">Visitor</th>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 hidden md:table-cell">
+                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">Visitor</th>
+                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden md:table-cell">
                     <span className="flex items-center gap-1.5">
-                      <MessageSquare className="h-3.5 w-3.5 text-slate-500" /> Reason
+                      <MessageSquare className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" /> Reason
                     </span>
                   </th>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 hidden sm:table-cell">
+                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden sm:table-cell">
                     <span className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-slate-500" /> Date
+                      <Calendar className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" /> Date
                     </span>
                   </th>
-                  <th className="px-4 py-3.5" />
+                  <th className="px-4 py-3.5 text-right font-semibold text-slate-700 dark:text-slate-300">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-card">
                 {paginated.map(log => (
-                  <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-4 py-3">
+                  <tr key={log.id} className="hover:bg-primary/5 transition-colors">
+                    <td className="px-4 py-3.5">
                       <div>
                         <p className="font-medium text-foreground">{log.name}</p>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
@@ -244,10 +244,10 @@ export function VisitorLogsClient({ logs }: Props) {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
+                    <td className="px-4 py-3.5 hidden md:table-cell">
                       <p className="text-sm text-muted-foreground line-clamp-2 max-w-xs">{log.message}</p>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs hidden sm:table-cell">
+                    <td className="px-4 py-3.5 text-muted-foreground text-xs hidden sm:table-cell">
                       <div>
                         <p>
                           {new Date(log.createdAt).toLocaleDateString('en-US', {
@@ -264,12 +264,12 @@ export function VisitorLogsClient({ logs }: Props) {
                         </p>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5 text-right">
                       <button
                         type="button"
                         aria-label={`Delete log from ${log.name}`}
                         onClick={() => setDeleteTarget(log)}
-                        className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10"
+                        className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 cursor-pointer"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -282,7 +282,7 @@ export function VisitorLogsClient({ logs }: Props) {
         )}
 
         {filtered.length > 0 && (
-          <div className="p-4 bg-card">
+          <div className="p-4 bg-card border-t border-border">
             <PaginationControl
               currentPage={currentPage}
               totalPages={totalPages}

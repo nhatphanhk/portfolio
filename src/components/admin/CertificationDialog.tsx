@@ -72,19 +72,19 @@ export function CertificationDialog({ mode, open, onOpenChange, initialData }: C
         <form id="cert-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
           <div>
             <label className="block text-sm font-medium mb-1">Certification Name *</label>
-            <input {...register('name')} placeholder="AWS Solutions Architect" className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            <input {...register('name')} placeholder="AWS Solutions Architect" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             {errors.name && <p className="text-xs text-destructive mt-1">{errors.name.message}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Issuer *</label>
-              <input {...register('issuer')} placeholder="Amazon Web Services" className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <input {...register('issuer')} placeholder="Amazon Web Services" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               {errors.issuer && <p className="text-xs text-destructive mt-1">{errors.issuer.message}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Status</label>
-              <select {...register('status')} className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+              <select {...register('status')} className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring">
                 <option value="ACTIVE">Active</option>
                 <option value="EXPIRED">Expired</option>
               </select>
@@ -94,30 +94,30 @@ export function CertificationDialog({ mode, open, onOpenChange, initialData }: C
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Issue Date *</label>
-              <input type="date" {...register('issueDate')} className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <input type="date" {...register('issueDate')} className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               {errors.issueDate && <p className="text-xs text-destructive mt-1">{errors.issueDate.message}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Expiry Date</label>
-              <input type="date" {...register('expiryDate')} className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <input type="date" {...register('expiryDate')} className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Credential ID</label>
-              <input {...register('credentialId')} placeholder="ABC123" className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <input {...register('credentialId')} placeholder="ABC123" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Verify URL</label>
-              <input {...register('credentialUrl')} placeholder="https://..." className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <input {...register('credentialUrl')} placeholder="https://..." className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               {errors.credentialUrl && <p className="text-xs text-destructive mt-1">{errors.credentialUrl.message}</p>}
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Description</label>
-            <textarea {...register('description')} rows={3} placeholder="Brief description of the certification..." className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+            <textarea {...register('description')} rows={3} placeholder="Brief description of the certification..." className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
           </div>
         </form>
 

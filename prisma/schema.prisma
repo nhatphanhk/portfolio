@@ -304,6 +304,7 @@ model BlogSeries {
   slug        String   @unique
   description String?
   coverUrl    String?
+  tags        String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -323,6 +324,23 @@ model SiteContent {
   updatedAt DateTime @updatedAt
 
   @@map("site_content")
+}
+
+model ContentTranslation {
+  id          String   @id @default(uuid())
+  entityType  String   // "blog", "project", "series", "profile"
+  entityId    String
+  locale      String   // "vi" or "en"
+  title       String?
+  excerpt     String?
+  content     String?  @db.Text
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([entityType, entityId, locale])
+  @@index([entityType, entityId, locale])
+  @@map("content_translations")
 }
 
 // ─── Enums ────────────────────────────────────────────────────────────────────

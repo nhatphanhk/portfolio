@@ -17,14 +17,12 @@ export async function parseResumeWithGemini(
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  // Default to gemini-2.0-flash with fallback to gemini-1.5-flash
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-2.0-flash',
-    generationConfig: {
-      temperature: 0.2,
-      responseMimeType: 'application/json',
-    },
-  });
+  const candidateModels = [
+    'gemini-flash-latest',
+    'gemini-3.6-flash',
+    'gemini-flash-lite-latest',
+    'gemini-3.5-flash',
+  ];
 
   const prompt = `You are a Senior Career Services Advisor at Harvard University and Oxford University.
 Analyze the following raw CV/Resume text. Extract all sections into a pristine, structured JSON matching the schema below.
@@ -43,61 +41,60 @@ Important Instructions:
 6. Spoken Languages:
    - Extract languages with proficiency level (e.g., Native, Fluent, Professional Working, Intermediate).
 7. Social Links:
-   - Extract GitHub, LinkedIn, Personal Website/Portfolio URLs.
-
-Output must be ONLY a valid JSON object matching this schema:
+   - Detect platform (e.g., GITHUB, LINKEDIN, TWITTER, PORTFOLIO) and full URL.
+8. Output Format:
+   - STRICT JSON matching the following schema only (no markdown, no extra commentary):
 {
   "profile": {
-    "name": "Full Name",
-    "title": "Professional Title / Headline",
-    "bio": "Refined executive summary",
-    "careerObjective": "Career objective (optional)",
-    "email": "email@example.com",
-    "phone": "+84 987654321",
-    "location": "City, Country",
-    "softSkills": "Leadership, Problem Solving, Agile, etc."
+    "name": "string",
+    "title": "string",
+    "tagline": "string",
+    "email": "string",
+    "phone": "string",
+    "location": "string",
+    "bio": "string",
+    "careerObjective": "string"
   },
   "experiences": [
     {
-      "company": "Company Name",
-      "position": "Job Title",
+      "company": "string",
+      "position": "string",
+      "location": "string",
       "startDate": "YYYY-MM",
       "endDate": "YYYY-MM",
-      "isCurrent": false,
-      "description": "Short summary of role",
-      "achievements": "Bullet point 1 with quantifiable impact\\nBullet point 2\\nBullet point 3",
-      "techStack": "React, TypeScript, Go, PostgreSQL"
+      "isCurrent": boolean,
+      "description": "string (Harvard bullets joined with newlines)",
+      "technologies": "string (comma-separated)"
     }
   ],
   "education": [
     {
-      "institution": "University / College Name",
-      "degree": "Degree (e.g. Bachelor of Science)",
-      "fieldOfStudy": "Computer Science / Software Engineering",
+      "institution": "string",
+      "degree": "string",
+      "fieldOfStudy": "string",
       "startDate": "YYYY-MM",
       "endDate": "YYYY-MM",
-      "isCurrent": false,
-      "gpa": "3.8/4.0",
-      "description": "Relevant honors or coursework"
+      "grade": "string",
+      "description": "string"
     }
   ],
   "skills": [
     {
-      "name": "Skill / Technology Name",
+      "name": "string",
       "category": "FRONTEND" | "BACKEND" | "DATABASE" | "DEVOPS" | "TOOLS" | "OTHER",
-      "level": 80
+      "level": number (1-5)
     }
   ],
   "spokenLanguages": [
     {
-      "language": "English",
-      "level": "Fluent / Professional Working"
+      "language": "string",
+      "proficiency": "string"
     }
   ],
   "socialLinks": [
     {
-      "platform": "GitHub" | "LinkedIn" | "Portfolio",
-      "url": "https://..."
+      "platform": "string",
+      "url": "string"
     }
   ]
 }
@@ -107,34 +104,20 @@ Raw CV Text to analyze:
 ${rawText.slice(0, 30000)}
 ---`;
 
-  try {
-    const response = await model.generateContent(prompt);
-    const text = response.response.text();
-    const parsed = JSON.parse(text);
-
-    return {
-      profile: parsed.profile || {},
-      experiences: Array.isArray(parsed.experiences) ? parsed.experiences : [],
-      education: Array.isArray(parsed.education) ? parsed.education : [],
-      skills: Array.isArray(parsed.skills) ? parsed.skills : [],
-      spokenLanguages: Array.isArray(parsed.spokenLanguages) ? parsed.spokenLanguages : [],
-      socialLinks: Array.isArray(parsed.socialLinks) ? parsed.socialLinks : [],
-      rawText,
-    };
-  } catch (primaryError: any) {
-    // Attempt fallback to gemini-1.5-flash if 2.0-flash is unavailable
-    console.warn('Gemini 2.0 Flash failed, falling back to Gemini 1.5 Flash:', primaryError);
+  let lastError: any = null;
+  for (const modelName of candidateModels) {
     try {
-      const fallbackModel = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
+      const model = genAI.getGenerativeModel({
+        model: modelName,
         generationConfig: {
           temperature: 0.2,
           responseMimeType: 'application/json',
         },
       });
-      const fallbackResponse = await fallbackModel.generateContent(prompt);
-      const fallbackText = fallbackResponse.response.text();
-      const parsed = JSON.parse(fallbackText);
+      const response = await model.generateContent(prompt);
+      const text = response.response.text();
+      const cleaned = text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+      const parsed = JSON.parse(cleaned);
 
       return {
         profile: parsed.profile || {},
@@ -145,11 +128,12 @@ ${rawText.slice(0, 30000)}
         socialLinks: Array.isArray(parsed.socialLinks) ? parsed.socialLinks : [],
         rawText,
       };
-    } catch (fallbackError: any) {
-      console.error('Gemini AI parsing failed:', fallbackError);
-      throw new Error(
-        `Gemini AI gặp lỗi khi phân tích CV: ${fallbackError.message || primaryError.message}`
-      );
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`Resume parsing model ${modelName} failed, trying fallback...`, err.message);
     }
   }
+
+  console.error('Gemini AI resume parsing failed across all candidate models:', lastError);
+  throw new Error(`Gemini AI gặp lỗi khi phân tích CV: ${lastError?.message || 'Unknown error'}`);
 }
