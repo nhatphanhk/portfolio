@@ -26,10 +26,12 @@ export function TipTapEditor({ content, onChange, placeholder = 'Write something
   const [imageModalOpen, setImageModalOpen] = useState(false);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         codeBlock: false,
         heading: false,
+        link: false,
       }),
       Heading.configure({ levels: [1, 2, 3] }),
       CodeBlockLowlight.extend({

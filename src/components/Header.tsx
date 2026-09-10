@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -39,8 +40,12 @@ const Header = () => {
   const pathname = usePathname();
   const { t } = useLanguage();
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isHidden, setIsHidden] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const getNavLabel = (name: string): string => {
     switch (name) {
@@ -60,26 +65,8 @@ const Header = () => {
   const isDarkHero = isHome && !isScrolled;
 
   useEffect(() => {
-    let lastY = window.scrollY;
-
     const handleScroll = () => {
-      const currentY = window.scrollY;
-      const atTop = currentY < 80;
-
-      setIsScrolled(!atTop);
-
-      if (atTop) {
-        // Always show at the very top
-        setIsHidden(false);
-      } else if (currentY > lastY + 4) {
-        // Scrolling DOWN — hide header
-        setIsHidden(true);
-      } else if (currentY < lastY - 4) {
-        // Scrolling UP — show header
-        setIsHidden(false);
-      }
-
-      lastY = currentY;
+      setIsScrolled(window.scrollY >= 80);
     };
 
     handleScroll();
@@ -105,11 +92,9 @@ const Header = () => {
     return pathname === href || (href !== '/' && pathname.startsWith(href));
   };
 
-  return (
+  const headerContent = (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
-        isHidden ? '-translate-y-full' : 'translate-y-0'
-      } ${
         isDarkHero
           ? 'bg-transparent'
           : 'backdrop-blur-md border-b border-border/80 shadow-sm'
@@ -300,6 +285,12 @@ const Header = () => {
       </nav>
     </header>
   );
+
+  if (mounted && typeof document !== 'undefined') {
+    return createPortal(headerContent, document.body);
+  }
+
+  return headerContent;
 };
 
 export default Header;

@@ -49,9 +49,13 @@ export async function createSeries(data: SeriesFormData) {
     revalidatePath('/blog');
     revalidatePath('/blog/series');
     return { ok: true };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error creating series:', error);
-    return { ok: false, error: 'Series slug must be unique' };
+    const err = error as { code?: string; message?: string };
+    if (err?.code === 'P2002') {
+      return { ok: false, error: 'Series slug must be unique' };
+    }
+    return { ok: false, error: err?.message || 'Failed to create series' };
   }
 }
 
@@ -80,9 +84,13 @@ export async function updateSeries(id: string, data: SeriesFormData) {
     revalidatePath('/blog');
     revalidatePath('/blog/series');
     return { ok: true };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error updating series:', error);
-    return { ok: false, error: 'Failed to update series' };
+    const err = error as { code?: string; message?: string };
+    if (err?.code === 'P2002') {
+      return { ok: false, error: 'Series slug must be unique' };
+    }
+    return { ok: false, error: err?.message || 'Failed to update series' };
   }
 }
 
