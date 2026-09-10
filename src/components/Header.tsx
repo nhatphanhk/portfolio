@@ -15,7 +15,6 @@ import {
   Mail,
   Sparkles,
   Layers,
-  Search,
 } from 'lucide-react';
 import { NAV_LINKS } from '@/lib/constants';
 import { useLanguage } from '@/lib/i18n/context';
@@ -84,12 +83,6 @@ const Header = () => {
       return pathname.startsWith('/blog/series');
     }
     return pathname === href || (href !== '/' && pathname.startsWith(href));
-  };
-
-  const handleOpenSearch = () => {
-    document.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'k', metaKey: true })
-    );
   };
 
   return (
@@ -204,42 +197,12 @@ const Header = () => {
               );
             })}
 
-            {/* Quick Search Shortcut */}
-            <button
-              type="button"
-              onClick={handleOpenSearch}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer ${
-                isDarkHero
-                  ? 'bg-white/10 hover:bg-white/20 border-white/20 text-white'
-                  : 'bg-muted/60 hover:bg-muted border-border/80 text-muted-foreground hover:text-foreground'
-              }`}
-              aria-label="Quick search (Ctrl+K)"
-              title="Quick search (Ctrl+K)"
-            >
-              <Search className="w-3.5 h-3.5" />
-              <kbd className="hidden lg:inline-flex items-center px-1 text-[10px] font-mono font-semibold rounded bg-background/60 border border-border/60">
-                ⌘K
-              </kbd>
-            </button>
-
             {/* Language Switcher (Desktop) */}
             <LanguageToggle isDarkHero={isDarkHero} className="ml-1" />
           </div>
 
-          {/* ── Mobile Actions (Search, Language Toggle & Menu Button) ── */}
+          {/* ── Mobile Actions (Language Toggle & Menu Button) ── */}
           <div className="flex md:hidden items-center gap-2">
-            <button
-              type="button"
-              onClick={handleOpenSearch}
-              className={`p-2 rounded-xl border transition-all duration-200 ${
-                isDarkHero
-                  ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
-                  : 'bg-black/5 border-black/10 text-gray-900 hover:bg-black/10'
-              }`}
-              aria-label="Quick search (Ctrl+K)"
-            >
-              <Search className="h-4 w-4" />
-            </button>
             <LanguageToggle isDarkHero={isDarkHero} />
             <button
               id="mobile-menu-toggle"
