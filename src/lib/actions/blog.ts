@@ -330,25 +330,87 @@ export async function getBlogById(id: string) {
   });
 }
 
-/** Action to translate a blog post using Gemini AI and save to PostgreSQL DB */
-export async function translateBlogAction(
+/** Action to translate a blog post using Gemini AI and return translated content for preview */
+export async function previewTranslateBlogAction(
   blogId: string,
   targetLocale: 'vi' | 'en' = 'vi',
+  currentContent?: { title: string; excerpt?: string | null; content: string },
   customApiKey?: string
 ): Promise<{ ok: boolean; data?: { title: string; excerpt: string; content: string }; error?: string }> {
   await ensureAdmin();
   try {
-    const blog = await prisma.blog.findUnique({
-      where: { id: blogId },
-      select: { title: true, excerpt: true, content: true },
-    });
+    let sourceData = currentContent;
+    if (!sourceData || !sourceData.title) {
+      const blog = await prisma.blog.findUnique({
+        where: { id: blogId },
+        select: { title: true, excerpt: true, content: true },
+      });
+      if (!blog) {
+        return { ok: false, error: 'Blog not found' };
+      }
+      sourceData = blog;
+    }
 
-    if (!blog) {
-      return { ok: false, error: 'Blog not found' };
+    const { generateBlogTranslation } = await import('@/lib/gemini-translate');
+    const result = await generateBlogTranslation(sourceData, targetLocale, customApiKey);
+
+    if (!result) {
+      return { ok: false, error: 'AI translation failed. Please check your Gemini API key or try again.' };
+    }
+
+    return { ok: true, data: result };
+  } catch (error) {
+    console.error('previewTranslateBlogAction error:', error);
+    return { ok: false, error: 'Error during translation' };
+  }
+}
+
+/** Action to save an approved translation to PostgreSQL DB */
+export async function saveBlogTranslationAction(
+  blogId: string,
+  data: { title: string; excerpt: string; content: string },
+  targetLocale: 'vi' | 'en' = 'vi'
+): Promise<{ ok: boolean; error?: string }> {
+  await ensureAdmin();
+  try {
+    const { saveBlogTranslationToDb } = await import('@/lib/gemini-translate');
+    const success = await saveBlogTranslationToDb(blogId, data, targetLocale);
+    if (!success) {
+      return { ok: false, error: 'Failed to save translation to database' };
+    }
+
+    revalidatePath('/blog');
+    revalidatePath(`/admin/blogs/editor/${blogId}`);
+    return { ok: true };
+  } catch (error) {
+    console.error('saveBlogTranslationAction error:', error);
+    return { ok: false, error: 'Failed to save translation' };
+  }
+}
+
+/** Action to translate a blog post using Gemini AI and save to PostgreSQL DB */
+export async function translateBlogAction(
+  blogId: string,
+  targetLocale: 'vi' | 'en' = 'vi',
+  customApiKey?: string,
+  currentContent?: { title: string; excerpt?: string | null; content: string }
+): Promise<{ ok: boolean; data?: { title: string; excerpt: string; content: string }; error?: string }> {
+  await ensureAdmin();
+  try {
+    let sourceData = currentContent;
+    if (!sourceData || !sourceData.title) {
+      const blog = await prisma.blog.findUnique({
+        where: { id: blogId },
+        select: { title: true, excerpt: true, content: true },
+      });
+      if (!blog) {
+        return { ok: false, error: 'Blog not found' };
+      }
+      sourceData = blog;
     }
 
     const { translateAndSaveBlogPost } = await import('@/lib/gemini-translate');
-    const result = await translateAndSaveBlogPost(blogId, blog, targetLocale, customApiKey);
+    const result = await translateAndSaveBlogPost(blogId, sourceData, targetLocale, customApiKey);
 
     if (!result) {
       return { ok: false, error: 'AI translation failed' };

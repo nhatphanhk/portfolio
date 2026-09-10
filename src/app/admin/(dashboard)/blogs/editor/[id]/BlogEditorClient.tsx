@@ -5,7 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { TipTapEditor } from '@/components/admin/editor/TipTapEditor';
-import { updateBlog, translateBlogAction } from '@/lib/actions/blog';
+import { updateBlog, previewTranslateBlogAction, saveBlogTranslationAction } from '@/lib/actions/blog';
+import { TranslationPreviewDialog, TranslatedData } from '@/components/admin/TranslationPreviewDialog';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import {
@@ -101,24 +102,55 @@ const inputCls =
 export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
   const [isPending, startTransition] = useTransition();
   const [isTranslating, setIsTranslating] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [translatedResult, setTranslatedResult] = useState<TranslatedData | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [autoSaveTimer, setAutoSaveTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   const handleAiTranslate = async () => {
     setIsTranslating(true);
-    toast.info('AI is generating translation and saving to DB...');
+    toast.info('AI đang chuyển ngữ nội dung bài viết...');
     try {
-      const res = await translateBlogAction(blog.id, 'vi');
-      if (res.ok) {
-        toast.success('AI translated & saved to DB ✓');
+      const currentPayload = {
+        title: getValues('title') || blog.title,
+        excerpt: getValues('excerpt') || blog.excerpt,
+        content: getValues('content') || blog.content,
+      };
+
+      const res = await previewTranslateBlogAction(blog.id, 'vi', currentPayload);
+      if (res.ok && res.data) {
+        setTranslatedResult(res.data);
+        setPreviewOpen(true);
+        toast.success('AI đã chuyển ngữ xong! Hãy xem trước bản dịch.');
       } else {
-        toast.error(res.error || 'Failed to translate');
+        toast.error(res.error || 'Chuyển ngữ AI thất bại');
       }
-    } catch {
-      toast.error('AI translation error');
+    } catch (err: any) {
+      toast.error('Lỗi khi gọi AI chuyển ngữ: ' + (err?.message || 'Lỗi không xác định'));
     } finally {
       setIsTranslating(false);
     }
+  };
+
+  const handleApplyToEditor = (data: TranslatedData) => {
+    setValue('title', data.title, { shouldDirty: true });
+    setValue('excerpt', data.excerpt, { shouldDirty: true });
+    setValue('content', data.content, { shouldDirty: true });
+    toast.success('Đã áp dụng bản dịch vào trình soạn thảo!');
+  };
+
+  const handleSaveToDb = async (data: TranslatedData) => {
+    const res = await saveBlogTranslationAction(blog.id, data, 'vi');
+    if (res.ok) {
+      toast.success('Đã lưu bản dịch song ngữ vào CSDL thành công!');
+    } else {
+      toast.error(res.error || 'Lỗi khi lưu bản dịch vào CSDL');
+    }
+  };
+
+  const handleApplyAndSave = async (data: TranslatedData) => {
+    handleApplyToEditor(data);
+    await handleSaveToDb(data);
   };
 
   const {
@@ -432,7 +464,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/30 rounded-lg text-sm font-medium hover:bg-purple-500/20 disabled:opacity-60 transition-colors cursor-pointer"
           >
             {isTranslating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-purple-600" />}
-            {isTranslating ? 'Translating & caching…' : 'AI Translate & Save to DB'}
+            {isTranslating ? 'AI đang chuyển ngữ...' : 'Dịch AI (Xem trước & Lưu)'}
           </button>
           {watchedStatus === 'DRAFT' ? (
             <button
@@ -508,6 +540,21 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
           </div>
         </div>
       </main>
+
+      <TranslationPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        original={{
+          title: getValues('title') || blog.title,
+          excerpt: getValues('excerpt') || blog.excerpt,
+          content: getValues('content') || blog.content,
+        }}
+        translated={translatedResult}
+        targetLocale="vi"
+        onApplyToEditor={handleApplyToEditor}
+        onSaveToDb={handleSaveToDb}
+        onApplyAndSave={handleApplyAndSave}
+      />
     </div>
   );
 }
