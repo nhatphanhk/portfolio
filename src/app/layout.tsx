@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import { CommandPalette } from '@/components/ui/CommandPalette';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { LanguageProvider } from '@/lib/i18n/context';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
@@ -68,11 +69,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
-          <Toaster position="bottom-right" />
-          <CommandPalette />
-          <Analytics />
-          <SpeedInsights />
+          <LanguageProvider>
+            {children}
+            <Toaster position="bottom-right" />
+            <CommandPalette />
+            <Analytics />
+            <SpeedInsights />
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

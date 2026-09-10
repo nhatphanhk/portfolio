@@ -7,7 +7,8 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:30
 
 export const NAV_LINKS = [
   { name: 'Resume', href: '/resume' },
-  { name: 'Blog', href: '/blog' },
+  { name: 'Blogs', href: '/blog' },
+  { name: 'Series', href: '/blog/series' },
   { name: 'Projects', href: '/project' },
   { name: 'Skills', href: '/skills' },
   { name: 'Certifications', href: '/certifications' },

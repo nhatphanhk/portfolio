@@ -164,3 +164,46 @@ export const getSeriesForBlog = cache(async (blogId: string) => {
     return null;
   }
 });
+
+export const getPublicSeriesBySlug = cache(async (slug: string) => {
+  try {
+    const series = await prisma.blogSeries.findUnique({
+      where: { slug },
+      include: {
+        blogs: {
+          where: { status: 'PUBLISHED' },
+          orderBy: { seriesOrder: 'asc' },
+          include: {
+            tags: { include: { tag: true } },
+          },
+        },
+      },
+    });
+
+    if (!series) return null;
+
+    return {
+      id: series.id,
+      title: series.title,
+      slug: series.slug,
+      description: series.description,
+      coverUrl: series.coverUrl,
+      createdAt: series.createdAt.toISOString(),
+      updatedAt: series.updatedAt.toISOString(),
+      blogs: series.blogs.map(b => ({
+        id: b.id,
+        title: b.title,
+        slug: b.slug,
+        excerpt: b.excerpt || '',
+        seriesOrder: b.seriesOrder ?? 0,
+        publishedAt: (b.publishedAt || b.createdAt).toISOString(),
+        readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
+        tags: b.tags.map(t => t.tag.name),
+        thumbnailUrl: b.thumbnailUrl || undefined,
+      })),
+    };
+  } catch (error) {
+    console.error('Error fetching series by slug:', error);
+    return null;
+  }
+});

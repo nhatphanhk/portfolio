@@ -14,12 +14,18 @@ import {
   Award,
   Mail,
   Sparkles,
+  Layers,
+  Search,
 } from 'lucide-react';
 import { NAV_LINKS } from '@/lib/constants';
+import { useLanguage } from '@/lib/i18n/context';
+import { LanguageToggle } from '@/components/ui/LanguageToggle';
 
 const NAV_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Resume: FileText,
   Blog: BookOpen,
+  Blogs: BookOpen,
+  Series: Layers,
   Projects: Briefcase,
   Skills: Cpu,
   Certifications: Award,
@@ -32,8 +38,23 @@ const NAV_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
  */
 const Header = () => {
   const pathname = usePathname();
+  const { t } = useLanguage();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const getNavLabel = (name: string): string => {
+    switch (name) {
+      case 'Resume': return t('nav.resume');
+      case 'Blogs':
+      case 'Blog': return t('nav.blogs');
+      case 'Series': return t('nav.series');
+      case 'Projects': return t('nav.projects');
+      case 'Skills': return t('nav.skills');
+      case 'Certifications': return t('nav.certifications');
+      case 'Contact': return t('nav.contact');
+      default: return name;
+    }
+  };
 
   const isHome = pathname === '/';
   const isDarkHero = isHome && !isScrolled;
@@ -51,6 +72,25 @@ const Header = () => {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  const isItemActive = (href: string) => {
+    if (href === '/blog') {
+      return (
+        pathname === '/blog' ||
+        (pathname.startsWith('/blog/') && !pathname.startsWith('/blog/series'))
+      );
+    }
+    if (href === '/blog/series') {
+      return pathname.startsWith('/blog/series');
+    }
+    return pathname === href || (href !== '/' && pathname.startsWith(href));
+  };
+
+  const handleOpenSearch = () => {
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'k', metaKey: true })
+    );
+  };
 
   return (
     <header
@@ -129,17 +169,16 @@ const Header = () => {
           </Link>
 
           {/* ── Navigation Links (Open & Seamless) ── */}
-          <div className="hidden md:flex items-center gap-1 sm:gap-2">
+          <div className="hidden md:flex items-center gap-1 sm:gap-1.5">
             {NAV_LINKS.map(item => {
-              const isActive =
-                pathname === item.href || pathname.startsWith(item.href);
+              const isActive = isItemActive(item.href);
               const Icon = NAV_ICONS[item.name] || Sparkles;
 
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group relative flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold tracking-wide rounded-full transition-all duration-200 ${
+                  className={`group relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold tracking-wide rounded-full transition-all duration-200 ${
                     isActive
                       ? isDarkHero
                         ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 shadow-[0_4px_16px_rgba(245,158,11,0.4)] scale-105'
@@ -160,14 +199,48 @@ const Header = () => {
                         : 'text-amber-600 group-hover:text-amber-500'
                     }`}
                   />
-                  <span>{item.name}</span>
+                  <span>{getNavLabel(item.name)}</span>
                 </Link>
               );
             })}
+
+            {/* Quick Search Shortcut */}
+            <button
+              type="button"
+              onClick={handleOpenSearch}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer ${
+                isDarkHero
+                  ? 'bg-white/10 hover:bg-white/20 border-white/20 text-white'
+                  : 'bg-muted/60 hover:bg-muted border-border/80 text-muted-foreground hover:text-foreground'
+              }`}
+              aria-label="Quick search (Ctrl+K)"
+              title="Quick search (Ctrl+K)"
+            >
+              <Search className="w-3.5 h-3.5" />
+              <kbd className="hidden lg:inline-flex items-center px-1 text-[10px] font-mono font-semibold rounded bg-background/60 border border-border/60">
+                ⌘K
+              </kbd>
+            </button>
+
+            {/* Language Switcher (Desktop) */}
+            <LanguageToggle isDarkHero={isDarkHero} className="ml-1" />
           </div>
 
-          {/* ── Mobile Menu Toggle Button ── */}
-          <div className="flex md:hidden items-center">
+          {/* ── Mobile Actions (Search, Language Toggle & Menu Button) ── */}
+          <div className="flex md:hidden items-center gap-2">
+            <button
+              type="button"
+              onClick={handleOpenSearch}
+              className={`p-2 rounded-xl border transition-all duration-200 ${
+                isDarkHero
+                  ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                  : 'bg-black/5 border-black/10 text-gray-900 hover:bg-black/10'
+              }`}
+              aria-label="Quick search (Ctrl+K)"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+            <LanguageToggle isDarkHero={isDarkHero} />
             <button
               id="mobile-menu-toggle"
               type="button"
@@ -193,7 +266,7 @@ const Header = () => {
         <div
           className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${
             isMobileMenuOpen
-              ? 'max-h-96 opacity-100 pb-4'
+              ? 'max-h-[32rem] opacity-100 pb-4'
               : 'max-h-0 opacity-0 pointer-events-none'
           }`}
         >
@@ -205,8 +278,7 @@ const Header = () => {
             }`}
           >
             {NAV_LINKS.map(item => {
-              const isActive =
-                pathname === item.href || pathname.startsWith(item.href);
+              const isActive = isItemActive(item.href);
               const Icon = NAV_ICONS[item.name] || Sparkles;
 
               return (
@@ -235,7 +307,7 @@ const Header = () => {
                           : 'text-amber-600'
                       }`}
                     />
-                    <span>{item.name}</span>
+                    <span>{getNavLabel(item.name)}</span>
                   </div>
                   {isActive && (
                     <span

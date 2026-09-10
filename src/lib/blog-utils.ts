@@ -6,6 +6,9 @@ export interface Heading {
 
 export function slugifyHeading(text: string): string {
   return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)+/g, '');
@@ -14,17 +17,25 @@ export function slugifyHeading(text: string): string {
 export function extractHeadings(html: string): Heading[] {
   if (!html) return [];
 
-  const regex = /<h([2-4])(?:\s+[^>]*)?>(.*?)<\/h\1>/gi;
+  // Match <h1> to <h4> across multiple lines and with attributes
+  const regex = /<h([1-4])(?:\s+[^>]*)?>([\s\S]*?)<\/h\1>/gi;
   const headings: Heading[] = [];
+  const idCounts = new Map<string, number>();
   let match;
 
   while ((match = regex.exec(html)) !== null) {
     const level = parseInt(match[1], 10);
     const rawText = match[2].replace(/<[^>]*>/g, '').trim();
-    const id = slugifyHeading(rawText);
-    if (rawText) {
-      headings.push({ id, text: rawText, level });
+    if (!rawText) continue;
+
+    let id = slugifyHeading(rawText) || `heading-${headings.length + 1}`;
+    const count = idCounts.get(id) || 0;
+    idCounts.set(id, count + 1);
+    if (count > 0) {
+      id = `${id}-${count}`;
     }
+
+    headings.push({ id, text: rawText, level });
   }
 
   return headings;

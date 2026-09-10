@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { TipTapEditor } from '@/components/admin/editor/TipTapEditor';
-import { updateBlog } from '@/lib/actions/blog';
+import { updateBlog, translateBlogAction } from '@/lib/actions/blog';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import {
@@ -20,6 +20,7 @@ import {
   Tag,
   AlignLeft,
   Settings,
+  Sparkles,
 } from 'lucide-react';
 
 const schema = z.object({
@@ -82,12 +83,30 @@ function Field({ label, error, children }: { label: string; error?: string; chil
 }
 
 const inputCls =
-  'w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring transition-shadow';
+  'w-full px-3.5 py-2 text-sm rounded-lg border border-border/80 bg-background text-foreground placeholder:text-muted-foreground shadow-2xs hover:border-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all';
 
 export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
   const [isPending, startTransition] = useTransition();
+  const [isTranslating, setIsTranslating] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [autoSaveTimer, setAutoSaveTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleAiTranslate = async () => {
+    setIsTranslating(true);
+    toast.info('AI is generating translation and saving to DB...');
+    try {
+      const res = await translateBlogAction(blog.id, 'vi');
+      if (res.ok) {
+        toast.success('AI translated & saved to DB ✓');
+      } else {
+        toast.error(res.error || 'Failed to translate');
+      }
+    } catch {
+      toast.error('AI translation error');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   const {
     register,
@@ -166,7 +185,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
   return (
     <div className="flex h-full overflow-hidden bg-background">
       {/* ── LEFT SIDEBAR: Meta ───────────────────────────────────── */}
-      <aside className="w-72 shrink-0 border-r border-border flex flex-col overflow-y-auto bg-card">
+      <aside className="w-80 shrink-0 border-r border-border flex flex-col overflow-y-auto bg-card shadow-xs">
         {/* Top bar */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <Link
@@ -269,6 +288,16 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {isPending ? 'Saving…' : 'Save'}
           </button>
+
+          <button
+            type="button"
+            onClick={handleAiTranslate}
+            disabled={isTranslating || isPending}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/30 rounded-lg text-sm font-medium hover:bg-purple-500/20 disabled:opacity-60 transition-colors cursor-pointer"
+          >
+            {isTranslating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-purple-600" />}
+            {isTranslating ? 'Translating & caching…' : 'AI Translate & Save to DB'}
+          </button>
           {watchedStatus === 'DRAFT' ? (
             <button
               type="button"
@@ -300,15 +329,15 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
       </aside>
 
       {/* ── MAIN EDITOR ─────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden bg-muted/40">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card shrink-0">
-          <h1 className="text-sm font-medium text-muted-foreground truncate max-w-xs">
+        <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card shrink-0 shadow-2xs">
+          <h1 className="text-sm font-medium text-foreground truncate max-w-xs">
             {watchedTitle || 'Untitled Post'}
           </h1>
           <div className="flex items-center gap-3">
             {isDirty && !isPending && (
-              <span className="text-xs text-muted-foreground italic">Unsaved changes</span>
+              <span className="text-xs text-amber-600 dark:text-amber-400 font-medium italic">Unsaved changes</span>
             )}
             {isPending && (
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -320,7 +349,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
                 href={`/blog/${blog.slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs text-primary hover:underline"
+                className="flex items-center gap-1 text-xs text-primary hover:underline font-medium"
               >
                 <Eye className="w-3 h-3" />
                 Preview
@@ -331,7 +360,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
 
         {/* Editor area */}
         <div className="flex-1 overflow-y-auto p-6 lg:p-10">
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             <TipTapEditor
               content={watch('content')}
               onChange={html => setValue('content', html, { shouldDirty: true })}

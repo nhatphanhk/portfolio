@@ -191,7 +191,10 @@ export async function getPublicBlogs() {
     const blogs = await prisma.blog.findMany({
       where: { status: 'PUBLISHED' },
       orderBy: { publishedAt: 'desc' },
-      include: { tags: { include: { tag: true } } },
+      include: {
+        tags: { include: { tag: true } },
+        series: { select: { id: true, title: true, slug: true } },
+      },
     });
     return blogs.map(b => ({
       id: b.id,
@@ -204,6 +207,9 @@ export async function getPublicBlogs() {
       tags: b.tags.map(t => t.tag.name),
       thumbnailUrl: b.thumbnailUrl || undefined,
       status: b.status,
+      seriesId: b.seriesId || undefined,
+      seriesOrder: b.seriesOrder ?? 0,
+      series: b.series ? { id: b.series.id, title: b.series.title, slug: b.series.slug } : undefined,
     }));
   } catch (error) {
     console.error('Error fetching public blogs from db:', error);
@@ -215,7 +221,10 @@ export const getPublicBlogBySlug = cache(async (slug: string) => {
   try {
     const b = await prisma.blog.findUnique({
       where: { slug },
-      include: { tags: { include: { tag: true } } },
+      include: {
+        tags: { include: { tag: true } },
+        series: { select: { id: true, title: true, slug: true } },
+      },
     });
     if (!b || b.status !== 'PUBLISHED') return null;
     return {
@@ -229,6 +238,9 @@ export const getPublicBlogBySlug = cache(async (slug: string) => {
       tags: b.tags.map(t => t.tag.name),
       thumbnailUrl: b.thumbnailUrl || undefined,
       status: b.status,
+      seriesId: b.seriesId || undefined,
+      seriesOrder: b.seriesOrder ?? 0,
+      series: b.series ? { id: b.series.id, title: b.series.title, slug: b.series.slug } : undefined,
     };
   } catch (error) {
     console.error('Error fetching blog by slug from db:', error);
@@ -274,4 +286,49 @@ export async function getBlogById(id: string) {
       series: { select: { id: true, title: true } },
     },
   });
+}
+
+/** Action to translate a blog post using Gemini AI and save to PostgreSQL DB */
+export async function translateBlogAction(
+  blogId: string,
+  targetLocale: 'vi' | 'en' = 'vi',
+  customApiKey?: string
+): Promise<{ ok: boolean; data?: { title: string; excerpt: string; content: string }; error?: string }> {
+  await ensureAdmin();
+  try {
+    const blog = await prisma.blog.findUnique({
+      where: { id: blogId },
+      select: { title: true, excerpt: true, content: true },
+    });
+
+    if (!blog) {
+      return { ok: false, error: 'Blog not found' };
+    }
+
+    const { translateAndSaveBlogPost } = await import('@/lib/gemini-translate');
+    const result = await translateAndSaveBlogPost(blogId, blog, targetLocale, customApiKey);
+
+    if (!result) {
+      return { ok: false, error: 'AI translation failed' };
+    }
+
+    revalidatePath('/blog');
+    revalidatePath(`/admin/blogs/editor/${blogId}`);
+    return { ok: true, data: result };
+  } catch (error) {
+    console.error('translateBlogAction error:', error);
+    return { ok: false, error: 'Error during translation' };
+  }
+}
+
+/** Get all saved translations for a blog */
+export async function getBlogTranslations(blogId: string) {
+  try {
+    return await prisma.contentTranslation.findMany({
+      where: { entityType: 'blog', entityId: blogId },
+    });
+  } catch (err) {
+    console.error('getBlogTranslations error:', err);
+    return [];
+  }
 }
