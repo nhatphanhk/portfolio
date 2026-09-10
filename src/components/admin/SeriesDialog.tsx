@@ -16,7 +16,8 @@ import { createSeries, updateSeries } from '@/lib/actions/series';
 
 const schema = z.object({
   title: z.string().min(2, 'Title required').max(255),
-  slug: z.string().min(2).max(255).regex(/^[a-z0-9-]+$/, 'Only lowercase letters, numbers, hyphens'),
+  tags: z.string().optional(),
+  slug: z.string().optional(),
   description: z.string().max(1000).optional(),
   coverUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
 });
@@ -44,6 +45,7 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
     resolver: zodResolver(schema),
     defaultValues: {
       title: initialData?.title ?? '',
+      tags: initialData?.tags ?? '',
       slug: initialData?.slug ?? '',
       description: initialData?.description ?? '',
       coverUrl: initialData?.coverUrl ?? '',
@@ -55,6 +57,8 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
       if (!initialData?.slug) {
         const slug = e.target.value
           .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-|-$/g, '');
         setValue('slug', slug, { shouldValidate: true });
@@ -65,10 +69,24 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
 
   const onSubmit = (data: FormData) => {
     startTransition(async () => {
+      const finalSlug =
+        data.slug?.trim() ||
+        data.title
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '');
+
+      const payload = {
+        ...data,
+        slug: finalSlug,
+      };
+
       const result =
         mode === 'create'
-          ? await createSeries(data)
-          : await updateSeries(initialData!.id!, data);
+          ? await createSeries(payload)
+          : await updateSeries(initialData!.id!, payload);
 
       if (result.ok) {
         toast.success(mode === 'create' ? 'Series created!' : 'Series updated!');
@@ -95,19 +113,21 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
               {...register('title')}
               onBlur={onTitleBlur}
               placeholder="Full-Stack Web Development Series"
-              className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-white dark:bg-slate-900 shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
             {errors.title && <p className="text-xs text-destructive mt-1">{errors.title.message}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Slug *</label>
+            <label className="block text-sm font-medium mb-1">Tags / Topics</label>
             <input
-              {...register('slug')}
-              placeholder="full-stack-web-dev"
-              className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              {...register('tags')}
+              placeholder="React, Next.js, Architecture (comma separated)"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-white dark:bg-slate-900 shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
-            {errors.slug && <p className="text-xs text-destructive mt-1">{errors.slug.message}</p>}
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Used for organizing and filtering series by technology or topic.
+            </p>
           </div>
 
           <div>
@@ -116,7 +136,7 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
               {...register('description')}
               rows={3}
               placeholder="A comprehensive guide to building modern full-stack web applications..."
-              className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-white dark:bg-slate-900 shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
             />
             {errors.description && (
               <p className="text-xs text-destructive mt-1">{errors.description.message}</p>
@@ -128,7 +148,7 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
             <input
               {...register('coverUrl')}
               placeholder="https://..."
-              className="w-full px-3 py-2 rounded-lg border border-border bg-white shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-white dark:bg-slate-900 shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
             {errors.coverUrl && (
               <p className="text-xs text-destructive mt-1">{errors.coverUrl.message}</p>

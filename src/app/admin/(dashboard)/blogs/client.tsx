@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition, useMemo } from 'react';
-import { FileText, Plus, Pencil, Trash2, Loader2, Search, Filter, Link as LinkIcon, ChevronDown } from 'lucide-react';
+import { FileText, Plus, Pencil, Trash2, Loader2, Search, Filter, Layers, ChevronDown } from 'lucide-react';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { deleteBlog, createBlogDraft } from '@/lib/actions/blog';
@@ -19,6 +19,7 @@ type Blog = {
   content: string;
   thumbnailUrl: string | null;
   tags: { tag: { name: string } }[];
+  series?: { id: string; title: string; slug: string } | null;
 };
 
 const ITEMS_PER_PAGE = 10;
@@ -33,7 +34,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
   const [deleteTarget, setDeleteTarget] = useState<Blog | null>(null);
 
   const [search, setSearch] = useState('');
-  const [slugFilter, setSlugFilter] = useState('');
+  const [seriesFilter, setSeriesFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [tagFilter, setTagFilter] = useState<string>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
@@ -45,9 +46,15 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
     return Array.from(set).sort();
   }, [blogs]);
 
-  // Extract all unique slugs for selection
-  const allSlugs = useMemo(() => {
-    return Array.from(new Set(blogs.map(b => b.slug).filter(Boolean))).sort();
+  // Extract all unique series
+  const allSeries = useMemo(() => {
+    const map = new Map<string, string>();
+    blogs.forEach(b => {
+      if (b.series) {
+        map.set(b.series.id, b.series.title);
+      }
+    });
+    return Array.from(map.entries()).map(([id, title]) => ({ id, title }));
   }, [blogs]);
 
   const handleNewPost = () => {
@@ -65,18 +72,25 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
     return blogs.filter(blog => {
       if (statusFilter !== 'ALL' && blog.status !== statusFilter) return false;
       if (tagFilter !== 'ALL' && !blog.tags.some(t => t.tag.name === tagFilter)) return false;
-      if (slugFilter && blog.slug !== slugFilter) return false;
+      if (seriesFilter !== 'ALL') {
+        if (seriesFilter === 'NONE') {
+          if (blog.series) return false;
+        } else {
+          if (blog.series?.id !== seriesFilter) return false;
+        }
+      }
       if (search.trim()) {
         const q = search.toLowerCase().trim();
         const matchTitle = blog.title.toLowerCase().includes(q);
         const matchSlug = blog.slug.toLowerCase().includes(q);
         const matchExcerpt = (blog.excerpt ?? '').toLowerCase().includes(q);
         const matchTag = blog.tags.some(t => t.tag.name.toLowerCase().includes(q));
-        if (!matchTitle && !matchSlug && !matchExcerpt && !matchTag) return false;
+        const matchSeries = blog.series?.title.toLowerCase().includes(q) ?? false;
+        if (!matchTitle && !matchSlug && !matchExcerpt && !matchTag && !matchSeries) return false;
       }
       return true;
     });
-  }, [blogs, statusFilter, tagFilter, slugFilter, search]);
+  }, [blogs, statusFilter, tagFilter, seriesFilter, search]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
   const paginated = useMemo(() => {
@@ -96,7 +110,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
           type="button"
           onClick={handleNewPost}
           disabled={isCreating}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/90 disabled:opacity-60 transition-colors self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/90 disabled:opacity-60 transition-colors self-start sm:self-auto cursor-pointer"
         >
           {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           {isCreating ? 'Creating…' : 'New Post'}
@@ -105,7 +119,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
 
       {/* Search & Filter Bar */}
       <div className="flex flex-col sm:flex-row items-center gap-3">
-        {/* Search input with clean white background */}
+        {/* Search input */}
         <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <input
@@ -116,25 +130,26 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-border bg-white shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-border bg-white dark:bg-slate-900 shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
 
-        {/* Slug filter select dropdown */}
-        <div className="relative w-full sm:w-52">
-          <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+        {/* Series filter select dropdown */}
+        <div className="relative w-full sm:w-56">
+          <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
           <select
-            value={slugFilter}
+            value={seriesFilter}
             onChange={e => {
-              setSlugFilter(e.target.value);
+              setSeriesFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-8 pr-7 py-2 text-xs rounded-xl border border-border bg-white shadow-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 font-mono appearance-none cursor-pointer truncate"
+            className="w-full pl-8 pr-7 py-2 text-xs rounded-xl border border-border bg-white dark:bg-slate-900 shadow-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 appearance-none cursor-pointer truncate"
           >
-            <option value="">All Slugs ({allSlugs.length})</option>
-            {allSlugs.map(slug => (
-              <option key={slug} value={slug}>
-                /{slug}
+            <option value="ALL">All Series ({allSeries.length})</option>
+            <option value="NONE">No Series (Standalone)</option>
+            {allSeries.map(s => (
+              <option key={s.id} value={s.id}>
+                {s.title}
               </option>
             ))}
           </select>
@@ -143,7 +158,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
 
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {/* Status filter */}
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-white shadow-xs text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-white dark:bg-slate-900 shadow-xs text-xs text-muted-foreground">
             <Filter className="h-3.5 w-3.5" />
             <span className="font-medium">Status:</span>
             <select
@@ -163,7 +178,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
 
           {/* Tag filter */}
           {allTags.length > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-white shadow-xs text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-white dark:bg-slate-900 shadow-xs text-xs text-muted-foreground">
               <span className="font-medium">Tag:</span>
               <select
                 value={tagFilter}
@@ -192,7 +207,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
             <FileText className="h-10 w-10 mb-3 opacity-30" />
             <p className="font-medium text-foreground">No blog posts found</p>
             <p className="text-xs text-muted-foreground mt-1">
-              {search || slugFilter || statusFilter !== 'ALL' || tagFilter !== 'ALL'
+              {search || seriesFilter !== 'ALL' || statusFilter !== 'ALL' || tagFilter !== 'ALL'
                 ? 'Try adjusting your search or filters'
                 : 'Click "New Post" to create your first article'}
             </p>
@@ -200,30 +215,44 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-muted/60 border-b border-border">
+              <thead className="bg-slate-100/90 dark:bg-slate-800/90 border-b border-border text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Title & Slug</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Tags</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Published</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-                  <th className="px-4 py-3" />
+                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">Title & Series</th>
+                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden md:table-cell">Tags</th>
+                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden sm:table-cell">Published</th>
+                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">Status</th>
+                  <th className="px-4 py-3.5 text-right font-semibold text-slate-700 dark:text-slate-300">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-card">
                 {paginated.map(blog => (
-                  <tr key={blog.id} className="hover:bg-muted/40 transition-colors">
-                    <td className="px-4 py-3">
+                  <tr
+                    key={blog.id}
+                    onClick={() => router.push(`/admin/blogs/editor/${blog.id}`)}
+                    className="hover:bg-primary/5 cursor-pointer transition-colors group"
+                  >
+                    <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2.5">
                         <FileText className="h-4 w-4 text-primary shrink-0" />
                         <div>
-                          <span className="font-medium text-foreground line-clamp-1">{blog.title}</span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                              {blog.title}
+                            </span>
+                            {blog.series && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0">
+                                <Layers className="w-2.5 h-2.5" />
+                                {blog.series.title}
+                              </span>
+                            )}
+                          </div>
                           <span className="font-mono text-xs text-muted-foreground block mt-0.5">
                             /{blog.slug}
                           </span>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
+                    <td className="px-4 py-3.5 hidden md:table-cell">
                       <div className="flex flex-wrap gap-1">
                         {blog.tags.slice(0, 3).map(t => (
                           <span
@@ -235,7 +264,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
                         ))}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
+                    <td className="px-4 py-3.5 text-muted-foreground hidden sm:table-cell">
                       {blog.publishedAt
                         ? new Date(blog.publishedAt).toLocaleDateString('en-US', {
                             month: 'short',
@@ -244,24 +273,25 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
                           })
                         : '—'}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <span
                         className={`px-2 py-0.5 text-xs rounded-full font-medium ${
                           blog.status === 'PUBLISHED'
-                            ? 'bg-green-500/10 text-green-700'
+                            ? 'bg-green-500/10 text-green-700 dark:text-green-400'
                             : blog.status === 'DRAFT'
-                              ? 'bg-amber-500/10 text-amber-700'
+                              ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
                               : 'bg-muted text-muted-foreground'
                         }`}
                       >
                         {blog.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5 text-right">
                       <div className="flex items-center gap-1 justify-end">
                         {/* Edit → redirect to full-page editor */}
                         <Link
                           href={`/admin/blogs/editor/${blog.id}`}
+                          onClick={(e) => e.stopPropagation()}
                           aria-label={`Edit ${blog.title}`}
                           className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
                         >
@@ -270,8 +300,11 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
                         <button
                           type="button"
                           aria-label={`Delete ${blog.title}`}
-                          onClick={() => setDeleteTarget(blog)}
-                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTarget(blog);
+                          }}
+                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -285,7 +318,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
         )}
 
         {filtered.length > 0 && (
-          <div className="p-4 bg-card">
+          <div className="p-4 bg-card border-t border-border">
             <PaginationControl
               currentPage={currentPage}
               totalPages={totalPages}

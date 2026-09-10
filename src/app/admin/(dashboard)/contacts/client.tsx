@@ -183,27 +183,32 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-muted/60 border-b border-border">
+              <thead className="bg-slate-100/90 dark:bg-slate-800/90 border-b border-border text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Sender</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Details</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Date</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-                  <th className="px-4 py-3" />
+                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">Sender</th>
+                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden md:table-cell">Details</th>
+                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden sm:table-cell">Date</th>
+                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">Status</th>
+                  <th className="px-4 py-3.5 text-right font-semibold text-slate-700 dark:text-slate-300">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-card">
                 {paginatedContacts.map(contact => (
-                  <tr key={contact.id} className="hover:bg-muted/40 transition-colors">
-                    <td className="px-4 py-3">
+                  <tr
+                    key={contact.id}
+                    onClick={() => setViewTarget(contact)}
+                    className="hover:bg-primary/5 cursor-pointer transition-colors group"
+                  >
+                    <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2.5">
                         <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-xs border border-primary/20">
                           {contact.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-foreground">{contact.name}</p>
+                          <p className="font-medium text-foreground group-hover:text-primary transition-colors">{contact.name}</p>
                           <a
                             href={`mailto:${contact.email}`}
+                            onClick={(e) => e.stopPropagation()}
                             className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
                           >
                             <Mail className="h-3 w-3" /> {contact.email}
@@ -211,11 +216,11 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell max-w-[240px]">
+                    <td className="px-4 py-3.5 hidden md:table-cell max-w-[240px]">
                       <p className="text-xs font-medium text-foreground truncate">{contact.subject ?? 'No subject'}</p>
                       <p className="text-xs text-muted-foreground truncate">{contact.message}</p>
                     </td>
-                    <td className="px-4 py-3 hidden sm:table-cell text-muted-foreground">
+                    <td className="px-4 py-3.5 hidden sm:table-cell text-muted-foreground">
                       <div className="flex items-center gap-1.5 text-xs">
                         <Calendar className="h-3 w-3 text-muted-foreground/70" />
                         {new Date(contact.createdAt).toLocaleDateString('en-US', {
@@ -225,18 +230,19 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
                         })}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <select
                         value={contact.status}
                         onChange={e => handleStatusChange(contact.id, e.target.value as any)}
+                        onClick={e => e.stopPropagation()}
                         disabled={isPending}
                         aria-label={`Change status for message from ${contact.name}`}
-                        className={`px-2 py-1 text-xs rounded-lg border outline-none font-medium focus:ring-2 focus:ring-ring transition-colors ${
+                        className={`px-2 py-1 text-xs rounded-lg border outline-none font-medium focus:ring-2 focus:ring-ring transition-colors cursor-pointer ${
                           contact.status === 'UNREAD'
                             ? 'bg-red-500/10 text-red-600 border-red-500/20'
                             : contact.status === 'READ'
-                              ? 'bg-amber-500/10 text-amber-700 border-amber-500/20'
-                              : 'bg-green-500/10 text-green-700 border-green-500/20'
+                              ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20'
+                              : 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20'
                         }`}
                       >
                         <option value="UNREAD">Unread</option>
@@ -244,21 +250,27 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
                         <option value="REPLIED">Replied</option>
                       </select>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5 text-right">
                       <div className="flex items-center gap-1 justify-end">
                         <button
                           type="button"
                           aria-label={`View message from ${contact.name}`}
-                          onClick={() => setViewTarget(contact)}
-                          className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setViewTarget(contact);
+                          }}
+                          className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted cursor-pointer"
                         >
                           <ExternalLink className="h-3.5 w-3.5" />
                         </button>
                         <button
                           type="button"
                           aria-label={`Delete message from ${contact.name}`}
-                          onClick={() => setDeleteTarget(contact)}
-                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTarget(contact);
+                          }}
+                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -273,7 +285,7 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
 
         {/* Pagination in table footer */}
         {filteredContacts.length > 0 && (
-          <div className="p-4 bg-card">
+          <div className="p-4 bg-card border-t border-border">
             <PaginationControl
               currentPage={currentPage}
               totalPages={totalPages}

@@ -219,6 +219,7 @@ export async function getAllBlogsFromDb() {
       include: {
         tags: { include: { tag: true } },
         author: { select: { name: true } },
+        series: { select: { id: true, title: true, slug: true } },
       },
     });
   } catch (error) {

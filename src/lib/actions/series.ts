@@ -6,11 +6,21 @@ import { ensureAdmin } from '@/lib/auth-utils';
 import { cache } from 'react';
 import { z } from 'zod';
 
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 const seriesSchema = z.object({
   title: z.string().min(2, 'Title required').max(255),
-  slug: z.string().min(2).max(255).regex(/^[a-z0-9-]+$/, 'Only lowercase letters, numbers, and hyphens'),
+  slug: z.string().optional(),
   description: z.string().max(1000).optional(),
   coverUrl: z.string().url().optional().or(z.literal('')),
+  tags: z.string().optional(),
 });
 
 export type SeriesFormData = z.infer<typeof seriesSchema>;
@@ -22,18 +32,22 @@ export async function createSeries(data: SeriesFormData) {
     return { ok: false, error: parsed.error.flatten().fieldErrors };
   }
 
+  const slug = parsed.data.slug?.trim() || slugify(parsed.data.title);
+
   try {
     await prisma.blogSeries.create({
       data: {
         title: parsed.data.title,
-        slug: parsed.data.slug,
+        slug,
         description: parsed.data.description,
         coverUrl: parsed.data.coverUrl || null,
+        tags: parsed.data.tags?.trim() || null,
       },
     });
 
     revalidatePath('/admin/blogs/series');
     revalidatePath('/blog');
+    revalidatePath('/blog/series');
     return { ok: true };
   } catch (error) {
     console.error('Error creating series:', error);
@@ -48,19 +62,23 @@ export async function updateSeries(id: string, data: SeriesFormData) {
     return { ok: false, error: parsed.error.flatten().fieldErrors };
   }
 
+  const slug = parsed.data.slug?.trim() || slugify(parsed.data.title);
+
   try {
     await prisma.blogSeries.update({
       where: { id },
       data: {
         title: parsed.data.title,
-        slug: parsed.data.slug,
+        slug,
         description: parsed.data.description,
         coverUrl: parsed.data.coverUrl || null,
+        tags: parsed.data.tags?.trim() || null,
       },
     });
 
     revalidatePath('/admin/blogs/series');
     revalidatePath('/blog');
+    revalidatePath('/blog/series');
     return { ok: true };
   } catch (error) {
     console.error('Error updating series:', error);

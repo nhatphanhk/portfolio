@@ -125,34 +125,38 @@ export function AdminCertificationsClient({ certifications }: { certifications: 
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-muted/60 border-b border-border">
+              <thead className="bg-slate-100/90 dark:bg-slate-800/90 border-b border-border text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Certification</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Dates</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Credential</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-                  <th className="px-4 py-3" />
+                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">Certification</th>
+                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden sm:table-cell">Dates</th>
+                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden md:table-cell">Credential</th>
+                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">Status</th>
+                  <th className="px-4 py-3.5 text-right font-semibold text-slate-700 dark:text-slate-300">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-card">
                 {paginated.map(cert => (
-                  <tr key={cert.id} className="hover:bg-muted/40 transition-colors">
-                    <td className="px-4 py-3">
+                  <tr
+                    key={cert.id}
+                    onClick={() => setEditTarget(cert)}
+                    className="hover:bg-primary/5 cursor-pointer transition-colors group"
+                  >
+                    <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2.5">
                         <Award className="h-4 w-4 text-primary shrink-0" />
                         <div>
-                          <p className="font-medium text-foreground">{cert.name}</p>
+                          <p className="font-medium text-foreground group-hover:text-primary transition-colors">{cert.name}</p>
                           <p className="text-xs text-muted-foreground">{cert.issuer}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 hidden sm:table-cell text-muted-foreground">
+                    <td className="px-4 py-3.5 hidden sm:table-cell text-muted-foreground">
                       <div>{formatDate(cert.issueDate)}</div>
                       {cert.expiryDate && (
                         <div className="text-xs opacity-75">Expires: {formatDate(cert.expiryDate)}</div>
                       )}
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
+                    <td className="px-4 py-3.5 hidden md:table-cell">
                       {cert.credentialId ? (
                         <div className="flex items-center gap-1">
                           <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
@@ -163,7 +167,8 @@ export function AdminCertificationsClient({ certifications }: { certifications: 
                               href={cert.credentialUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-muted-foreground hover:text-foreground"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-muted-foreground hover:text-foreground inline-flex"
                             >
                               <ExternalLink className="h-3 w-3" />
                             </a>
@@ -173,32 +178,38 @@ export function AdminCertificationsClient({ certifications }: { certifications: 
                         '—'
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       <span
                         className={`px-2 py-0.5 text-xs rounded-full font-medium ${
                           cert.status === 'ACTIVE'
-                            ? 'bg-green-500/10 text-green-700'
+                            ? 'bg-green-500/10 text-green-700 dark:text-green-400'
                             : 'bg-muted text-muted-foreground'
                         }`}
                       >
                         {cert.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5 text-right">
                       <div className="flex items-center gap-1 justify-end">
                         <button
                           type="button"
                           aria-label={`Edit ${cert.name}`}
-                          onClick={() => setEditTarget(cert)}
-                          className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditTarget(cert);
+                          }}
+                          className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted cursor-pointer"
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
                           type="button"
                           aria-label={`Delete ${cert.name}`}
-                          onClick={() => setDeleteTarget(cert)}
-                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTarget(cert);
+                          }}
+                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -212,7 +223,7 @@ export function AdminCertificationsClient({ certifications }: { certifications: 
         )}
 
         {filtered.length > 0 && (
-          <div className="p-4 bg-card">
+          <div className="p-4 bg-card border-t border-border">
             <PaginationControl
               currentPage={currentPage}
               totalPages={totalPages}
