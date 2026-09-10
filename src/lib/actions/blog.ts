@@ -351,17 +351,17 @@ export async function previewTranslateBlogAction(
       sourceData = blog;
     }
 
-    const { generateBlogTranslation } = await import('@/lib/gemini-translate');
-    const result = await generateBlogTranslation(sourceData, targetLocale, customApiKey);
+    const { generateBlogTranslationWithDetails } = await import('@/lib/gemini-translate');
+    const result = await generateBlogTranslationWithDetails(sourceData, targetLocale, customApiKey);
 
-    if (!result) {
-      return { ok: false, error: 'AI translation failed. Please check your Gemini API key or try again.' };
+    if (!result.ok || !result.data) {
+      return { ok: false, error: result.error || 'AI translation failed' };
     }
 
-    return { ok: true, data: result };
-  } catch (error) {
+    return { ok: true, data: result.data };
+  } catch (error: any) {
     console.error('previewTranslateBlogAction error:', error);
-    return { ok: false, error: 'Error during translation' };
+    return { ok: false, error: error?.message || 'Error during translation' };
   }
 }
 
@@ -409,19 +409,21 @@ export async function translateBlogAction(
       sourceData = blog;
     }
 
-    const { translateAndSaveBlogPost } = await import('@/lib/gemini-translate');
-    const result = await translateAndSaveBlogPost(blogId, sourceData, targetLocale, customApiKey);
+    const { generateBlogTranslationWithDetails, saveBlogTranslationToDb } = await import('@/lib/gemini-translate');
+    const result = await generateBlogTranslationWithDetails(sourceData, targetLocale, customApiKey);
 
-    if (!result) {
-      return { ok: false, error: 'AI translation failed' };
+    if (!result.ok || !result.data) {
+      return { ok: false, error: result.error || 'AI translation failed' };
     }
+
+    await saveBlogTranslationToDb(blogId, result.data, targetLocale);
 
     revalidatePath('/blog');
     revalidatePath(`/admin/blogs/editor/${blogId}`);
-    return { ok: true, data: result };
-  } catch (error) {
+    return { ok: true, data: result.data };
+  } catch (error: any) {
     console.error('translateBlogAction error:', error);
-    return { ok: false, error: 'Error during translation' };
+    return { ok: false, error: error?.message || 'Error during translation' };
   }
 }
 

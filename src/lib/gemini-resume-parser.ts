@@ -18,11 +18,10 @@ export async function parseResumeWithGemini(
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const candidateModels = [
-    'gemini-3.6-flash',
-    'gemini-3.7-flash',
     'gemini-flash-latest',
-    'gemini-2.5-flash-lite',
-    'gemini-2.5-flash',
+    'gemini-3.6-flash',
+    'gemini-flash-lite-latest',
+    'gemini-3.5-flash',
   ];
 
   const prompt = `You are a Senior Career Services Advisor at Harvard University and Oxford University.

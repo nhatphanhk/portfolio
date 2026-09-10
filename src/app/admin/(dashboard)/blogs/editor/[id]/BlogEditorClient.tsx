@@ -23,6 +23,7 @@ import {
   Settings,
   Sparkles,
   Layers,
+  Languages,
 } from 'lucide-react';
 
 const schema = z.object({
@@ -104,24 +105,26 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
   const [isTranslating, setIsTranslating] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [translatedResult, setTranslatedResult] = useState<TranslatedData | null>(null);
+  const [targetLocale, setTargetLocale] = useState<'vi' | 'en'>('vi');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [autoSaveTimer, setAutoSaveTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleAiTranslate = async () => {
+  const handleAiTranslate = async (localeToUse: 'vi' | 'en' = targetLocale) => {
     setIsTranslating(true);
-    toast.info('AI đang chuyển ngữ nội dung bài viết...');
+    const targetLabel = localeToUse === 'vi' ? 'Tiếng Việt' : 'Tiếng Anh';
+    toast.info(`AI đang chuyển ngữ sang ${targetLabel}...`);
     try {
       const currentPayload = {
-        title: getValues('title') || blog.title,
-        excerpt: getValues('excerpt') || blog.excerpt,
-        content: getValues('content') || blog.content,
+        title: getValues('title') || blog.title || 'Untitled Post',
+        excerpt: getValues('excerpt') || blog.excerpt || '',
+        content: getValues('content') || blog.content || '',
       };
 
-      const res = await previewTranslateBlogAction(blog.id, 'vi', currentPayload);
+      const res = await previewTranslateBlogAction(blog.id, localeToUse, currentPayload);
       if (res.ok && res.data) {
         setTranslatedResult(res.data);
         setPreviewOpen(true);
-        toast.success('AI đã chuyển ngữ xong! Hãy xem trước bản dịch.');
+        toast.success(`AI đã chuyển ngữ sang ${targetLabel}! Hãy xem trước bản dịch.`);
       } else {
         toast.error(res.error || 'Chuyển ngữ AI thất bại');
       }
@@ -140,9 +143,9 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
   };
 
   const handleSaveToDb = async (data: TranslatedData) => {
-    const res = await saveBlogTranslationAction(blog.id, data, 'vi');
+    const res = await saveBlogTranslationAction(blog.id, data, targetLocale);
     if (res.ok) {
-      toast.success('Đã lưu bản dịch song ngữ vào CSDL thành công!');
+      toast.success(`Đã lưu bản dịch (${targetLocale.toUpperCase()}) vào CSDL song ngữ thành công!`);
     } else {
       toast.error(res.error || 'Lỗi khi lưu bản dịch vào CSDL');
     }
@@ -457,15 +460,55 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
             {isPending ? 'Saving…' : 'Save'}
           </button>
 
-          <button
-            type="button"
-            onClick={handleAiTranslate}
-            disabled={isTranslating || isPending}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/30 rounded-lg text-sm font-medium hover:bg-purple-500/20 disabled:opacity-60 transition-colors cursor-pointer"
-          >
-            {isTranslating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-purple-600" />}
-            {isTranslating ? 'AI đang chuyển ngữ...' : 'Dịch AI (Xem trước & Lưu)'}
-          </button>
+          {/* AI Translation Action with Target Locale Selector */}
+          <div className="space-y-1.5 p-2 rounded-xl bg-purple-500/5 border border-purple-500/20">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[11px] font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-1">
+                <Languages className="w-3.5 h-3.5" />
+                Dịch sang:
+              </span>
+              <div className="flex items-center gap-1 bg-background/80 p-0.5 rounded-lg border border-border">
+                <button
+                  type="button"
+                  onClick={() => setTargetLocale('vi')}
+                  className={`px-2 py-0.5 text-[11px] font-medium rounded-md transition-all cursor-pointer ${
+                    targetLocale === 'vi'
+                      ? 'bg-purple-600 text-white font-bold shadow-2xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  🇻🇳 Tiếng Việt
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTargetLocale('en')}
+                  className={`px-2 py-0.5 text-[11px] font-medium rounded-md transition-all cursor-pointer ${
+                    targetLocale === 'en'
+                      ? 'bg-purple-600 text-white font-bold shadow-2xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  🇬🇧 English
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleAiTranslate(targetLocale)}
+              disabled={isTranslating || isPending}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-60 transition-colors cursor-pointer"
+            >
+              {isTranslating ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="w-3.5 h-3.5" />
+              )}
+              {isTranslating
+                ? `AI đang dịch (${targetLocale.toUpperCase()})...`
+                : `Dịch AI (${targetLocale === 'vi' ? 'Tiếng Việt' : 'English'})`}
+            </button>
+          </div>
           {watchedStatus === 'DRAFT' ? (
             <button
               type="button"
@@ -550,7 +593,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
           content: getValues('content') || blog.content,
         }}
         translated={translatedResult}
-        targetLocale="vi"
+        targetLocale={targetLocale}
         onApplyToEditor={handleApplyToEditor}
         onSaveToDb={handleSaveToDb}
         onApplyAndSave={handleApplyAndSave}
