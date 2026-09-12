@@ -166,6 +166,36 @@ export const vi: TranslationDict = {
     downloadPdf: 'Tải xuống PDF',
   },
 
+  // Landing Page
+  landing: {
+    heroGreeting: 'Xin chào, tôi là',
+    heroCtaProjects: 'Xem Dự Án',
+    heroCtaResume: 'Hồ Sơ / CV',
+    heroScroll: 'Cuộn xuống',
+    aboutBadge: 'Về Bản Thân',
+    aboutHeading: 'Xây dựng web chất lượng, tỉ mỉ qua từng dự án.',
+    aboutSkillsBadge: 'Công nghệ cốt lõi',
+    aboutTopStackBadge: 'Kỹ năng hàng đầu',
+    aboutCta: 'Xem Chi Tiết Hồ Sơ & Tiểu Sử',
+    aboutGalleryTitle: 'Khoảnh Khắc & Không Gian Làm Việc',
+    aboutGallerySubtitle: 'Một góc nhìn chân thực về hành trình lập trình, bàn làm việc và các hoạt động công nghệ.',
+    statYearsLabel: 'Năm kinh nghiệm',
+    statProjectsLabel: 'Dự án hoàn thành',
+    statClientsLabel: 'Khách hàng tin cậy',
+    bpscProjectsBadge: 'Dự Án Tiêu Biểu',
+    bpscProjectsTitle: 'Dự Án Nổi Bật',
+    viewAllProjects: 'Xem tất cả dự án',
+    liveDemo: 'Bản thử nghiệm',
+    sourceCode: 'Mã nguồn',
+    bpscBlogsBadge: 'Bài Viết & Góc Nhìn',
+    bpscBlogsTitle: 'Bài Viết Mới Nhất',
+    viewAllBlogs: 'Xem tất cả bài viết',
+    bpscCertsBadge: 'Chứng Chỉ & Bằng Cấp',
+    bpscCertsTitle: 'Chứng Chỉ Đã Xác Thực',
+    viewAllCerts: 'Xem tất cả chứng chỉ',
+    verifyCredential: 'Xác thực chứng chỉ',
+  },
+
   // Footer
   footer: {
     navigation: 'Điều hướng',

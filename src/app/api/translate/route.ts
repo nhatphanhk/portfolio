@@ -9,6 +9,8 @@ import {
   generateProfileTranslationWithDetails,
   generateExperienceTranslationWithDetails,
   saveEntityTranslationToDb,
+  generateSiteContentTranslationWithDetails,
+  saveSiteContentTranslationsToDb,
 } from '@/lib/gemini-translate';
 
 export async function POST(req: Request) {
@@ -299,6 +301,42 @@ export async function POST(req: Request) {
         if (!success) {
           return NextResponse.json(
             { ok: false, error: 'Failed to save experience translation to database' },
+            { status: 500 }
+          );
+        }
+
+        return NextResponse.json({ ok: true });
+      }
+    }
+
+    // ── 6. SITE CONTENT (LANDING PAGE) ───────────────────────────────────
+    if (entityType === 'site_content') {
+      const siteData = (body.siteData || body.items || {}) as Record<string, string>;
+
+      if (action === 'preview') {
+        const result = await generateSiteContentTranslationWithDetails(
+          siteData,
+          locale,
+          customApiKey
+        );
+
+        if (!result.ok || !result.data) {
+          return NextResponse.json(
+            { ok: false, error: result.error || 'Landing page translation failed' },
+            { status: 500 }
+          );
+        }
+
+        return NextResponse.json({ ok: true, data: result.data });
+      }
+
+      if (action === 'save') {
+        const translations = (body.translations || siteData) as Record<string, string>;
+        const success = await saveSiteContentTranslationsToDb(locale, translations);
+
+        if (!success) {
+          return NextResponse.json(
+            { ok: false, error: 'Failed to save landing page translation to database' },
             { status: 500 }
           );
         }

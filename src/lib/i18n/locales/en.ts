@@ -164,6 +164,36 @@ export const en = {
     downloadPdf: 'Download PDF',
   },
 
+  // Landing Page
+  landing: {
+    heroGreeting: "Hi, I'm",
+    heroCtaProjects: 'View Projects',
+    heroCtaResume: 'Resume',
+    heroScroll: 'Scroll',
+    aboutBadge: 'About Me',
+    aboutHeading: 'Building the web, one project at a time.',
+    aboutSkillsBadge: 'Core Technologies',
+    aboutTopStackBadge: 'Top Stack',
+    aboutCta: 'Read Full Resume & Bio',
+    aboutGalleryTitle: 'Moments & Workspace',
+    aboutGallerySubtitle: 'A glimpse into my development journey, workspace, and technology activities.',
+    statYearsLabel: 'Years Exp',
+    statProjectsLabel: 'Projects',
+    statClientsLabel: 'Clients',
+    bpscProjectsBadge: 'Portfolio Highlights',
+    bpscProjectsTitle: 'Featured Projects',
+    viewAllProjects: 'View all projects',
+    liveDemo: 'Live Demo',
+    sourceCode: 'Source',
+    bpscBlogsBadge: 'Articles & Thoughts',
+    bpscBlogsTitle: 'Latest Publications',
+    viewAllBlogs: 'View all articles',
+    bpscCertsBadge: 'Credentials & Badges',
+    bpscCertsTitle: 'Verified Certifications',
+    viewAllCerts: 'View all certs',
+    verifyCredential: 'Verify Credential',
+  },
+
   // Footer
   footer: {
     navigation: 'Navigation',

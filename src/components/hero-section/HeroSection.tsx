@@ -26,11 +26,19 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ profile, socialLinks, content }: HeroSectionProps) {
-  const { isEn } = useLanguage();
+  const { isEn, t } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
 
   const displayTitle = isEn && profile.translations?.en?.title ? profile.translations.en.title : profile.title;
+  const displayTagline = (isEn && (profile as any).translations?.en?.tagline) || profile.tagline;
+
+  const getC = (key: string, fallback: string) => {
+    if (isEn) {
+      return (content as any)?.en?.[key] || content?.[key] || fallback;
+    }
+    return (content as any)?.vi?.[key] || fallback;
+  };
 
   // ── Three.js Cosmic Starfield with Soft Circular Sprites ──────────────────
   useEffect(() => {
@@ -206,7 +214,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
 
       {/* ── Two-Column Layout (Content Left, Sun Right) ── */}
       <div
-        className="relative w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 py-28 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center"
+        className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center"
         style={{ zIndex: 10 }}
       >
         {/* ══ LEFT — Text Content ══════════════════════════════════════════ */}
@@ -223,7 +231,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
                 letterSpacing: '0.04em',
               }}
             >
-              {content?.hero_greeting || "Hi, I'm"}
+              {getC('hero_greeting', t.landing.heroGreeting)}
             </span>
             <span
               className="block text-6xl sm:text-7xl xl:text-8xl text-gold-shimmer font-black"
@@ -273,7 +281,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
               textShadow: '0 1px 12px rgba(0, 0, 0, 0.7)',
             }}
           >
-            {profile.tagline}
+            {displayTagline}
           </p>
 
           {/* CTA Buttons */}
@@ -291,7 +299,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
                 boxShadow: '0 4px 25px rgba(245, 158, 11, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.5)',
               }}
             >
-              {content?.hero_cta_projects || 'View Projects'}
+              {getC('hero_cta_projects', t.landing.heroCtaProjects)}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
 
@@ -310,7 +318,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
                 }}
               >
                 <Download className="h-4 w-4" />
-                {content?.hero_cta_resume || 'Resume'}
+                {getC('hero_cta_resume', t.landing.heroCtaResume)}
               </a>
             )}
           </div>
@@ -429,7 +437,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
           className="text-[10px] font-bold tracking-widest uppercase"
           style={{ color: 'oklch(0.65 0.10 255)' }}
         >
-          Scroll
+          {t.landing.heroScroll}
         </span>
         <ChevronDown
           className="h-4 w-4 animate-bounce"

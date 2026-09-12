@@ -16,6 +16,7 @@ import {
 } from '@/lib/actions/project';
 import { TipTapEditor } from '@/components/admin/editor/TipTapEditor';
 import { Sparkles, Languages, CheckCircle2, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { slugify } from '@/lib/utils';
 
 const schema = z.object({
   title: z.string().min(3).max(255),
@@ -198,7 +199,7 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
 
   const onTitleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     if (!initialData?.slug) {
-      const slug = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const slug = slugify(e.target.value);
       setValue('slug', slug, { shouldValidate: true });
     }
   };

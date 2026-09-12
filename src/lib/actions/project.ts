@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import { ensureAdmin } from '@/lib/auth-utils';
+import { slugify } from '@/lib/utils';
 
 const projectSchema = z.object({
   title: z.string().min(3).max(255),
@@ -52,7 +53,7 @@ async function syncTags(tagNames: string[]): Promise<string[]> {
   for (const name of tagNames) {
     const trimmed = name.trim();
     if (!trimmed) continue;
-    const slug = trimmed.toLowerCase().replace(/\s+/g, '-');
+    const slug = slugify(trimmed);
     const tag = await prisma.tag.upsert({
       where: { slug },
       create: { name: trimmed, slug },

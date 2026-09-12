@@ -6,14 +6,7 @@ import { ensureAdmin } from '@/lib/auth-utils';
 import { cache } from 'react';
 import { z } from 'zod';
 
-function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
+import { slugify } from '@/lib/utils';
 
 const seriesSchema = z.object({
   title: z.string().min(2, 'Title required').max(255),

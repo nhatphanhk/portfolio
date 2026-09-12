@@ -1,3 +1,5 @@
+import { slugify } from '@/lib/utils';
+
 export interface Heading {
   id: string;
   text: string;
@@ -5,13 +7,7 @@ export interface Heading {
 }
 
 export function slugifyHeading(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[đĐ]/g, 'd')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)+/g, '');
+  return slugify(text);
 }
 
 export function extractHeadings(html: string): Heading[] {

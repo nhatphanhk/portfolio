@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { en, type TranslationDict } from './locales/en';
 import { vi } from './locales/vi';
 
@@ -12,7 +12,8 @@ interface LanguageContextType {
   locale: Locale;
   setLocale: (locale: Locale) => void;
   toggleLocale: () => void;
-  t: (path: string) => string;
+  t: ((path: string) => string) & TranslationDict;
+  dict: TranslationDict;
   isVi: boolean;
   isEn: boolean;
 }
@@ -59,9 +60,10 @@ export function LanguageProvider({
     setLocale(locale === 'en' ? 'vi' : 'en');
   }, [locale, setLocale]);
 
-  const t = useCallback(
-    (path: string): string => {
-      const activeDict = translations[locale] || translations.en;
+  const activeDict = translations[locale] || translations.en;
+
+  const t = useMemo(() => {
+    const fn = (path: string): string => {
       const parts = path.split('.');
       let current: unknown = activeDict;
 
@@ -83,9 +85,10 @@ export function LanguageProvider({
       }
 
       return typeof current === 'string' ? current : path;
-    },
-    [locale]
-  );
+    };
+
+    return Object.assign(fn, activeDict) as ((path: string) => string) & TranslationDict;
+  }, [activeDict]);
 
   return (
     <LanguageContext.Provider
@@ -94,6 +97,7 @@ export function LanguageProvider({
         setLocale,
         toggleLocale,
         t,
+        dict: activeDict,
         isVi: locale === 'vi',
         isEn: locale === 'en',
       }}

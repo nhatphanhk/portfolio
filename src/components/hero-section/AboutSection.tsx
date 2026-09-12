@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowRight, MapPin, Mail, Sparkles, Code2 } from 'lucide-react';
+import { ArrowRight, MapPin, Mail, Sparkles, Code2, Quote } from 'lucide-react';
 import type { getProfile } from '@/lib/actions/about';
 import type { getPublicSkillsByCategory } from '@/lib/actions/skill';
 import { useLanguage } from '@/lib/i18n/context';
@@ -20,13 +20,24 @@ interface AboutSectionProps {
 }
 
 export function AboutSection({ profile, skillsByCategory, content }: AboutSectionProps) {
-  const { isEn } = useLanguage();
+  const { isEn, t } = useLanguage();
+  const getC = (key: string, fallback: string) => {
+    if (isEn) {
+      return (content as any)?.en?.[key] || content?.[key] || fallback;
+    }
+    return (content as any)?.vi?.[key] || fallback;
+  };
   const allSkills = Object.values(skillsByCategory).flat();
   const highLevelSkills = allSkills.filter(s => s.level >= 4);
   const topSkills = (highLevelSkills.length > 0 ? highLevelSkills : allSkills).slice(0, 10);
 
   const sectionRef = useRef<HTMLElement>(null);
   const glowOrbRef = useRef<HTMLDivElement>(null);
+
+  // Author Gallery Image Fallbacks (Curated high-res images)
+  const authorImg1 = content?.about_author_image_1 || profile.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80';
+  const authorImg2 = content?.about_author_image_2 || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80';
+  const authorImg3 = content?.about_author_image_3 || 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80';
 
   useEffect(() => {
     if (!sectionRef.current) return;
@@ -175,199 +186,220 @@ export function AboutSection({ profile, skillsByCategory, content }: AboutSectio
     <section
       ref={sectionRef}
       id="about"
-      className="relative py-28 overflow-hidden"
-      style={{
-        background: 'linear-gradient(165deg, oklch(0.96 0.02 80) 0%, oklch(0.98 0.01 85) 45%, oklch(0.95 0.02 255 / 20%) 100%)',
-      }}
+      className="relative py-20 overflow-hidden bg-gradient-to-br from-background via-background to-primary/5"
     >
       {/* Background ambient floating glow orb (Parallax) */}
       <div
         ref={glowOrbRef}
-        className="absolute top-12 -right-24 w-96 h-96 rounded-full pointer-events-none opacity-40 blur-3xl"
+        className="absolute top-12 -right-24 w-80 h-80 rounded-full pointer-events-none opacity-30 blur-3xl"
         style={{
-          background: 'radial-gradient(circle, oklch(0.72 0.18 78 / 35%) 0%, oklch(0.42 0.22 255 / 15%) 60%, transparent 80%)',
+          background: 'radial-gradient(circle, oklch(0.72 0.18 78 / 30%) 0%, oklch(0.42 0.22 255 / 10%) 60%, transparent 80%)',
         }}
         aria-hidden="true"
       />
 
-      <div className="max-w-6xl mx-auto px-6 relative z-10">
-        <div className="grid lg:grid-cols-12 gap-12 lg:gap-14 items-center">
-          {/* ══ Left Column (Content) ══ */}
-          <div data-about="content-col" className="lg:col-span-6">
-            {/* Section Badge */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* ══ Section Header ══ */}
+        <div data-about="content-col" className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-5 pb-6 border-b border-border/60">
+          <div>
             <div
               data-about="label"
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-4 shadow-xs"
-              style={{
-                background: 'oklch(0.72 0.18 78 / 15%)',
-                color: 'oklch(0.55 0.2 78)',
-                border: '1px solid oklch(0.72 0.18 78 / 30%)',
-              }}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-3 bg-primary/10 text-primary border border-primary/20"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>{content?.about_badge || 'About Me'}</span>
+              <span>{getC('about_badge', t.landing.aboutBadge)}</span>
             </div>
 
-            {/* Heading */}
             <h2
               data-about="heading"
-              className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.15] mb-4"
-              style={{ color: 'oklch(0.16 0.04 255)' }}
+              className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.15] text-foreground mb-3"
             >
-              {content?.about_heading || (
-                <>
-                  Building the web,{' '}
-                  <span className="text-gold-shimmer font-black">one project at a time.</span>
-                </>
-              )}
+              {getC('about_heading', t.landing.aboutHeading)}
             </h2>
 
-            {/* Expanding Accent Line */}
             <div
               data-about="accent-line"
-              className="h-1 w-24 rounded-full mb-6"
-              style={{
-                background: 'linear-gradient(90deg, oklch(0.72 0.18 78), oklch(0.42 0.22 255))',
-                boxShadow: '0 0 12px oklch(0.72 0.18 78 / 40%)',
-              }}
+              className="h-1 w-20 rounded-full bg-gradient-to-r from-primary to-accent"
             />
-
-            {/* Bio Paragraph */}
-            <p
-              data-about="bio"
-              className="text-base sm:text-lg text-slate-700 leading-relaxed mb-6 font-normal"
-            >
-              {(isEn && (profile as any)?.translations?.en?.bio) || profile.bio}
-            </p>
-
-            {/* Meta Information */}
-            <div className="flex flex-col sm:flex-row gap-4 text-sm text-slate-600 mb-8">
-              {profile.location && (
-                <div data-about="meta-item" className="flex items-center gap-2 font-medium">
-                  <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600">
-                    <MapPin className="h-4 w-4" />
-                  </div>
-                  <span>{profile.location}</span>
-                </div>
-              )}
-              {profile.email && (
-                <div data-about="meta-item" className="flex items-center gap-2 font-medium">
-                  <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600">
-                    <Mail className="h-4 w-4" />
-                  </div>
-                  <a href={`mailto:${profile.email}`} className="hover:text-primary transition-colors">
-                    {profile.email}
-                  </a>
-                </div>
-              )}
-            </div>
-
-            {/* CTA Button */}
-            <Link
-              data-about="cta"
-              href="/resume"
-              className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm bg-primary text-primary-foreground shadow-md shadow-primary/25 hover:gap-3 hover:scale-105 active:scale-95 transition-all duration-200"
-            >
-              <span>Read Full Resume & Bio</span>
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Link>
           </div>
 
-          {/* ══ Right Column (Skills & Dynamic Stats) ══ */}
-          <div data-about="skills-col" className="lg:col-span-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-400 text-xs sm:text-sm font-semibold self-start md:self-auto">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>{isEn ? 'Open for new challenges & projects' : 'Sẵn sàng cho dự án & thử thách mới'}</span>
+          </div>
+        </div>
+
+        {/* ══ Balanced 2-col Grid ══ */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          {/* ── LEFT COLUMN: Portrait + Quote + Meta ── */}
+          <div className="flex flex-col gap-4">
+            {/* Portrait Card */}
+            <div className="relative group rounded-2xl overflow-hidden shadow-lg border border-border/70 bg-card">
+              <div className="relative aspect-[3/4] w-full overflow-hidden bg-muted">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={authorImg1}
+                  alt={profile.name}
+                  className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/10 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4 text-white">
+                  <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/15 backdrop-blur-md border border-white/25 text-[11px] font-bold mb-1.5">
+                    <Sparkles className="w-3 h-3 text-amber-300" />
+                    <span>{getC('about_author_role', isEn ? 'Lead Engineer' : 'Kỹ Sư Phần Mềm')}</span>
+                  </div>
+                  <h4 className="text-xl sm:text-2xl font-black tracking-tight">{profile.name}</h4>
+                  <p className="text-xs text-slate-300 line-clamp-1 mt-0.5">{profile.title}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quote Card */}
+            <div className="p-5 rounded-2xl bg-card border border-border/70 shadow-sm flex items-start gap-3">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+                <Quote className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-muted-foreground italic leading-relaxed">
+                  &ldquo;{getC('about_author_quote', isEn ? 'Passionate about crafting scalable software architectures, elegant reactive UIs, and AI-driven developer tooling.' : 'Đam mê kiến tạo các hệ thống phần mềm mở rộng, giao diện người dùng mượt mà và ứng dụng AI vào quy trình phát triển.')}&rdquo;
+                </p>
+                <p className="text-xs font-bold text-muted-foreground/60 mt-1.5">— {profile.name}</p>
+              </div>
+            </div>
+
+            {/* Meta + CTA */}
+            <div className="p-5 rounded-2xl bg-card border border-border/70 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-2">
+                {profile.location && (
+                  <div data-about="meta-item" className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
+                    <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600">
+                      <MapPin className="h-3.5 w-3.5" />
+                    </div>
+                    <span>{profile.location}</span>
+                  </div>
+                )}
+                {profile.email && (
+                  <div data-about="meta-item" className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
+                    <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600">
+                      <Mail className="h-3.5 w-3.5" />
+                    </div>
+                    <a href={`mailto:${profile.email}`} className="hover:text-primary transition-colors truncate max-w-[200px]">
+                      {profile.email}
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              <Link
+                data-about="cta"
+                href="/resume"
+                className="group inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:gap-3 hover:opacity-90 active:scale-95 transition-all duration-200 shrink-0"
+              >
+                <span>{t.landing.aboutCta}</span>
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
+          </div>
+
+          {/* ── RIGHT COLUMN: Bio + Skills + Stats + Photos ── */}
+          <div data-about="skills-col" className="flex flex-col gap-4">
+            {/* Bio Card */}
+            <div className="p-6 rounded-2xl bg-card border border-border/70 shadow-sm">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider text-blue-600 bg-blue-500/10 border border-blue-500/20 mb-4">
+                <Code2 className="w-3.5 h-3.5" />
+                <span>{isEn ? 'Engineering Story' : 'Câu Chuyện Nghề Nghiệp'}</span>
+              </div>
+              <p
+                data-about="bio"
+                className="text-sm sm:text-base text-foreground/80 leading-relaxed"
+              >
+                {(isEn && (profile as any)?.translations?.en?.bio) || profile.bio}
+              </p>
+            </div>
+
+            {/* Skills Card */}
             <div
               data-about="skills-card"
-              className="p-7 sm:p-9 rounded-3xl bg-white border border-border/80 shadow-xl shadow-slate-900/5 relative overflow-hidden"
+              className="p-6 rounded-2xl bg-card border border-border/70 shadow-sm"
             >
-              <div className="flex items-center justify-between mb-5">
-                <p className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                   <Code2 className="w-4 h-4 text-primary" />
-                  <span>{content?.about_skills_badge || 'Core Technologies'}</span>
+                  <span>{getC('about_skills_badge', t.landing.aboutSkillsBadge)}</span>
                 </p>
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                  {content?.about_top_stack_badge || 'Top Stack'}
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  {getC('about_top_stack_badge', t.landing.aboutTopStackBadge)}
                 </span>
               </div>
 
-              {/* Skill Tags */}
-              <div className="flex flex-wrap gap-2 mb-8">
+              <div className="flex flex-wrap gap-2">
                 {topSkills.map(skill => (
                   <span
                     data-about="skill-tag"
                     key={skill.id}
-                    className="group px-3.5 py-2 text-xs font-bold rounded-xl cursor-default transition-all duration-200"
-                    style={{
-                      background: 'oklch(0.72 0.18 78 / 10%)',
-                      border: '1px solid oklch(0.72 0.18 78 / 30%)',
-                      color: 'oklch(0.35 0.14 78)',
-                    }}
-                    onMouseEnter={e => {
-                      const el = e.currentTarget as HTMLElement;
-                      el.style.background = 'oklch(0.72 0.18 78)';
-                      el.style.color = '#0f172a';
-                      el.style.borderColor = 'oklch(0.72 0.18 78)';
-                      el.style.boxShadow = '0 4px 16px oklch(0.72 0.18 78 / 45%)';
-                      el.style.transform = 'translateY(-2px) scale(1.05)';
-                    }}
-                    onMouseLeave={e => {
-                      const el = e.currentTarget as HTMLElement;
-                      el.style.background = 'oklch(0.72 0.18 78 / 10%)';
-                      el.style.color = 'oklch(0.35 0.14 78)';
-                      el.style.borderColor = 'oklch(0.72 0.18 78 / 30%)';
-                      el.style.boxShadow = '';
-                      el.style.transform = '';
-                    }}
+                    className="px-3 py-1.5 text-xs font-bold rounded-lg bg-primary/8 border border-primary/20 text-primary cursor-default transition-all duration-200 hover:scale-105 hover:bg-primary/15"
                   >
                     {skill.name}
                   </span>
                 ))}
               </div>
+            </div>
 
-              {/* Stats Row with Animated Number Counters */}
-              <div className="pt-6 border-t border-border/70 grid grid-cols-3 gap-3 sm:gap-4 text-center">
-                {/* Stat 1 */}
-                <div
-                  data-about="stat-card"
-                  className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:bg-amber-500/5 hover:border-amber-500/20"
-                >
-                  <p
-                    data-about="stat-number"
-                    data-target={content?.stat_years_value || '5'}
-                    className="text-2xl sm:text-3xl font-black text-amber-500"
-                  >
-                    0+
-                  </p>
-                  <p className="text-[11px] font-semibold text-slate-500 mt-1">{content?.stat_years_label || 'Years Exp'}</p>
+            {/* Stats Row */}
+            <div className="grid grid-cols-3 gap-3">
+              <div
+                data-about="stat-card"
+                className="p-4 rounded-2xl bg-card border border-border/70 shadow-sm text-center hover:border-amber-500/30 hover:shadow-md transition-all"
+              >
+                <p data-about="stat-number" data-target={content?.stat_years_value || '5'} className="text-2xl sm:text-3xl font-black text-amber-500">0+</p>
+                <p className="text-[11px] font-semibold text-muted-foreground mt-1 leading-tight">{getC('stat_years_label', t.landing.statYearsLabel)}</p>
+              </div>
+              <div
+                data-about="stat-card"
+                className="p-4 rounded-2xl bg-card border border-border/70 shadow-sm text-center hover:border-blue-500/30 hover:shadow-md transition-all"
+              >
+                <p data-about="stat-number" data-target={content?.stat_projects_value || '20'} className="text-2xl sm:text-3xl font-black text-blue-600">0+</p>
+                <p className="text-[11px] font-semibold text-muted-foreground mt-1 leading-tight">{getC('stat_projects_label', t.landing.statProjectsLabel)}</p>
+              </div>
+              <div
+                data-about="stat-card"
+                className="p-4 rounded-2xl bg-card border border-border/70 shadow-sm text-center hover:border-teal-500/30 hover:shadow-md transition-all"
+              >
+                <p data-about="stat-number" data-target={content?.stat_clients_value || '15'} className="text-2xl sm:text-3xl font-black text-teal-600">0+</p>
+                <p className="text-[11px] font-semibold text-muted-foreground mt-1 leading-tight">{getC('stat_clients_label', t.landing.statClientsLabel)}</p>
+              </div>
+            </div>
+
+            {/* Workspace Photos */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="group relative rounded-2xl overflow-hidden border border-border/70 bg-card aspect-[4/3]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={authorImg2}
+                  alt="Workspace Setup"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/65 via-transparent to-transparent" />
+                <div className="absolute bottom-2.5 left-3 right-3 text-white">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300">{isEn ? 'Workspace' : 'Làm việc'}</p>
+                  <p className="text-[11px] font-semibold text-slate-100 leading-tight">{isEn ? 'Clean Setup' : 'Tối giản'}</p>
                 </div>
+              </div>
 
-                {/* Stat 2 */}
-                <div
-                  data-about="stat-card"
-                  className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:bg-blue-500/5 hover:border-blue-500/20"
-                >
-                  <p
-                    data-about="stat-number"
-                    data-target={content?.stat_projects_value || '20'}
-                    className="text-2xl sm:text-3xl font-black text-blue-600"
-                  >
-                    0+
-                  </p>
-                  <p className="text-[11px] font-semibold text-slate-500 mt-1">{content?.stat_projects_label || 'Projects'}</p>
-                </div>
-
-                {/* Stat 3 */}
-                <div
-                  data-about="stat-card"
-                  className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:bg-teal-500/5 hover:border-teal-500/20"
-                >
-                  <p
-                    data-about="stat-number"
-                    data-target={content?.stat_clients_value || '15'}
-                    className="text-2xl sm:text-3xl font-black text-teal-600"
-                  >
-                    0+
-                  </p>
-                  <p className="text-[11px] font-semibold text-slate-500 mt-1">{content?.stat_clients_label || 'Clients'}</p>
+              <div className="group relative rounded-2xl overflow-hidden border border-border/70 bg-card aspect-[4/3]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={authorImg3}
+                  alt="Coding & Architecture"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/65 via-transparent to-transparent" />
+                <div className="absolute bottom-2.5 left-3 right-3 text-white">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-blue-300">{isEn ? 'In Action' : 'Thực chiến'}</p>
+                  <p className="text-[11px] font-semibold text-slate-100 leading-tight">{isEn ? 'Architecture & AI' : 'Kiến trúc & AI'}</p>
                 </div>
               </div>
             </div>

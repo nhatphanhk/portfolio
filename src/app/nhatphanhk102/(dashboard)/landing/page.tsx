@@ -1,4 +1,4 @@
-import { getAllSiteContent } from '@/lib/actions/site-content';
+import { getAllSiteContent, getSiteContentBundle } from '@/lib/actions/site-content';
 import { AdminLandingClient } from './client';
 
 export const metadata = {
@@ -6,7 +6,10 @@ export const metadata = {
 };
 
 export default async function AdminLandingPage() {
-  const items = await getAllSiteContent();
+  const [items, bundle] = await Promise.all([
+    getAllSiteContent(),
+    getSiteContentBundle(),
+  ]);
 
-  return <AdminLandingClient initialItems={items} />;
+  return <AdminLandingClient initialItems={items} initialBundle={bundle} />;
 }

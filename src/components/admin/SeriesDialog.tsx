@@ -20,6 +20,7 @@ import {
   getSeriesTranslations,
 } from '@/lib/actions/series';
 import { Sparkles, Languages, CheckCircle2, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { slugify } from '@/lib/utils';
 
 const schema = z.object({
   title: z.string().min(2, 'Title required').max(255),
@@ -199,12 +200,7 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
   const onTitleBlur = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
       if (!initialData?.slug) {
-        const slug = e.target.value
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-|-$/g, '');
+        const slug = slugify(e.target.value);
         setValue('slug', slug, { shouldValidate: true });
       }
     },
@@ -213,14 +209,7 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
 
   const onSubmit = (data: FormData) => {
     startTransition(async () => {
-      const finalSlug =
-        data.slug?.trim() ||
-        data.title
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-|-$/g, '');
+      const finalSlug = data.slug?.trim() || slugify(data.title);
 
       const payload = {
         ...data,

@@ -30,79 +30,86 @@ export default function CertificationsClient({ certifications }: CertificationsC
   return (
     <>
       {/* Header */}
-      <div className="mb-16">
-        <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+      <div className="mb-12">
+        <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-3 tracking-tight">
           {t('certifications.title')}
         </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
+        <p className="text-base text-muted-foreground max-w-2xl leading-relaxed mb-6">
           {t('certifications.subtitle')}
         </p>
 
-        {/* Stats */}
-        <div className="flex gap-8 mt-8">
-          <div>
-            <p className="text-3xl font-bold text-foreground">{active.length}</p>
-            <p className="text-sm text-muted-foreground">{t('certifications.active')}</p>
+        {/* Stats — pill style */}
+        <div className="flex flex-wrap gap-3">
+          <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+            <CheckCircle className="w-4 h-4" />
+            <span className="text-sm font-bold">{active.length}</span>
+            <span className="text-xs font-medium opacity-80">{t('certifications.active')}</span>
           </div>
-          <div>
-            <p className="text-3xl font-bold text-muted-foreground">{expired.length}</p>
-            <p className="text-sm text-muted-foreground">{t('certifications.expired')}</p>
-          </div>
+          {expired.length > 0 && (
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-muted border border-border text-muted-foreground">
+              <XCircle className="w-4 h-4" />
+              <span className="text-sm font-bold">{expired.length}</span>
+              <span className="text-xs font-medium opacity-80">{t('certifications.expired')}</span>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Active Certifications */}
       {active.length > 0 && (
-        <div className="mb-16">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-primary mb-8">
+        <div className="mb-12">
+          <h2 className="text-xs font-black uppercase tracking-widest text-primary mb-6 flex items-center gap-2">
+            <span className="w-1 h-4 rounded-full bg-primary" />
             {t('certifications.active')}
           </h2>
-          <div className="grid md:grid-cols-2 gap-5">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {active.map(cert => (
               <article
                 key={cert.id}
-                className="p-6 rounded-xl border border-border bg-card hover:border-foreground/20 hover:shadow-sm transition-all duration-200"
+                className="p-5 rounded-2xl border border-border/70 bg-card hover:border-primary/25 hover:shadow-md transition-all duration-200 flex flex-col justify-between gap-4"
               >
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <h3 className="font-semibold text-foreground leading-snug">{cert.name}</h3>
-                  <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-                </div>
+                <div>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <h3 className="font-semibold text-sm text-foreground leading-snug">{cert.name}</h3>
+                    <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  </div>
 
-                <p className="text-sm font-medium text-muted-foreground mb-4">{cert.issuer}</p>
+                  <p className="text-xs font-semibold text-primary bg-primary/8 border border-primary/20 rounded-md px-2 py-0.5 inline-flex mb-3">
+                    {cert.issuer}
+                  </p>
 
-                <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5" />
-                    <span>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
                       {t('certifications.issued')}{' '}
                       {new Date(cert.issueDate).toLocaleDateString(dateLocale, {
                         month: 'short',
                         year: 'numeric',
                       })}
                     </span>
+                    {cert.expiryDate && (
+                      <span className="text-muted-foreground/60">
+                        · {t('certifications.expired')}{' '}
+                        {new Date(cert.expiryDate).toLocaleDateString(dateLocale, {
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </span>
+                    )}
                   </div>
-                  {cert.expiryDate && (
-                    <span className="text-muted-foreground/60">
-                      · {t('certifications.expired')}{' '}
-                      {new Date(cert.expiryDate).toLocaleDateString(dateLocale, {
-                        month: 'short',
-                        year: 'numeric',
-                      })}
-                    </span>
+
+                  {cert.description && (
+                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-2">
+                      {cert.description}
+                    </p>
                   )}
                 </div>
 
-                {cert.description && (
-                  <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                    {cert.description}
-                  </p>
-                )}
-
                 {(cert.credentialId || cert.credentialUrl) && (
-                  <div className="flex items-center justify-between pt-3 border-t border-border">
+                  <div className="flex items-center justify-between pt-3 border-t border-border/50 gap-2">
                     {cert.credentialId && (
-                      <span className="text-xs text-muted-foreground font-mono">
-                        {t('certifications.credentialId')}: {cert.credentialId}
+                      <span className="text-[10px] text-muted-foreground font-mono truncate">
+                        {cert.credentialId}
                       </span>
                     )}
                     {cert.credentialUrl && (
@@ -110,7 +117,7 @@ export default function CertificationsClient({ certifications }: CertificationsC
                         href={cert.credentialUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-semibold shrink-0 ml-auto"
                       >
                         {t('certifications.viewCredential')} <ExternalLink className="h-3 w-3" />
                       </a>
@@ -126,21 +133,22 @@ export default function CertificationsClient({ certifications }: CertificationsC
       {/* Expired Certifications */}
       {expired.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-8">
+          <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
+            <span className="w-1 h-4 rounded-full bg-muted-foreground/40" />
             {t('certifications.expired')}
           </h2>
-          <div className="grid md:grid-cols-2 gap-5 opacity-60">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 opacity-55">
             {expired.map(cert => (
               <article
                 key={cert.id}
-                className="p-6 rounded-xl border border-border bg-muted/30"
+                className="p-5 rounded-2xl border border-border bg-muted/20"
               >
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <h3 className="font-semibold text-foreground leading-snug">{cert.name}</h3>
-                  <XCircle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <h3 className="font-semibold text-sm text-foreground leading-snug">{cert.name}</h3>
+                  <XCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                 </div>
-                <p className="text-sm text-muted-foreground mb-2">{cert.issuer}</p>
-                <div className="text-xs text-muted-foreground">
+                <p className="text-xs font-medium text-muted-foreground mb-2">{cert.issuer}</p>
+                <div className="text-xs text-muted-foreground/70">
                   <span>
                     {t('certifications.issued')}{' '}
                     {new Date(cert.issueDate).toLocaleDateString(dateLocale, {

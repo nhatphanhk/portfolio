@@ -236,7 +236,7 @@ export default function ContactSection({ profile, socialLinks, hideHeader = fals
 
   return (
     <section id="contact" className="py-24 bg-muted/30">
-      <div className="max-w-5xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <p className="text-sm font-semibold uppercase tracking-widest text-primary mb-3">
             {t('nav.contact')}
