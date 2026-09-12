@@ -43,7 +43,7 @@ export function NavUser({
     if (typeof window !== 'undefined') {
       localStorage.removeItem('is_admin');
     }
-    signOut({ callbackUrl: '/admin/login' });
+    signOut({ callbackUrl: '/nhatphanhk102/login' });
   };
 
   return (

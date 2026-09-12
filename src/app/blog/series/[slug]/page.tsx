@@ -9,16 +9,19 @@ interface SeriesPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   const allSeries = await getPublicSeries();
   return allSeries.map(s => ({ slug: s.slug }));
 }
 
+import { getServerLocale } from '@/lib/i18n/server';
+
 export async function generateMetadata({ params }: SeriesPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const series = await getPublicSeriesBySlug(slug);
+  const locale = await getServerLocale();
+  const series = await getPublicSeriesBySlug(slug, locale);
 
   if (!series) {
     return {
@@ -43,7 +46,8 @@ export async function generateMetadata({ params }: SeriesPageProps): Promise<Met
 
 export default async function SeriesDetailPage({ params }: SeriesPageProps) {
   const { slug } = await params;
-  const series = await getPublicSeriesBySlug(slug);
+  const locale = await getServerLocale();
+  const series = await getPublicSeriesBySlug(slug, locale);
 
   if (!series) {
     notFound();

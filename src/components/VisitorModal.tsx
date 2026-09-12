@@ -51,7 +51,7 @@ export function VisitorModal() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // ── Layer 1: Check Admin LocalStorage Flag (Set upon logging in via /admin/login) ──
+    // ── Layer 1: Check Admin LocalStorage Flag (Set upon logging in via /nhatphanhk102/login) ──
     const isAdmin = localStorage.getItem('is_admin') === 'true';
     if (isAdmin) {
       return;

@@ -105,7 +105,7 @@ export async function updateSiteContentBatch(updates: Array<{ key: string; value
     }
 
     revalidatePath('/');
-    revalidatePath('/admin/landing');
+    revalidatePath('/nhatphanhk102/landing');
     return { ok: true };
   } catch (error) {
     console.error('Error updating site content batch:', error);

@@ -18,15 +18,18 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
 };
 
-// Edge caching for high-traffic defense: revalidate every 5 minutes.
+// Edge caching for high-traffic defense: revalidate every 1 hour.
 // Content changes made in Admin are instantly refreshed via revalidatePath.
-export const revalidate = 300;
+export const revalidate = 3600;
+
+import { getServerLocale } from '@/lib/i18n/server';
 
 export default async function Home() {
+  const locale = await getServerLocale();
   const [profile, socialLinks, projects, blogs, certs, skillsByCategory, siteContent] = await Promise.all([
-    getProfile(),
+    getProfile(locale),
     getSocialLinks(),
-    getPublicProjects(),
+    getPublicProjects(locale),
     getPublicBlogs(),
     getPublicCertifications(),
     getPublicSkillsByCategory(),

@@ -90,7 +90,7 @@ export default async function ProjectsDashboardPage() {
           <p className="text-sm text-muted-foreground">Overview and analytics for your projects</p>
         </div>
         <Link
-          href="/admin/projects"
+          href="/nhatphanhk102/projects"
           className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors"
         >
           <Code className="h-4 w-4" /> View All Projects
@@ -157,7 +157,7 @@ export default async function ProjectsDashboardPage() {
         <div className="p-6 rounded-xl border border-border bg-card">
           <h2 className="font-semibold text-foreground mb-4">Status Breakdown</h2>
           {total === 0 ? (
-            <p className="text-sm text-muted-foreground">No projects yet. <Link href="/admin/projects" className="text-primary underline">Add your first project.</Link></p>
+            <p className="text-sm text-muted-foreground">No projects yet. <Link href="/nhatphanhk102/projects" className="text-primary underline">Add your first project.</Link></p>
           ) : (
             <div className="space-y-3">
               <MiniBar label="Published" value={published} max={total} color="bg-green-500" />

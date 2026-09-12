@@ -60,16 +60,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+import { getServerLocale } from '@/lib/i18n/server';
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getServerLocale();
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <LanguageProvider>
+          <LanguageProvider initialLocale={locale}>
             {children}
             <Toaster position="bottom-right" />
             <CommandPalette />
@@ -81,4 +85,5 @@ export default function RootLayout({
     </html>
   );
 }
+
 

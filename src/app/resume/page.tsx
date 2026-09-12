@@ -1,9 +1,10 @@
 import { MainLayout } from '@/components';
 import { ResumeMultiPage } from '@/components/resume/ResumeMultiPage';
 import { UserBreadcrumb } from '@/components/UserBreadcrumb';
+import { ResumeHeaderClient } from '@/components/resume/ResumeHeaderClient';
 
-// Always render fresh so admin updates via revalidatePath are immediately reflected
-export const revalidate = 60;
+// Background revalidation every 1 hour (Admin updates purge cache instantly via revalidatePath)
+export const revalidate = 3600;
 
 import {
   getProfile,
@@ -15,15 +16,30 @@ import {
   getSpokenLanguages,
   getActivities,
 } from '@/lib/actions/about';
-import { Download } from 'lucide-react';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'Resume',
-  description: 'Professional Curriculum Vitae & Experience Overview',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getServerLocale();
+  const isVi = locale === 'vi';
+  return {
+    title: isVi ? 'Hồ sơ năng lực & CV' : 'Resume',
+    description: isVi
+      ? 'Hồ sơ năng lực cá nhân, kinh nghiệm làm việc và các kỹ năng chuyên môn'
+      : 'Professional Curriculum Vitae & Experience Overview',
+    openGraph: {
+      title: isVi ? 'Hồ sơ năng lực & CV | nhatphanhk102' : 'Resume | nhatphanhk102',
+      description: isVi
+        ? 'Hồ sơ năng lực cá nhân, kinh nghiệm làm việc và các kỹ năng chuyên môn'
+        : 'Professional Curriculum Vitae & Experience Overview',
+      locale: isVi ? 'vi_VN' : 'en_US',
+    },
+  };
+}
+
+import { getServerLocale } from '@/lib/i18n/server';
 
 export default async function ResumePage() {
+  const locale = await getServerLocale();
   const [
     profile,
     experiences,
@@ -34,8 +50,8 @@ export default async function ResumePage() {
     spokenLanguages,
     activities,
   ] = await Promise.all([
-    getProfile(),
-    getExperiences(),
+    getProfile(locale),
+    getExperiences(locale),
     getSocialLinks(),
     getEducation(),
     getSkillsByCategory(),
@@ -52,24 +68,7 @@ export default async function ResumePage() {
           <UserBreadcrumb items={[{ label: 'Resume' }]} className="mb-6" />
 
           {/* Page header aligned with Header logo */}
-          <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-1 tracking-tight">Resume</h1>
-              <p className="text-muted-foreground text-sm">
-                Professional profile, experience, and technical competencies
-              </p>
-            </div>
-            {profile.resumeUrl && (
-              <a
-                href={profile.resumeUrl}
-                download
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:opacity-90 active:scale-95 transition-all shadow-md shadow-primary/20 shrink-0"
-              >
-                <Download className="w-4 h-4" />
-                Download PDF
-              </a>
-            )}
-          </div>
+          <ResumeHeaderClient resumeUrl={profile.resumeUrl} />
 
           {/* Dynamic Multi-Page Resume Presentation */}
           <div className="flex justify-center">

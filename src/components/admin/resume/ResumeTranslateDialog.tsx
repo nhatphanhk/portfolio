@@ -117,18 +117,53 @@ export function ResumeTranslateDialog({
     }
     setIsTranslatingProfile(true);
     try {
-      const res = await previewTranslateProfileAction(profile.id, 'en', {
-        title: profile.title,
-        tagline: profile.tagline,
-        bio: profile.bio,
-        careerObjective: profile.careerObjective,
-        softSkills: profile.softSkills,
-      });
-      if (res.ok && res.data) {
-        setProfileTrans(res.data);
+      let resData = null;
+      let errorMsg = null;
+
+      try {
+        const apiRes = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entityType: 'profile',
+            entityId: profile.id,
+            action: 'preview',
+            title: profile.title,
+            tagline: profile.tagline,
+            bio: profile.bio,
+            careerObjective: profile.careerObjective,
+            softSkills: profile.softSkills,
+            targetLocale: 'en',
+          }),
+        });
+        const json = await apiRes.json();
+        if (json.ok && json.data) {
+          resData = json.data;
+        } else {
+          errorMsg = json.error;
+        }
+      } catch {}
+
+      if (!resData) {
+        const res = await previewTranslateProfileAction(profile.id, 'en', {
+          title: profile.title,
+          tagline: profile.tagline,
+          bio: profile.bio,
+          careerObjective: profile.careerObjective,
+          softSkills: profile.softSkills,
+        });
+        if (res.ok && res.data) {
+          resData = res.data;
+        } else {
+          errorMsg = res.error || errorMsg;
+        }
+      }
+
+      if (resData) {
+        setProfileTrans(resData);
         toast.success('Bản dịch AI cho Hồ sơ cá nhân đã tạo xong! Xem trước và bấm Lưu.');
       } else {
-        toast.error(res.error || 'Dịch hồ sơ thất bại');
+        toast.error(errorMsg || 'Dịch hồ sơ thất bại');
       }
     } catch (err: any) {
       toast.error(err.message || 'Lỗi khi dịch hồ sơ');
@@ -141,6 +176,27 @@ export function ResumeTranslateDialog({
     if (!profile?.id) return;
     setIsSavingProfile(true);
     try {
+      try {
+        const apiRes = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entityType: 'profile',
+            entityId: profile.id,
+            action: 'save',
+            ...profileTrans,
+            targetLocale: 'en',
+          }),
+        });
+        const json = await apiRes.json();
+        if (json.ok) {
+          setHasProfileTrans(true);
+          toast.success('Đã lưu bản dịch Hồ sơ cá nhân (EN)!');
+          onSuccess?.();
+          return;
+        }
+      } catch {}
+
       const res = await saveProfileTranslationAction(profile.id, profileTrans, 'en');
       if (res.ok) {
         setHasProfileTrans(true);
@@ -159,19 +215,52 @@ export function ResumeTranslateDialog({
   const handleTranslateExperience = async (exp: any) => {
     setTranslatingExpId(exp.id);
     try {
-      const res = await previewTranslateExperienceAction(exp.id, 'en', {
-        position: exp.position,
-        description: exp.description,
-        achievements: exp.achievements,
-      });
-      if (res.ok && res.data) {
+      let resData = null;
+      let errorMsg = null;
+
+      try {
+        const apiRes = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entityType: 'experience',
+            entityId: exp.id,
+            action: 'preview',
+            position: exp.position,
+            description: exp.description,
+            achievements: exp.achievements,
+            targetLocale: 'en',
+          }),
+        });
+        const json = await apiRes.json();
+        if (json.ok && json.data) {
+          resData = json.data;
+        } else {
+          errorMsg = json.error;
+        }
+      } catch {}
+
+      if (!resData) {
+        const res = await previewTranslateExperienceAction(exp.id, 'en', {
+          position: exp.position,
+          description: exp.description,
+          achievements: exp.achievements,
+        });
+        if (res.ok && res.data) {
+          resData = res.data;
+        } else {
+          errorMsg = res.error || errorMsg;
+        }
+      }
+
+      if (resData) {
         setExpTranslations(prev => ({
           ...prev,
-          [exp.id]: res.data,
+          [exp.id]: resData,
         }));
         toast.success(`Đã dịch kinh nghiệm tại ${exp.company}!`);
       } else {
-        toast.error(res.error || 'Dịch kinh nghiệm thất bại');
+        toast.error(errorMsg || 'Dịch kinh nghiệm thất bại');
       }
     } catch (err: any) {
       toast.error(err.message || 'Lỗi khi dịch kinh nghiệm');
@@ -185,6 +274,27 @@ export function ResumeTranslateDialog({
     if (!data) return;
     setSavingExpId(expId);
     try {
+      try {
+        const apiRes = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entityType: 'experience',
+            entityId: expId,
+            action: 'save',
+            ...data,
+            targetLocale: 'en',
+          }),
+        });
+        const json = await apiRes.json();
+        if (json.ok) {
+          setSavedExpIds(prev => new Set(prev).add(expId));
+          toast.success('Đã lưu bản dịch kinh nghiệm (EN)!');
+          onSuccess?.();
+          return;
+        }
+      } catch {}
+
       const res = await saveExperienceTranslationAction(expId, data, 'en');
       if (res.ok) {
         setSavedExpIds(prev => new Set(prev).add(expId));

@@ -100,17 +100,54 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
 
     setIsTranslating(true);
     try {
-      const res = await previewTranslateProjectAction(initialData.id, 'en', {
-        title: currentTitle,
-        description: watch('description'),
-        content: watch('content'),
-      });
-      if (res.ok && res.data) {
-        setTransData(res.data);
+      let resData: { title: string; description: string; content: string } | null = null;
+      let errorMsg: string | null = null;
+
+      // 1. Try REST API endpoint first
+      try {
+        const apiRes = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entityType: 'project',
+            entityId: initialData.id,
+            action: 'preview',
+            title: currentTitle,
+            description: watch('description'),
+            content: watch('content'),
+            targetLocale: 'en',
+          }),
+        });
+        const json = await apiRes.json();
+        if (json.ok && json.data) {
+          resData = json.data;
+        } else {
+          errorMsg = json.error;
+        }
+      } catch {
+        // Continue to server action fallback
+      }
+
+      // 2. Fallback to Server Action
+      if (!resData) {
+        const res = await previewTranslateProjectAction(initialData.id, 'en', {
+          title: currentTitle,
+          description: watch('description'),
+          content: watch('content'),
+        });
+        if (res.ok && res.data) {
+          resData = res.data;
+        } else {
+          errorMsg = res.error || errorMsg;
+        }
+      }
+
+      if (resData) {
+        setTransData(resData);
         setShowTransPreview(true);
         toast.success('Bản dịch AI đã sẵn sàng! Xem trước và bấm Lưu bên dưới.');
       } else {
-        toast.error(res.error || 'Dịch thất bại');
+        toast.error(errorMsg || 'Dịch thất bại');
       }
     } catch (err: any) {
       toast.error(err.message || 'Lỗi khi gọi AI dịch');
@@ -123,6 +160,28 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
     if (!initialData?.id) return;
     setIsSavingTrans(true);
     try {
+      // 1. Try REST API first
+      try {
+        const apiRes = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entityType: 'project',
+            entityId: initialData.id,
+            action: 'save',
+            ...transData,
+            targetLocale: 'en',
+          }),
+        });
+        const json = await apiRes.json();
+        if (json.ok) {
+          setHasTranslation(true);
+          toast.success('Đã lưu bản dịch Tiếng Anh (EN) thành công!');
+          return;
+        }
+      } catch {}
+
+      // 2. Fallback to server action
       const res = await saveProjectTranslationAction(initialData.id, transData, 'en');
       if (res.ok) {
         setHasTranslation(true);

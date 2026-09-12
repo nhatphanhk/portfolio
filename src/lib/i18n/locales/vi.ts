@@ -30,6 +30,12 @@ export const vi: TranslationDict = {
     loading: 'Đang tải...',
     part: 'phần',
     parts: 'phần',
+    home: 'Trang chủ',
+    technology: 'Công nghệ',
+    technologies: 'Công nghệ',
+    active: 'Còn hiệu lực',
+    expired: 'Đã hết hạn',
+    issued: 'Ngày cấp',
   },
 
   // Blogs page
@@ -79,20 +85,85 @@ export const vi: TranslationDict = {
     subtitle: 'Các dự án phát triển phần mềm nổi bật, đóng góp mã nguồn mở và các ứng dụng web.',
     highlights: 'Điểm nhấn dự án',
     featuredTitle: 'Dự án tiêu biểu',
+    searchPlaceholder: 'Tìm kiếm dự án theo tên, mô tả hoặc công nghệ...',
+    filterByTech: 'Lọc theo công nghệ:',
+    foundProjects: 'Tìm thấy',
+    matchingProjects: 'dự án phù hợp',
+    matchingProject: 'dự án phù hợp',
+    withTech: 'với công nghệ',
+    noProjectsFound: 'Không tìm thấy dự án nào',
+    noProjectsDesc: 'Không có dự án nào phù hợp với điều kiện tìm kiếm hoặc bộ lọc hiện tại của bạn.',
+    featured: 'Nổi bật',
+    demo: 'Bản Demo',
+    code: 'Mã nguồn',
+    viewDetails: 'Xem chi tiết dự án',
+  },
+
+  // Skills
+  skills: {
+    badge: 'Năng lực & Hệ thống công nghệ',
+    title: 'Kỹ năng chuyên môn',
+    subtitle: 'Tổng hợp các công nghệ, ngôn ngữ lập trình, framework và công cụ tôi sử dụng để phát triển các ứng dụng web chất lượng cao và có khả năng mở rộng.',
+    tracked: 'kỹ năng được ghi nhận',
+    categories: {
+      FRONTEND: 'Lập trình Frontend',
+      BACKEND: 'Lập trình Backend',
+      DEVOPS: 'DevOps & Điện toán đám mây',
+      TOOLS: 'Công cụ & Quy trình',
+      LANGUAGE: 'Ngôn ngữ lập trình',
+      FRAMEWORK: 'Framework & Thư viện',
+      DATABASE: 'Cơ sở dữ liệu & Lưu trữ',
+      CLOUD: 'Nền tảng Đám mây',
+      IAC: 'Hạ tầng dạng mã (IaC)',
+      MONITORING: 'Giám sát & Quản lý Log',
+      VERSION_CONTROL: 'Quản lý phiên bản mã nguồn',
+      OTHER: 'Công nghệ khác',
+    },
+  },
+
+  // Certifications
+  certifications: {
+    title: 'Chứng chỉ nghề nghiệp',
+    subtitle: 'Các chứng chỉ chuyên môn khẳng định năng lực trong lĩnh vực điện toán đám mây, phát triển phần mềm và kỹ thuật hệ thống.',
+    active: 'Còn hiệu lực',
+    expired: 'Đã hết hạn',
+    issued: 'Ngày cấp',
+    viewCredential: 'Xem chứng chỉ gốc',
+    credentialId: 'Mã định danh',
   },
 
   // Contact
   contact: {
     title: 'Liên hệ',
-    subtitle: 'Bạn có ý tưởng dự án hoặc muốn hợp tác? Đừng ngần ngại để lại tin nhắn cho tôi.',
+    subtitle: 'Bạn có ý tưởng dự án, cơ hội hợp tác hoặc muốn trao đổi? Đừng ngần ngại gửi tin nhắn, tôi sẽ phản hồi sớm nhất có thể.',
+    letsWork: 'Cùng nhau tạo nên những dự án tuyệt vời',
+    directContact: 'Thông tin liên hệ trực tiếp',
     name: 'Họ và tên của bạn',
+    namePlaceholder: 'Nhập họ và tên...',
     email: 'Địa chỉ Email',
+    emailPlaceholder: 'email-cua-ban@gmail.com',
     subject: 'Chủ đề',
+    subjectPlaceholder: 'Bạn muốn trao đổi về chủ đề gì?',
     message: 'Nội dung tin nhắn',
+    messagePlaceholder: 'Chia sẻ về dự án của bạn hoặc nội dung cần trao đổi...',
     send: 'Gửi tin nhắn',
     sending: 'Đang gửi...',
     success: 'Tin nhắn đã được gửi thành công!',
+    successDesc: 'Cảm ơn bạn đã liên hệ. Tôi sẽ phản hồi sớm nhất có thể.',
     error: 'Gửi tin nhắn thất bại. Vui lòng thử lại sau.',
+    valName: 'Họ tên phải có ít nhất 2 ký tự',
+    valEmail: 'Vui lòng nhập địa chỉ email hợp lệ',
+    valSubject: 'Chủ đề phải có ít nhất 3 ký tự',
+    valMessage: 'Nội dung tin nhắn phải có ít nhất 10 ký tự',
+    responseTimeTitle: 'Thời gian phản hồi',
+    responseTimeDesc: 'Tôi thường phản hồi trong vòng 24–48 giờ. Đối với các vấn đề khẩn cấp, bạn có thể gửi email trực tiếp.',
+  },
+
+  // Resume
+  resume: {
+    title: 'Hồ sơ năng lực & CV',
+    subtitle: 'Hồ sơ cá nhân, kinh nghiệm làm việc và các năng lực chuyên môn',
+    downloadPdf: 'Tải xuống PDF',
   },
 
   // Footer
@@ -100,5 +171,6 @@ export const vi: TranslationDict = {
     navigation: 'Điều hướng',
     connect: 'Kết nối',
     rights: 'Bảo lưu mọi quyền.',
+    builtWith: 'Xây dựng với Next.js & Tailwind CSS',
   },
 };

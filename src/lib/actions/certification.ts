@@ -37,8 +37,9 @@ export async function createCertification(formData: CertificationFormData) {
     },
   });
 
-  revalidatePath('/admin/certifications');
+  revalidatePath('/nhatphanhk102/certifications');
   revalidatePath('/certifications');
+  revalidatePath('/');
   return { ok: true };
 }
 
@@ -65,16 +66,18 @@ export async function updateCertification(
     },
   });
 
-  revalidatePath('/admin/certifications');
+  revalidatePath('/nhatphanhk102/certifications');
   revalidatePath('/certifications');
+  revalidatePath('/');
   return { ok: true };
 }
 
 export async function deleteCertification(id: string) {
   await ensureAdmin();
   await prisma.certification.delete({ where: { id } });
-  revalidatePath('/admin/certifications');
+  revalidatePath('/nhatphanhk102/certifications');
   revalidatePath('/certifications');
+  revalidatePath('/');
   return { ok: true };
 }
 

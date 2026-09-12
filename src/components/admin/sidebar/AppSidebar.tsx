@@ -32,7 +32,7 @@ const navGroups: NavGroup[] = [
     items: [
       {
         title: 'Dashboard',
-        url: '/admin',
+        url: '/nhatphanhk102',
         icon: LayoutDashboard,
       },
     ],
@@ -42,51 +42,51 @@ const navGroups: NavGroup[] = [
     items: [
       {
         title: 'Landing Page',
-        url: '/admin/landing',
+        url: '/nhatphanhk102/landing',
         icon: LayoutTemplate,
       },
       {
         title: 'Resume / CV',
-        url: '/admin/resume',
+        url: '/nhatphanhk102/resume',
         icon: UserRound,
       },
       {
         title: 'Blogs',
-        url: '/admin/blogs',
+        url: '/nhatphanhk102/blogs',
         icon: BookOpen,
         items: [
           {
             title: 'All Posts',
-            url: '/admin/blogs',
+            url: '/nhatphanhk102/blogs',
           },
           {
             title: 'Series',
-            url: '/admin/blogs/series',
+            url: '/nhatphanhk102/blogs/series',
           },
           {
             title: 'Analytics',
-            url: '/admin/blogs/dashboard',
+            url: '/nhatphanhk102/blogs/dashboard',
           },
         ],
       },
       {
         title: 'Projects',
-        url: '/admin/projects',
+        url: '/nhatphanhk102/projects',
         icon: Code,
         items: [
           {
             title: 'All Projects',
-            url: '/admin/projects',
+            url: '/nhatphanhk102/projects',
           },
           {
             title: 'Analytics',
-            url: '/admin/projects/dashboard',
+            url: '/nhatphanhk102/projects/dashboard',
           },
         ],
       },
       {
         title: 'Media Library',
-        url: '/admin/media',
+        url: '/nhatphanhk102/media',
         icon: Images,
       },
     ],
@@ -96,12 +96,12 @@ const navGroups: NavGroup[] = [
     items: [
       {
         title: 'Skills',
-        url: '/admin/skills',
+        url: '/nhatphanhk102/skills',
         icon: Layers,
       },
       {
         title: 'Certifications',
-        url: '/admin/certifications',
+        url: '/nhatphanhk102/certifications',
         icon: Award,
       },
     ],
@@ -111,12 +111,12 @@ const navGroups: NavGroup[] = [
     items: [
       {
         title: 'Contact Inbox',
-        url: '/admin/contacts',
+        url: '/nhatphanhk102/contacts',
         icon: Mail,
       },
       {
         title: 'Visitor Logs',
-        url: '/admin/visitors',
+        url: '/nhatphanhk102/visitors',
         icon: Map,
       },
     ],
@@ -136,7 +136,7 @@ export function AppSidebar({
       <SidebarHeader className="border-b border-sidebar-border/80 pb-3 pt-3 overflow-hidden">
         <div className="flex items-center justify-between px-3 py-1 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
           <Link
-            href="/admin"
+            href="/nhatphanhk102"
             className="flex items-center gap-2.5 font-bold text-sidebar-foreground hover:opacity-90 transition min-w-0"
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden border border-sidebar-border/80 shadow-xs bg-sidebar-accent">

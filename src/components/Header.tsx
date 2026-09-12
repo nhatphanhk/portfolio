@@ -168,7 +168,7 @@ const Header = () => {
           </Link>
 
           {/* ── Navigation Links (Open & Seamless) ── */}
-          <div className="hidden md:flex items-center gap-1 sm:gap-1.5">
+          <div className="hidden lg:flex items-center gap-1 lg:gap-1.5">
             {NAV_LINKS.map(item => {
               const isActive = isItemActive(item.href);
               const Icon = NAV_ICONS[item.name] || Sparkles;
@@ -177,7 +177,7 @@ const Header = () => {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold tracking-wide rounded-full transition-all duration-200 ${isActive
+                  className={`group relative flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold tracking-wide rounded-full transition-all duration-200 whitespace-nowrap ${isActive
                     ? isDarkHero
                       ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 shadow-[0_4px_16px_rgba(245,158,11,0.4)] scale-105'
                       : 'bg-primary text-primary-foreground shadow-sm scale-105'
@@ -187,7 +187,7 @@ const Header = () => {
                     }`}
                 >
                   <Icon
-                    className={`w-3.5 h-3.5 transition-transform duration-200 group-hover:rotate-6 ${isActive
+                    className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 group-hover:rotate-6 ${isActive
                       ? isDarkHero
                         ? 'text-slate-950'
                         : 'text-primary-foreground'
@@ -206,7 +206,7 @@ const Header = () => {
           </div>
 
           {/* ── Mobile Actions (Language Toggle & Menu Button) ── */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className="flex lg:hidden items-center gap-2">
             <LanguageToggle isDarkHero={isDarkHero} />
             <button
               id="mobile-menu-toggle"
@@ -230,7 +230,7 @@ const Header = () => {
 
         {/* ── Mobile Navigation Drawer ── */}
         <div
-          className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${isMobileMenuOpen
+          className={`lg:hidden transition-all duration-300 ease-in-out overflow-hidden ${isMobileMenuOpen
             ? 'max-h-[32rem] opacity-100 pb-4'
             : 'max-h-0 opacity-0 pointer-events-none'
             }`}

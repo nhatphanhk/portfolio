@@ -48,7 +48,7 @@ export default function AdminLoginPage() {
         sessionStorage.setItem('visitor_logged', 'true');
       }
 
-      router.push('/admin');
+      router.push('/nhatphanhk102');
       router.refresh();
     } catch {
       setError('An unexpected error occurred. Please try again.');

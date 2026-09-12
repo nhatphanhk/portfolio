@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     const apiKey = (formData.get('apiKey') as string | null) || undefined;
 
     // Parse PDF text using pdf-parse
-    const pdfParse = require('pdf-parse');
+    const pdfParse = require('pdf-parse/lib/pdf-parse');
     const parsedPdf = await pdfParse(buffer);
     const rawText = parsedPdf.text || '';
 

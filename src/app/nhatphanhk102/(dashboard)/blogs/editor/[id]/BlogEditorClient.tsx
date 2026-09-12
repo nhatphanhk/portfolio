@@ -315,7 +315,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
         {/* Top bar */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <Link
-            href="/admin/blogs"
+            href="/nhatphanhk102/blogs"
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />

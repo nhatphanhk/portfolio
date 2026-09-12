@@ -45,7 +45,7 @@ export async function createSeries(data: SeriesFormData) {
       },
     });
 
-    revalidatePath('/admin/blogs/series');
+    revalidatePath('/nhatphanhk102/blogs/series');
     revalidatePath('/blog');
     revalidatePath('/blog/series');
     return { ok: true };
@@ -80,7 +80,7 @@ export async function updateSeries(id: string, data: SeriesFormData) {
       },
     });
 
-    revalidatePath('/admin/blogs/series');
+    revalidatePath('/nhatphanhk102/blogs/series');
     revalidatePath('/blog');
     revalidatePath('/blog/series');
     return { ok: true };
@@ -107,7 +107,7 @@ export async function deleteSeries(id: string) {
       where: { id },
     });
 
-    revalidatePath('/admin/blogs/series');
+    revalidatePath('/nhatphanhk102/blogs/series');
     revalidatePath('/blog');
     return { ok: true };
   } catch (error) {
@@ -496,7 +496,7 @@ export async function saveSeriesTranslationAction(
     }
 
     revalidatePath('/blog/series');
-    revalidatePath('/admin/blogs/series');
+    revalidatePath('/nhatphanhk102/blogs/series');
     return { ok: true };
   } catch (error) {
     console.error('saveSeriesTranslationAction error:', error);

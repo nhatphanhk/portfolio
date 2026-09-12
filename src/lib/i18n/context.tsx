@@ -22,22 +22,30 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 const STORAGE_KEY = 'portfolio_locale';
 const COOKIE_NAME = 'NEXT_LOCALE';
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('en');
+export function LanguageProvider({
+  children,
+  initialLocale,
+}: {
+  children: React.ReactNode;
+  initialLocale?: Locale;
+}) {
+  const [locale, setLocaleState] = useState<Locale>(initialLocale ?? 'en');
 
   useEffect(() => {
     // 1. Read from localStorage or cookie
     const stored = (typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY)) as Locale | null;
     if (stored === 'en' || stored === 'vi') {
-      setLocaleState(stored);
-    } else {
+      if (stored !== locale) {
+        setLocaleState(stored);
+      }
+    } else if (!initialLocale) {
       // Check browser language
       const browserLang = navigator.language?.toLowerCase();
       if (browserLang?.startsWith('vi')) {
         setLocaleState('vi');
       }
     }
-  }, []);
+  }, [initialLocale, locale]);
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);

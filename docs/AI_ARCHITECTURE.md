@@ -97,14 +97,14 @@ action file for a resource before adding a new query pattern.
 ## 4. Authentication
 
 - **`src/auth.config.ts`** — shared NextAuth config: JWT session (24h), `pages.signIn` =
-  `/admin/login`, `authorized()` callback redirects unauthenticated `/admin/*` requests to
+  `/nhatphanhk102/login`, `authorized()` callback redirects unauthenticated `/nhatphanhk102/*` requests to
   the login page and redirects already-logged-in users away from it.
 - **`src/auth.ts`** — Credentials provider: looks up `User` in Postgres via Prisma + bcrypt.
   If the DB is unreachable or the user doesn't exist, falls back to a single env-defined
   admin (`ADMIN_EMAIL` / `ADMIN_PASSWORD_HASH`) — this is the recovery path if the DB is
   down, keep it.
 - **`src/proxy.ts`** — the Next.js 16 middleware (renamed from `middleware.ts`; don't
-  recreate `middleware.ts`, having both causes a conflict). Matcher is `/admin/:path*`
+  recreate `middleware.ts`, having both causes a conflict). Matcher is `/nhatphanhk102/:path*`
   only — it's a UX-layer redirect, not the security boundary. The real guard is
   `ensureAdmin()`, called inside every mutating Server Action.
 - Sessions carry `role` and `id` via the `jwt`/`session` callbacks in `auth.config.ts`.
@@ -129,7 +129,7 @@ framework-required routes, or serving raw JSON):
 `/api-doc` (`src/app/api-doc/page.tsx`, note: **not** under `src/app/api/`) is a
 Swagger UI *page* that fetches the spec above and renders it via
 `src/components/SwaggerUIClient.tsx` — it's auth-gated like the admin area even though it
-lives outside `src/app/admin/`.
+lives outside `src/app/nhatphanhk102/`.
 
 ### Rate limiting & Cost Optimization
 
@@ -142,9 +142,9 @@ lives outside `src/app/admin/`.
 ### High-Traffic Defense & Caching Strategy (ISR)
 
 To protect PostgreSQL connections from being exhausted when traffic surges (e.g. viral links or crawlers):
-- Public pages (`/`, `/blog`, `/project`, `/skills`, `/certifications`, `/contact`) export `export const revalidate = 300;` (5 minutes).
+- Public pages (`/`, `/blog`, `/project`, `/skills`, `/certifications`, `/contact`, `/resume`) export `export const revalidate = 3600;` (1 hour).
 - **Edge Caching:** Vercel Edge CDN serves cached static HTML responses in <20ms without invoking Prisma or PostgreSQL.
-- **Instant Admin Invalidation:** Mutating Server Actions call `revalidatePath()` upon save, which immediately purges the Edge cache — updates are instantly visible without waiting for the 300s window.
+- **Instant Admin Invalidation:** Mutating Server Actions call `revalidatePath()` upon save, which immediately purges the Edge cache — updates are instantly visible without waiting for the 3600s window.
 
 ---
 

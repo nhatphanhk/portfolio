@@ -16,7 +16,7 @@ This is a **real, deployed system**, not a prototype or an MVP-in-progress. It h
 
 1. **Public website** — visitors read profile info, blog posts, projects, skills,
    certifications, and can send a contact message.
-2. **Admin dashboard** (`/admin`, authenticated) — full CRUD content management for every
+2. **Admin dashboard** (`/nhatphanhk102`, authenticated) — full CRUD content management for every
    public content type, plus a contact inbox and visitor log.
 
 All content is database-backed via Prisma. A handful of static files in `src/data/*.ts`
@@ -41,7 +41,7 @@ saved through the admin.
 | `/contact` | Contact form (rate-limited) |
 | `/sitemap.xml`, `/robots.txt` | Generated from live DB content (published blogs/projects) |
 
-### Admin dashboard (`/admin`, NextAuth-gated)
+### Admin dashboard (`/nhatphanhk102`, NextAuth-gated)
 
 Full CRUD for: Blog posts (draft/published/archived, tags), Projects (with images, tags,
 featured flag), Skills (category + level), Certifications, Social links, Experience,

@@ -4,8 +4,8 @@ export const authConfig = {
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   trustHost: true,
   pages: {
-    signIn: '/admin/login',
-    error: '/admin/login',
+    signIn: '/nhatphanhk102/login',
+    error: '/nhatphanhk102/login',
   },
   session: {
     strategy: 'jwt',
@@ -14,8 +14,8 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isAdminRoute = nextUrl.pathname.startsWith('/admin');
-      const isLoginPage = nextUrl.pathname === '/admin/login';
+      const isAdminRoute = nextUrl.pathname.startsWith('/nhatphanhk102');
+      const isLoginPage = nextUrl.pathname === '/nhatphanhk102/login';
 
       if (isAdminRoute && !isLoginPage) {
         if (isLoggedIn) return true;
@@ -23,7 +23,7 @@ export const authConfig = {
       }
 
       if (isLoginPage && isLoggedIn) {
-        return Response.redirect(new URL('/admin', nextUrl));
+        return Response.redirect(new URL('/nhatphanhk102', nextUrl));
       }
 
       return true;

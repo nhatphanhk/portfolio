@@ -111,9 +111,10 @@ export async function createBlog(formData: BlogFormData) {
     });
   }
 
-  revalidatePath('/admin/blogs');
+  revalidatePath('/nhatphanhk102/blogs');
   revalidatePath('/blog');
   revalidatePath('/blog/series');
+  revalidatePath('/');
   return { ok: true };
 }
 
@@ -175,10 +176,11 @@ export async function updateBlog(id: string, formData: BlogFormData) {
     });
   }
 
-  revalidatePath('/admin/blogs');
+  revalidatePath('/nhatphanhk102/blogs');
   revalidatePath('/blog');
   revalidatePath('/blog/series');
   revalidatePath(`/blog/${rest.slug}`);
+  revalidatePath('/');
   return { ok: true };
 }
 
@@ -190,7 +192,7 @@ export async function deleteBlog(id: string) {
       select: { slug: true, seriesId: true },
     });
     if (!blog) {
-      revalidatePath('/admin/blogs');
+      revalidatePath('/nhatphanhk102/blogs');
       revalidatePath('/blog');
       revalidatePath('/blog/series');
       return { ok: true };
@@ -201,10 +203,11 @@ export async function deleteBlog(id: string) {
     }
 
     await prisma.blog.delete({ where: { id } });
-    revalidatePath('/admin/blogs');
+    revalidatePath('/nhatphanhk102/blogs');
     revalidatePath('/blog');
     revalidatePath('/blog/series');
     revalidatePath(`/blog/${blog.slug}`);
+    revalidatePath('/');
     return { ok: true };
   } catch (error) {
     console.error('Error deleting blog:', error);
@@ -310,7 +313,7 @@ export async function createBlogDraft(): Promise<{ ok: boolean; id?: string; err
       },
     });
 
-    revalidatePath('/admin/blogs');
+    revalidatePath('/nhatphanhk102/blogs');
     return { ok: true, id: blog.id };
   } catch (err) {
     console.error('createBlogDraft error:', err);
@@ -380,7 +383,7 @@ export async function saveBlogTranslationAction(
     }
 
     revalidatePath('/blog');
-    revalidatePath(`/admin/blogs/editor/${blogId}`);
+    revalidatePath(`/nhatphanhk102/blogs/editor/${blogId}`);
     return { ok: true };
   } catch (error) {
     console.error('saveBlogTranslationAction error:', error);
@@ -419,7 +422,7 @@ export async function translateBlogAction(
     await saveBlogTranslationToDb(blogId, result.data, targetLocale);
 
     revalidatePath('/blog');
-    revalidatePath(`/admin/blogs/editor/${blogId}`);
+    revalidatePath(`/nhatphanhk102/blogs/editor/${blogId}`);
     return { ok: true, data: result.data };
   } catch (error: any) {
     console.error('translateBlogAction error:', error);
