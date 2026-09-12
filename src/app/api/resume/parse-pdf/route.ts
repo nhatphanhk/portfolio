@@ -6,6 +6,31 @@ import { put } from '@vercel/blob';
 import path from 'path';
 import fs from 'fs/promises';
 
+// Polyfill DOMMatrix and canvas primitives for pdfjs in Node.js runtime
+if (typeof (global as any).DOMMatrix === 'undefined') {
+  (global as any).DOMMatrix = class DOMMatrix {
+    a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
+    m11 = 1; m12 = 0; m13 = 0; m14 = 0;
+    m21 = 0; m22 = 1; m23 = 0; m24 = 0;
+    m31 = 0; m32 = 0; m33 = 1; m34 = 0;
+    m41 = 0; m42 = 0; m43 = 0; m44 = 1;
+    is2D = true;
+    isIdentity = true;
+    constructor() {}
+  };
+}
+if (typeof (global as any).ImageData === 'undefined') {
+  (global as any).ImageData = class ImageData {
+    width = 0; height = 0; data = new Uint8ClampedArray(0);
+    constructor(w = 0, h = 0) { this.width = w; this.height = h; }
+  };
+}
+if (typeof (global as any).Path2D === 'undefined') {
+  (global as any).Path2D = class Path2D {
+    constructor() {}
+  };
+}
+
 // pdf-parse dynamic import to avoid any build-time packaging conflicts
 export async function POST(request: NextRequest) {
   try {
@@ -96,7 +121,7 @@ export async function POST(request: NextRequest) {
     const apiKey = (formData.get('apiKey') as string | null) || undefined;
 
     // Parse PDF text using pdf-parse
-    const pdfParse = require('pdf-parse');
+    const pdfParse = require('pdf-parse/lib/pdf-parse');
     const parsedPdf = await pdfParse(buffer);
     const rawText = parsedPdf.text || '';
 

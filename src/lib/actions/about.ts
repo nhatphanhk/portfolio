@@ -8,7 +8,7 @@ import { ensureAdmin } from '@/lib/auth-utils';
 import { PROFILE, EXPERIENCES } from '@/data/content';
 
 const REVALIDATE = () => {
-  revalidatePath('/admin/resume');
+  revalidatePath('/nhatphanhk102/resume');
   revalidatePath('/resume');
   revalidatePath('/');
 };

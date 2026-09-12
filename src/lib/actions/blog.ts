@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import { ensureAdmin } from '@/lib/auth-utils';
 import { smartReorderSeriesBlogs, compactSeriesOrders } from '@/lib/actions/series';
+import { slugify } from '@/lib/utils';
 
 const blogSchema = z.object({
   title: z.string().min(3).max(255),
@@ -57,7 +58,7 @@ async function syncTags(tagNames: string[]): Promise<string[]> {
   for (const name of tagNames) {
     const trimmed = name.trim();
     if (!trimmed) continue;
-    const slug = trimmed.toLowerCase().replace(/\s+/g, '-');
+    const slug = slugify(trimmed);
     const tag = await prisma.tag.upsert({
       where: { slug },
       create: { name: trimmed, slug },
@@ -111,9 +112,10 @@ export async function createBlog(formData: BlogFormData) {
     });
   }
 
-  revalidatePath('/admin/blogs');
+  revalidatePath('/nhatphanhk102/blogs');
   revalidatePath('/blog');
   revalidatePath('/blog/series');
+  revalidatePath('/');
   return { ok: true };
 }
 
@@ -175,10 +177,11 @@ export async function updateBlog(id: string, formData: BlogFormData) {
     });
   }
 
-  revalidatePath('/admin/blogs');
+  revalidatePath('/nhatphanhk102/blogs');
   revalidatePath('/blog');
   revalidatePath('/blog/series');
   revalidatePath(`/blog/${rest.slug}`);
+  revalidatePath('/');
   return { ok: true };
 }
 
@@ -190,7 +193,7 @@ export async function deleteBlog(id: string) {
       select: { slug: true, seriesId: true },
     });
     if (!blog) {
-      revalidatePath('/admin/blogs');
+      revalidatePath('/nhatphanhk102/blogs');
       revalidatePath('/blog');
       revalidatePath('/blog/series');
       return { ok: true };
@@ -201,10 +204,11 @@ export async function deleteBlog(id: string) {
     }
 
     await prisma.blog.delete({ where: { id } });
-    revalidatePath('/admin/blogs');
+    revalidatePath('/nhatphanhk102/blogs');
     revalidatePath('/blog');
     revalidatePath('/blog/series');
     revalidatePath(`/blog/${blog.slug}`);
+    revalidatePath('/');
     return { ok: true };
   } catch (error) {
     console.error('Error deleting blog:', error);
@@ -228,7 +232,7 @@ export async function getAllBlogsFromDb() {
   }
 }
 
-export async function getPublicBlogs() {
+export async function getPublicBlogs(locale: 'vi' | 'en' = 'vi') {
   try {
     const blogs = await prisma.blog.findMany({
       where: { status: 'PUBLISHED' },
@@ -238,21 +242,36 @@ export async function getPublicBlogs() {
         series: { select: { id: true, title: true, slug: true } },
       },
     });
-    return blogs.map(b => ({
-      id: b.id,
-      title: b.title,
-      slug: b.slug,
-      excerpt: b.excerpt || '',
-      content: b.content,
-      publishedAt: (b.publishedAt || b.createdAt).toISOString(),
-      readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
-      tags: b.tags.map(t => t.tag.name),
-      thumbnailUrl: b.thumbnailUrl || undefined,
-      status: b.status,
-      seriesId: b.seriesId || undefined,
-      seriesOrder: b.seriesOrder ?? 0,
-      series: b.series ? { id: b.series.id, title: b.series.title, slug: b.series.slug } : undefined,
-    }));
+
+    let translationMap = new Map<string, any>();
+    if (locale === 'en') {
+      const { getBatchEntityTranslationsFromDb } = await import('@/lib/gemini-translate');
+      translationMap = await getBatchEntityTranslationsFromDb(
+        'blog',
+        blogs.map(b => b.id),
+        'en'
+      );
+    }
+
+    return blogs.map(b => {
+      const trans = translationMap.get(b.id);
+      const isEn = locale === 'en';
+      return {
+        id: b.id,
+        title: isEn && trans?.title ? trans.title : b.title,
+        slug: b.slug,
+        excerpt: isEn && trans?.excerpt !== undefined ? trans.excerpt : (b.excerpt || ''),
+        content: isEn && trans?.content ? trans.content : b.content,
+        publishedAt: (b.publishedAt || b.createdAt).toISOString(),
+        readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
+        tags: b.tags.map(t => t.tag.name),
+        thumbnailUrl: b.thumbnailUrl || undefined,
+        status: b.status,
+        seriesId: b.seriesId || undefined,
+        seriesOrder: b.seriesOrder ?? 0,
+        series: b.series ? { id: b.series.id, title: b.series.title, slug: b.series.slug } : undefined,
+      };
+    });
   } catch (error) {
     console.error('Error fetching public blogs from db:', error);
     return [];
@@ -310,7 +329,7 @@ export async function createBlogDraft(): Promise<{ ok: boolean; id?: string; err
       },
     });
 
-    revalidatePath('/admin/blogs');
+    revalidatePath('/nhatphanhk102/blogs');
     return { ok: true, id: blog.id };
   } catch (err) {
     console.error('createBlogDraft error:', err);
@@ -380,7 +399,7 @@ export async function saveBlogTranslationAction(
     }
 
     revalidatePath('/blog');
-    revalidatePath(`/admin/blogs/editor/${blogId}`);
+    revalidatePath(`/nhatphanhk102/blogs/editor/${blogId}`);
     return { ok: true };
   } catch (error) {
     console.error('saveBlogTranslationAction error:', error);
@@ -419,7 +438,7 @@ export async function translateBlogAction(
     await saveBlogTranslationToDb(blogId, result.data, targetLocale);
 
     revalidatePath('/blog');
-    revalidatePath(`/admin/blogs/editor/${blogId}`);
+    revalidatePath(`/nhatphanhk102/blogs/editor/${blogId}`);
     return { ok: true, data: result.data };
   } catch (error: any) {
     console.error('translateBlogAction error:', error);

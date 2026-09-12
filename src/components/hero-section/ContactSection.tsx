@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,15 +8,7 @@ import { toast } from 'sonner';
 import { Send, Mail, MapPin } from 'lucide-react';
 import type { getProfile } from '@/lib/actions/about';
 import DynamicIcon from '@/components/ui/DynamicIcon';
-
-const contactSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
-  subject: z.string().min(3, 'Subject must be at least 3 characters'),
-  message: z.string().min(10, 'Message must be at least 10 characters'),
-});
-
-type ContactFormData = z.infer<typeof contactSchema>;
+import { useLanguage } from '@/lib/i18n/context';
 
 interface ContactSectionProps {
   profile: Awaited<ReturnType<typeof getProfile>>;
@@ -24,12 +16,31 @@ interface ContactSectionProps {
   hideHeader?: boolean;
 }
 
+type ContactFormData = {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+};
+
 /**
  * ContactSection with validated form that submits to the /api/contact endpoint.
- * Uses react-hook-form + zod for validation, sonner for toast notifications.
+ * Uses react-hook-form + zod for validation, sonner for toast notifications, and i18n.
  */
 export default function ContactSection({ profile, socialLinks, hideHeader = false }: ContactSectionProps) {
+  const { t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const contactSchema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(2, t('contact.valName')),
+        email: z.string().email(t('contact.valEmail')),
+        subject: z.string().min(3, t('contact.valSubject')),
+        message: z.string().min(10, t('contact.valMessage')),
+      }),
+    [t]
+  );
 
   const {
     register,
@@ -51,16 +62,16 @@ export default function ContactSection({ profile, socialLinks, hideHeader = fals
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData?.error?.message ?? 'Failed to send message');
+        throw new Error(errorData?.error?.message ?? t('contact.error'));
       }
 
-      toast.success('Message sent!', {
-        description: "Thanks for reaching out. I'll get back to you soon.",
+      toast.success(t('contact.success'), {
+        description: t('contact.successDesc'),
       });
       reset();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Something went wrong';
-      toast.error('Failed to send message', { description: message });
+      const message = err instanceof Error ? err.message : t('contact.error');
+      toast.error(t('contact.error'), { description: message });
     } finally {
       setIsSubmitting(false);
     }
@@ -80,12 +91,12 @@ export default function ContactSection({ profile, socialLinks, hideHeader = fals
                 {/* Name */}
                 <div>
                   <label htmlFor="contact-name" className="block text-sm font-medium text-foreground mb-1.5">
-                    Name <span className="text-destructive">*</span>
+                    {t('contact.name')} <span className="text-destructive">*</span>
                   </label>
                   <input
                     id="contact-name"
                     type="text"
-                    placeholder="Your name"
+                    placeholder={t('contact.namePlaceholder')}
                     {...register('name')}
                     className={`w-full px-4 py-2.5 rounded-lg border bg-white text-foreground text-sm shadow-xs transition-colors outline-none focus:ring-2 focus:ring-ring ${
                       errors.name ? 'border-destructive' : 'border-border/80 hover:border-foreground/40'
@@ -99,12 +110,12 @@ export default function ContactSection({ profile, socialLinks, hideHeader = fals
                 {/* Email */}
                 <div>
                   <label htmlFor="contact-email" className="block text-sm font-medium text-foreground mb-1.5">
-                    Email <span className="text-destructive">*</span>
+                    {t('contact.email')} <span className="text-destructive">*</span>
                   </label>
                   <input
                     id="contact-email"
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder={t('contact.emailPlaceholder')}
                     {...register('email')}
                     className={`w-full px-4 py-2.5 rounded-lg border bg-white text-foreground text-sm shadow-xs transition-colors outline-none focus:ring-2 focus:ring-ring ${
                       errors.email ? 'border-destructive' : 'border-border/80 hover:border-foreground/40'
@@ -119,12 +130,12 @@ export default function ContactSection({ profile, socialLinks, hideHeader = fals
               {/* Subject */}
               <div>
                 <label htmlFor="contact-subject" className="block text-sm font-medium text-foreground mb-1.5">
-                  Subject <span className="text-destructive">*</span>
+                  {t('contact.subject')} <span className="text-destructive">*</span>
                 </label>
                 <input
                   id="contact-subject"
                   type="text"
-                  placeholder="What's this about?"
+                  placeholder={t('contact.subjectPlaceholder')}
                   {...register('subject')}
                   className={`w-full px-4 py-2.5 rounded-lg border bg-white text-foreground text-sm shadow-xs transition-colors outline-none focus:ring-2 focus:ring-ring ${
                     errors.subject ? 'border-destructive' : 'border-border/80 hover:border-foreground/40'
@@ -138,12 +149,12 @@ export default function ContactSection({ profile, socialLinks, hideHeader = fals
               {/* Message */}
               <div>
                 <label htmlFor="contact-message" className="block text-sm font-medium text-foreground mb-1.5">
-                  Message <span className="text-destructive">*</span>
+                  {t('contact.message')} <span className="text-destructive">*</span>
                 </label>
                 <textarea
                   id="contact-message"
                   rows={5}
-                  placeholder="Tell me about your project or just say hello..."
+                  placeholder={t('contact.messagePlaceholder')}
                   {...register('message')}
                   className={`w-full px-4 py-2.5 rounded-lg border bg-white text-foreground text-sm shadow-xs resize-none transition-colors outline-none focus:ring-2 focus:ring-ring ${
                     errors.message ? 'border-destructive' : 'border-border/80 hover:border-foreground/40'
@@ -161,7 +172,7 @@ export default function ContactSection({ profile, socialLinks, hideHeader = fals
                 className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-foreground text-background rounded-lg font-medium hover:bg-foreground/90 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
               >
                 <Send className="h-4 w-4" />
-                {isSubmitting ? 'Sending…' : 'Send Message'}
+                {isSubmitting ? t('contact.sending') : t('contact.send')}
               </button>
             </form>
           </div>
@@ -169,7 +180,7 @@ export default function ContactSection({ profile, socialLinks, hideHeader = fals
           {/* Info — 2 columns */}
           <div className="lg:col-span-2 space-y-8">
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Contact Info</h3>
+              <h3 className="font-semibold text-foreground mb-4">{t('contact.directContact')}</h3>
               <div className="space-y-3">
                 {profile.email && (
                   <div className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -189,7 +200,7 @@ export default function ContactSection({ profile, socialLinks, hideHeader = fals
             </div>
 
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Follow Me</h3>
+              <h3 className="font-semibold text-foreground mb-4">{t('footer.connect')}</h3>
               <div className="flex flex-wrap gap-2.5">
                 {socialLinks.map(social => {
                   return (
@@ -210,10 +221,9 @@ export default function ContactSection({ profile, socialLinks, hideHeader = fals
             </div>
 
             <div className="p-5 rounded-xl border border-border bg-card">
-              <p className="text-sm font-medium text-foreground mb-1">Response Time</p>
+              <p className="text-sm font-medium text-foreground mb-1">{t('contact.responseTimeTitle')}</p>
               <p className="text-sm text-muted-foreground">
-                I typically respond within 24–48 hours. For urgent inquiries, reach out directly via
-                email.
+                {t('contact.responseTimeDesc')}
               </p>
             </div>
           </div>
@@ -226,17 +236,16 @@ export default function ContactSection({ profile, socialLinks, hideHeader = fals
 
   return (
     <section id="contact" className="py-24 bg-muted/30">
-      <div className="max-w-5xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <p className="text-sm font-semibold uppercase tracking-widest text-primary mb-3">
-            Contact
+            {t('nav.contact')}
           </p>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Let&apos;s Work Together
+            {t('contact.letsWork')}
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Have a project in mind or just want to say hello? Send me a message and I&apos;ll get
-            back to you as soon as possible.
+            {t('contact.subtitle')}
           </p>
         </div>
         {formAndInfo}

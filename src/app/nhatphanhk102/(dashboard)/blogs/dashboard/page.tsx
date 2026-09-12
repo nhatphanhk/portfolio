@@ -87,7 +87,7 @@ export default async function BlogDashboardPage() {
           <p className="text-sm text-muted-foreground">Overview and analytics for your blog posts</p>
         </div>
         <Link
-          href="/admin/blogs"
+          href="/nhatphanhk102/blogs"
           className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors"
         >
           <FileText className="h-4 w-4" /> View All Posts
@@ -152,7 +152,7 @@ export default async function BlogDashboardPage() {
       <div className="p-6 rounded-xl border border-border bg-card">
         <h2 className="font-semibold text-foreground mb-4">Status Breakdown</h2>
         {total === 0 ? (
-          <p className="text-sm text-muted-foreground">No posts yet. <Link href="/admin/blogs" className="text-primary underline">Create your first post.</Link></p>
+          <p className="text-sm text-muted-foreground">No posts yet. <Link href="/nhatphanhk102/blogs" className="text-primary underline">Create your first post.</Link></p>
         ) : (
           <div className="space-y-3">
             <MiniBar label="Published" value={published} max={total} color="bg-green-500" />

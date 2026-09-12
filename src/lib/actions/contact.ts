@@ -28,14 +28,14 @@ export async function updateContactStatus(
     data: { status: parsed.data },
   });
 
-  revalidatePath('/admin/contacts');
+  revalidatePath('/nhatphanhk102/contacts');
   return { ok: true };
 }
 
 export async function deleteContact(id: string) {
   await ensureAdmin();
   await prisma.contact.delete({ where: { id } });
-  revalidatePath('/admin/contacts');
+  revalidatePath('/nhatphanhk102/contacts');
   return { ok: true };
 }
 
@@ -74,6 +74,6 @@ export async function getVisitorLogsFromDb() {
 export async function deleteVisitorLog(id: string) {
   await ensureAdmin();
   await prisma.contact.delete({ where: { id } });
-  revalidatePath('/admin/visitors');
+  revalidatePath('/nhatphanhk102/visitors');
   return { ok: true };
 }

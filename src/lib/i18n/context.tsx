@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { en, type TranslationDict } from './locales/en';
 import { vi } from './locales/vi';
 
@@ -12,7 +12,8 @@ interface LanguageContextType {
   locale: Locale;
   setLocale: (locale: Locale) => void;
   toggleLocale: () => void;
-  t: (path: string) => string;
+  t: ((path: string) => string) & TranslationDict;
+  dict: TranslationDict;
   isVi: boolean;
   isEn: boolean;
 }
@@ -22,22 +23,30 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 const STORAGE_KEY = 'portfolio_locale';
 const COOKIE_NAME = 'NEXT_LOCALE';
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('en');
+export function LanguageProvider({
+  children,
+  initialLocale,
+}: {
+  children: React.ReactNode;
+  initialLocale?: Locale;
+}) {
+  const [locale, setLocaleState] = useState<Locale>(initialLocale ?? 'en');
 
   useEffect(() => {
     // 1. Read from localStorage or cookie
     const stored = (typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY)) as Locale | null;
     if (stored === 'en' || stored === 'vi') {
-      setLocaleState(stored);
-    } else {
+      if (stored !== locale) {
+        setLocaleState(stored);
+      }
+    } else if (!initialLocale) {
       // Check browser language
       const browserLang = navigator.language?.toLowerCase();
       if (browserLang?.startsWith('vi')) {
         setLocaleState('vi');
       }
     }
-  }, []);
+  }, [initialLocale, locale]);
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
@@ -51,9 +60,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     setLocale(locale === 'en' ? 'vi' : 'en');
   }, [locale, setLocale]);
 
-  const t = useCallback(
-    (path: string): string => {
-      const activeDict = translations[locale] || translations.en;
+  const activeDict = translations[locale] || translations.en;
+
+  const t = useMemo(() => {
+    const fn = (path: string): string => {
       const parts = path.split('.');
       let current: unknown = activeDict;
 
@@ -75,9 +85,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       }
 
       return typeof current === 'string' ? current : path;
-    },
-    [locale]
-  );
+    };
+
+    return Object.assign(fn, activeDict) as ((path: string) => string) & TranslationDict;
+  }, [activeDict]);
 
   return (
     <LanguageContext.Provider
@@ -86,6 +97,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         setLocale,
         toggleLocale,
         t,
+        dict: activeDict,
         isVi: locale === 'vi',
         isEn: locale === 'en',
       }}

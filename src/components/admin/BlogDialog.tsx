@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { createBlog, updateBlog, type BlogFormData } from '@/lib/actions/blog';
 import { getAllSeries } from '@/lib/actions/series';
 import { TipTapEditor } from '@/components/admin/editor/TipTapEditor';
+import { slugify } from '@/lib/utils';
 
 const schema = z.object({
   title: z.string().min(3, 'Title required').max(255),
@@ -68,7 +69,7 @@ export function BlogDialog({ mode, open, onOpenChange, initialData, onSuccess }:
   /** Auto-generate slug from title */
   const onTitleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
     if (!initialData?.slug) {
-      const slug = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const slug = slugify(e.target.value);
       setValue('slug', slug, { shouldValidate: true });
     }
   }, [initialData?.slug, setValue]);

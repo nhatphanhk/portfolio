@@ -61,7 +61,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
     startCreateTransition(async () => {
       const result = await createBlogDraft();
       if (result.ok && result.id) {
-        router.push(`/admin/blogs/editor/${result.id}`);
+        router.push(`/nhatphanhk102/blogs/editor/${result.id}`);
       } else {
         toast.error('Failed to create draft. Please try again.');
       }
@@ -228,7 +228,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
                 {paginated.map(blog => (
                   <tr
                     key={blog.id}
-                    onClick={() => router.push(`/admin/blogs/editor/${blog.id}`)}
+                    onClick={() => router.push(`/nhatphanhk102/blogs/editor/${blog.id}`)}
                     className="hover:bg-primary/5 cursor-pointer transition-colors group"
                   >
                     <td className="px-4 py-3.5">
@@ -290,7 +290,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
                       <div className="flex items-center gap-1 justify-end">
                         {/* Edit → redirect to full-page editor */}
                         <Link
-                          href={`/admin/blogs/editor/${blog.id}`}
+                          href={`/nhatphanhk102/blogs/editor/${blog.id}`}
                           onClick={(e) => e.stopPropagation()}
                           aria-label={`Edit ${blog.title}`}
                           className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { TRANSLATABLE_SITE_CONTENT_KEYS } from '@/lib/site-content-defaults';
 
 export interface TranslatedBlogData {
   title: string;
@@ -642,5 +643,113 @@ Achievements: ${sourceData.achievements || ''}
       achievements: (result.data.achievements || sourceData.achievements || '').trim(),
     },
   };
+}
+
+/**
+ * Translates landing page site content text entries (Hero, About, Stats, BPSC) into targetLocale.
+ */
+export async function generateSiteContentTranslationWithDetails(
+  sourceData: Record<string, string>,
+  targetLocale: 'vi' | 'en' = 'vi',
+  customApiKey?: string
+): Promise<{ ok: boolean; data?: Record<string, string>; error?: string }> {
+  // Filter only translatable keys
+  const translatableEntries: Record<string, string> = {};
+  for (const key of TRANSLATABLE_SITE_CONTENT_KEYS) {
+    if (sourceData[key] && typeof sourceData[key] === 'string') {
+      translatableEntries[key] = sourceData[key];
+    }
+  }
+
+  if (Object.keys(translatableEntries).length === 0) {
+    return { ok: true, data: {} };
+  }
+
+  const targetLangName = targetLocale === 'vi' ? 'Vietnamese (Tiếng Việt)' : 'English';
+  const prompt = `You are a professional software engineering website copywriter and technical translator.
+Translate the following landing page text items into natural, high-impact, polished ${targetLangName} for a senior software engineer's portfolio website.
+
+CRITICAL REQUIREMENTS:
+1. Maintain a modern, confident, professional developer portfolio tone.
+2. Preserve technical terminology naturally (e.g. Full-Stack, UI, AI, Next.js, Cloud, React, TypeScript).
+3. Keep the translations concise and punchy, matching the length and intent of the original items.
+4. Return ONLY a valid JSON object where the keys exactly match the input keys, and the values are the translated strings.
+Do not invent or omit any keys.
+
+ITEMS TO TRANSLATE (JSON):
+${JSON.stringify(translatableEntries, null, 2)}
+`;
+
+  const result = await runGeminiJsonPrompt<Record<string, string>>(prompt, 30000, customApiKey);
+  if (!result.ok || !result.data) {
+    return { ok: false, error: result.error };
+  }
+
+  // Sanitize and trim values
+  const cleanData: Record<string, string> = {};
+  for (const [k, v] of Object.entries(result.data)) {
+    if (typeof v === 'string') {
+      cleanData[k] = v.trim();
+    }
+  }
+
+  return { ok: true, data: cleanData };
+}
+
+/**
+ * Retrieves landing page translations from DB for given locale.
+ */
+export async function getSiteContentTranslationsFromDb(locale: string = 'vi'): Promise<Record<string, string> | null> {
+  try {
+    const record = await prisma.contentTranslation.findUnique({
+      where: {
+        entityType_entityId_locale: {
+          entityType: 'site_content',
+          entityId: 'landing',
+          locale,
+        },
+      },
+    });
+
+    if (!record || !record.content) return null;
+    return JSON.parse(record.content) as Record<string, string>;
+  } catch (err) {
+    console.error(`Error fetching site_content translations (${locale}) from DB:`, err);
+    return null;
+  }
+}
+
+/**
+ * Saves landing page translations into DB for given locale.
+ */
+export async function saveSiteContentTranslationsToDb(
+  locale: string,
+  translations: Record<string, string>
+): Promise<boolean> {
+  try {
+    await prisma.contentTranslation.upsert({
+      where: {
+        entityType_entityId_locale: {
+          entityType: 'site_content',
+          entityId: 'landing',
+          locale,
+        },
+      },
+      create: {
+        entityType: 'site_content',
+        entityId: 'landing',
+        locale,
+        content: JSON.stringify(translations),
+      },
+      update: {
+        content: JSON.stringify(translations),
+        updatedAt: new Date(),
+      },
+    });
+    return true;
+  } catch (err) {
+    console.error(`Error saving site_content translations (${locale}) to DB:`, err);
+    return false;
+  }
 }
 

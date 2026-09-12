@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/breadcrumb';
 
 const SEGMENT_NAMES: Record<string, string> = {
+  nhatphanhk102: 'Dashboard',
   admin: 'Dashboard',
   blogs: 'Blogs',
   editor: 'Editor',
@@ -30,10 +31,10 @@ const SEGMENT_NAMES: Record<string, string> = {
 export function AdminBreadcrumb() {
   const pathname = usePathname();
 
-  // Split path, e.g. /admin/blogs/editor/123 -> ['admin', 'blogs', 'editor', '123']
+  // Split path, e.g. /nhatphanhk102/blogs/editor/123 -> ['nhatphanhk102', 'blogs', 'editor', '123']
   const segments = pathname.split('/').filter(Boolean);
 
-  if (segments.length === 0 || (segments.length === 1 && segments[0] === 'admin')) {
+  if (segments.length === 0 || (segments.length === 1 && (segments[0] === 'nhatphanhk102' || segments[0] === 'admin'))) {
     return (
       <Breadcrumb>
         <BreadcrumbList>

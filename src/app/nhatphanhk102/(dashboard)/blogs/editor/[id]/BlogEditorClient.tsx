@@ -25,6 +25,7 @@ import {
   Layers,
   Languages,
 } from 'lucide-react';
+import { slugify } from '@/lib/utils';
 
 const schema = z.object({
   title: z.string().min(3, 'Title is required').max(255),
@@ -255,10 +256,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
   const onTitleBlur = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
       if (blog.slug.startsWith('draft-')) {
-        const slug = e.target.value
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-|-$/g, '');
+        const slug = slugify(e.target.value);
         if (slug) setValue('slug', slug, { shouldValidate: true });
       }
     },
@@ -315,7 +313,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
         {/* Top bar */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <Link
-            href="/admin/blogs"
+            href="/nhatphanhk102/blogs"
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />

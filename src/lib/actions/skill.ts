@@ -39,8 +39,9 @@ export async function createSkill(formData: SkillFormData) {
     data: { ...rest, iconUrl: iconUrl || undefined },
   });
 
-  revalidatePath('/admin/skills');
+  revalidatePath('/nhatphanhk102/skills');
   revalidatePath('/skills');
+  revalidatePath('/');
   return { ok: true };
 }
 
@@ -56,16 +57,18 @@ export async function updateSkill(id: string, formData: SkillFormData) {
     data: { ...rest, iconUrl: iconUrl || undefined },
   });
 
-  revalidatePath('/admin/skills');
+  revalidatePath('/nhatphanhk102/skills');
   revalidatePath('/skills');
+  revalidatePath('/');
   return { ok: true };
 }
 
 export async function deleteSkill(id: string) {
   await ensureAdmin();
   await prisma.skill.delete({ where: { id } });
-  revalidatePath('/admin/skills');
+  revalidatePath('/nhatphanhk102/skills');
   revalidatePath('/skills');
+  revalidatePath('/');
   return { ok: true };
 }
 

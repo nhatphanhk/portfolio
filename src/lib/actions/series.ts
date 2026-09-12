@@ -6,14 +6,7 @@ import { ensureAdmin } from '@/lib/auth-utils';
 import { cache } from 'react';
 import { z } from 'zod';
 
-function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
+import { slugify } from '@/lib/utils';
 
 const seriesSchema = z.object({
   title: z.string().min(2, 'Title required').max(255),
@@ -45,7 +38,7 @@ export async function createSeries(data: SeriesFormData) {
       },
     });
 
-    revalidatePath('/admin/blogs/series');
+    revalidatePath('/nhatphanhk102/blogs/series');
     revalidatePath('/blog');
     revalidatePath('/blog/series');
     return { ok: true };
@@ -80,7 +73,7 @@ export async function updateSeries(id: string, data: SeriesFormData) {
       },
     });
 
-    revalidatePath('/admin/blogs/series');
+    revalidatePath('/nhatphanhk102/blogs/series');
     revalidatePath('/blog');
     revalidatePath('/blog/series');
     return { ok: true };
@@ -107,7 +100,7 @@ export async function deleteSeries(id: string) {
       where: { id },
     });
 
-    revalidatePath('/admin/blogs/series');
+    revalidatePath('/nhatphanhk102/blogs/series');
     revalidatePath('/blog');
     return { ok: true };
   } catch (error) {
@@ -236,7 +229,10 @@ export const getSeriesForBlog = cache(async (blogId: string, locale: 'vi' | 'en'
       currentBlogId: blogId,
       currentIndex: blog.series.blogs.findIndex(b => b.id === blogId),
       totalParts: blog.series.blogs.length,
-      posts: blog.series.blogs,
+      posts: blog.series.blogs.map(b => ({
+        ...b,
+        publishedAt: b.publishedAt ? b.publishedAt.toISOString() : null,
+      })),
     };
   } catch (error) {
     console.error('Error getting series for blog:', error);
@@ -496,7 +492,7 @@ export async function saveSeriesTranslationAction(
     }
 
     revalidatePath('/blog/series');
-    revalidatePath('/admin/blogs/series');
+    revalidatePath('/nhatphanhk102/blogs/series');
     return { ok: true };
   } catch (error) {
     console.error('saveSeriesTranslationAction error:', error);

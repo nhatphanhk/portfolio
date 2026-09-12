@@ -3,7 +3,6 @@ import { MainLayout } from '@/components';
 import { getPublicSeries } from '@/lib/actions/series';
 import { SeriesListClient } from '@/components/blog/SeriesListClient';
 import { UserBreadcrumb } from '@/components/UserBreadcrumb';
-import { Layers } from 'lucide-react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -12,10 +11,14 @@ export const metadata: Metadata = {
     'Structured multi-part learning roadmaps and article series covering in-depth web development, system design, and software engineering.',
 };
 
-export const revalidate = 300;
+export const revalidate = 3600;
+
+import { getServerLocale } from '@/lib/i18n/server';
+import { SeriesHeaderClient } from '@/components/blog/SeriesHeaderClient';
 
 export default async function SeriesDirectoryPage() {
-  const seriesList = await getPublicSeries();
+  const locale = await getServerLocale();
+  const seriesList = await getPublicSeries(locale);
 
   return (
     <MainLayout>
@@ -30,19 +33,7 @@ export default async function SeriesDirectoryPage() {
         />
 
         {/* Page Header */}
-        <div className="mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20 mb-4">
-            <Layers className="w-3.5 h-3.5" />
-            <span>Curated Learning Roadmaps</span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 tracking-tight">
-            Article Series
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-3xl leading-relaxed">
-            In-depth, step-by-step multi-part series covering full-stack architecture, performance optimization,
-            and real-world engineering solutions.
-          </p>
-        </div>
+        <SeriesHeaderClient />
 
         {/* Interactive Series List & Search */}
         <Suspense

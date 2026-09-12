@@ -1,19 +1,35 @@
 import { MainLayout } from '@/components';
 import { getPublicProjects } from '@/lib/actions/project';
 import { ProjectListClient } from '@/components/project/ProjectListClient';
+import { ProjectHeaderClient } from '@/components/project/ProjectHeaderClient';
 import { UserBreadcrumb } from '@/components/UserBreadcrumb';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'Projects',
-  description:
-    'A showcase of my full-stack projects — from web applications to developer tools, built with modern technologies.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getServerLocale();
+  const isVi = locale === 'vi';
+  return {
+    title: isVi ? 'Dự án' : 'Projects',
+    description: isVi
+      ? 'Danh mục các dự án phát triển phần mềm nổi bật, từ ứng dụng web đến công cụ lập trình hiện đại.'
+      : 'A showcase of my full-stack projects — from web applications to developer tools, built with modern technologies.',
+    openGraph: {
+      title: isVi ? 'Dự án | nhatphanhk102' : 'Projects | nhatphanhk102',
+      description: isVi
+        ? 'Danh mục các dự án phát triển phần mềm nổi bật, từ ứng dụng web đến công cụ lập trình hiện đại.'
+        : 'A showcase of my full-stack projects — from web applications to developer tools, built with modern technologies.',
+      locale: isVi ? 'vi_VN' : 'en_US',
+    },
+  };
+}
 
-export const revalidate = 300;
+export const revalidate = 3600;
+
+import { getServerLocale } from '@/lib/i18n/server';
 
 export default async function ProjectPage() {
-  const projects = await getPublicProjects();
+  const locale = await getServerLocale();
+  const projects = await getPublicProjects(locale);
 
   return (
     <MainLayout>
@@ -21,14 +37,8 @@ export default async function ProjectPage() {
         {/* Breadcrumb aligned with Header */}
         <UserBreadcrumb items={[{ label: 'Projects' }]} className="mb-6" />
 
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 tracking-tight">Projects</h1>
-          <p className="text-lg text-muted-foreground max-w-3xl">
-            A selection of projects I&apos;ve built — spanning full-stack web apps, developer tools,
-            and design systems.
-          </p>
-        </div>
+        {/* Dynamic Header */}
+        <ProjectHeaderClient />
 
         {/* Interactive List with Search, Filter & Pagination */}
         <ProjectListClient projects={projects} />

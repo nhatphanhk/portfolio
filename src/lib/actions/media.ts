@@ -40,13 +40,13 @@ export async function deleteMedia(id: string) {
 
   await prisma.media.delete({ where: { id } });
 
-  revalidatePath('/admin/media');
+  revalidatePath('/nhatphanhk102/media');
   return { ok: true };
 }
 
 export async function updateMediaAltText(id: string, altText: string) {
   await ensureAdmin();
   await prisma.media.update({ where: { id }, data: { altText } });
-  revalidatePath('/admin/media');
+  revalidatePath('/nhatphanhk102/media');
   return { ok: true };
 }

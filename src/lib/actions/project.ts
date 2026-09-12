@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import { ensureAdmin } from '@/lib/auth-utils';
+import { slugify } from '@/lib/utils';
 
 const projectSchema = z.object({
   title: z.string().min(3).max(255),
@@ -52,7 +53,7 @@ async function syncTags(tagNames: string[]): Promise<string[]> {
   for (const name of tagNames) {
     const trimmed = name.trim();
     if (!trimmed) continue;
-    const slug = trimmed.toLowerCase().replace(/\s+/g, '-');
+    const slug = slugify(trimmed);
     const tag = await prisma.tag.upsert({
       where: { slug },
       create: { name: trimmed, slug },
@@ -85,8 +86,9 @@ export async function createProject(formData: ProjectFormData) {
     },
   });
 
-  revalidatePath('/admin/projects');
+  revalidatePath('/nhatphanhk102/projects');
   revalidatePath('/project');
+  revalidatePath('/');
   return { ok: true };
 }
 
@@ -110,9 +112,10 @@ export async function updateProject(id: string, formData: ProjectFormData) {
     },
   });
 
-  revalidatePath('/admin/projects');
+  revalidatePath('/nhatphanhk102/projects');
   revalidatePath('/project');
   revalidatePath(`/project/${rest.slug}`);
+  revalidatePath('/');
   return { ok: true };
 }
 
@@ -124,14 +127,15 @@ export async function deleteProject(id: string) {
       select: { slug: true },
     });
     if (!project) {
-      revalidatePath('/admin/projects');
+      revalidatePath('/nhatphanhk102/projects');
       revalidatePath('/project');
       return { ok: true };
     }
     await prisma.project.delete({ where: { id } });
-    revalidatePath('/admin/projects');
+    revalidatePath('/nhatphanhk102/projects');
     revalidatePath('/project');
     revalidatePath(`/project/${project.slug}`);
+    revalidatePath('/');
     return { ok: true };
   } catch (error) {
     console.error('Error deleting project:', error);
@@ -288,7 +292,7 @@ export async function saveProjectTranslationAction(
     }
 
     revalidatePath('/project');
-    revalidatePath('/admin/projects');
+    revalidatePath('/nhatphanhk102/projects');
     return { ok: true };
   } catch (error) {
     console.error('saveProjectTranslationAction error:', error);

@@ -61,7 +61,7 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
     if (item.items && item.items.length > 0) {
       return item.items.some(sub => pathname === sub.url);
     }
-    if (item.url === '/admin') return pathname === '/admin';
+    if (item.url === '/nhatphanhk102' || item.url === '/admin') return pathname === item.url;
     return pathname === item.url || pathname.startsWith(item.url + '/');
   };
 

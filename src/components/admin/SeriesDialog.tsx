@@ -20,6 +20,7 @@ import {
   getSeriesTranslations,
 } from '@/lib/actions/series';
 import { Sparkles, Languages, CheckCircle2, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { slugify } from '@/lib/utils';
 
 const schema = z.object({
   title: z.string().min(2, 'Title required').max(255),
@@ -100,16 +101,52 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
 
     setIsTranslating(true);
     try {
-      const res = await previewTranslateSeriesAction(initialData.id, 'en', {
-        title: currentTitle,
-        description: watch('description'),
-      });
-      if (res.ok && res.data) {
-        setTransData(res.data);
+      let resData: { title: string; description: string } | null = null;
+      let errorMsg: string | null = null;
+
+      // 1. Try REST API endpoint first
+      try {
+        const apiRes = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entityType: 'series',
+            entityId: initialData.id,
+            action: 'preview',
+            title: currentTitle,
+            description: watch('description'),
+            targetLocale: 'en',
+          }),
+        });
+        const json = await apiRes.json();
+        if (json.ok && json.data) {
+          resData = json.data;
+        } else {
+          errorMsg = json.error;
+        }
+      } catch {
+        // Fallback
+      }
+
+      // 2. Fallback to Server Action
+      if (!resData) {
+        const res = await previewTranslateSeriesAction(initialData.id, 'en', {
+          title: currentTitle,
+          description: watch('description'),
+        });
+        if (res.ok && res.data) {
+          resData = res.data;
+        } else {
+          errorMsg = res.error || errorMsg;
+        }
+      }
+
+      if (resData) {
+        setTransData(resData);
         setShowTransPreview(true);
         toast.success('Bản dịch AI cho Series đã sẵn sàng!');
       } else {
-        toast.error(res.error || 'Dịch thất bại');
+        toast.error(errorMsg || 'Dịch thất bại');
       }
     } catch (err: any) {
       toast.error(err.message || 'Lỗi khi gọi AI dịch');
@@ -122,6 +159,29 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
     if (!initialData?.id) return;
     setIsSavingTrans(true);
     try {
+      // 1. Try REST API first
+      try {
+        const apiRes = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entityType: 'series',
+            entityId: initialData.id,
+            action: 'save',
+            ...transData,
+            targetLocale: 'en',
+          }),
+        });
+        const json = await apiRes.json();
+        if (json.ok) {
+          setHasTranslation(true);
+          toast.success('Đã lưu bản dịch Series (EN) thành công!');
+          onSuccess?.();
+          return;
+        }
+      } catch {}
+
+      // 2. Fallback to server action
       const res = await saveSeriesTranslationAction(initialData.id, transData, 'en');
       if (res.ok) {
         setHasTranslation(true);
@@ -140,12 +200,7 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
   const onTitleBlur = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
       if (!initialData?.slug) {
-        const slug = e.target.value
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-|-$/g, '');
+        const slug = slugify(e.target.value);
         setValue('slug', slug, { shouldValidate: true });
       }
     },
@@ -154,14 +209,7 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
 
   const onSubmit = (data: FormData) => {
     startTransition(async () => {
-      const finalSlug =
-        data.slug?.trim() ||
-        data.title
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-|-$/g, '');
+      const finalSlug = data.slug?.trim() || slugify(data.title);
 
       const payload = {
         ...data,
