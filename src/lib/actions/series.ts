@@ -236,7 +236,10 @@ export const getSeriesForBlog = cache(async (blogId: string, locale: 'vi' | 'en'
       currentBlogId: blogId,
       currentIndex: blog.series.blogs.findIndex(b => b.id === blogId),
       totalParts: blog.series.blogs.length,
-      posts: blog.series.blogs,
+      posts: blog.series.blogs.map(b => ({
+        ...b,
+        publishedAt: b.publishedAt ? b.publishedAt.toISOString() : null,
+      })),
     };
   } catch (error) {
     console.error('Error getting series for blog:', error);

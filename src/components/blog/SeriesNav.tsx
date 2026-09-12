@@ -1,14 +1,29 @@
 import Link from 'next/link';
 import { Layers, ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
-import { getSeriesForBlog } from '@/lib/actions/series';
 
-interface SeriesNavProps {
-  blogId: string;
+export interface SeriesPostItem {
+  id: string;
+  title: string;
+  slug: string;
+  seriesOrder?: number | null;
+  publishedAt?: Date | string | null;
 }
 
-export async function SeriesNav({ blogId }: SeriesNavProps) {
-  const seriesData = await getSeriesForBlog(blogId);
+export interface SeriesData {
+  seriesTitle: string;
+  seriesSlug: string;
+  currentBlogId: string;
+  currentIndex: number;
+  totalParts: number;
+  posts: SeriesPostItem[];
+}
 
+interface SeriesNavProps {
+  seriesData: SeriesData | null;
+  currentBlogId: string;
+}
+
+export function SeriesNav({ seriesData, currentBlogId }: SeriesNavProps) {
   if (!seriesData || seriesData.totalParts <= 1) return null;
 
   const { seriesTitle, seriesSlug, currentIndex, totalParts, posts } = seriesData;
@@ -35,7 +50,7 @@ export async function SeriesNav({ blogId }: SeriesNavProps) {
       {/* Series list */}
       <ol className="space-y-1.5 mb-6 text-sm">
         {posts.map((post, idx) => {
-          const isCurrent = post.id === blogId;
+          const isCurrent = post.id === currentBlogId;
           return (
             <li key={post.id} className="flex items-center gap-2.5">
               <span

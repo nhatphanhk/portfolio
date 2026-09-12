@@ -1,6 +1,7 @@
 import { MainLayout } from '@/components';
 import { notFound } from 'next/navigation';
 import { getPublicBlogBySlug, getBlogTranslations } from '@/lib/actions/blog';
+import { getSeriesForBlog } from '@/lib/actions/series';
 import { BlogPostDetailClient } from '@/components/blog/BlogPostDetailClient';
 import { UserBreadcrumb } from '@/components/UserBreadcrumb';
 import type { Metadata } from 'next';
@@ -38,8 +39,11 @@ export default async function BlogPostPage({ params }: Props) {
 
   if (!post) notFound();
 
-  // Fetch pre-saved translations from DB (0 ms wait on language switch!)
-  const translations = await getBlogTranslations(post.id);
+  // Fetch pre-saved translations and series data directly on the server in parallel
+  const [translations, seriesData] = await Promise.all([
+    getBlogTranslations(post.id),
+    post.seriesId ? getSeriesForBlog(post.id) : Promise.resolve(null),
+  ]);
 
   return (
     <MainLayout>
@@ -55,6 +59,7 @@ export default async function BlogPostPage({ params }: Props) {
 
         <BlogPostDetailClient
           post={post}
+          seriesData={seriesData}
           initialTranslations={translations.map(t => ({
             locale: t.locale,
             title: t.title,

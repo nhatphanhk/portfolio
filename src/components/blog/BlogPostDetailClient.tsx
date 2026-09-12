@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { useLanguage } from '@/lib/i18n/context';
 import { BlogContent } from '@/components/blog/BlogContent';
 import { BlogOutline } from '@/components/blog/BlogOutline';
-import { SeriesNav } from '@/components/blog/SeriesNav';
+import { SeriesNav, type SeriesData } from '@/components/blog/SeriesNav';
 import { extractHeadings } from '@/lib/blog-utils';
 import { Clock, Sparkles, Loader2, Globe } from 'lucide-react';
 import { toast } from 'sonner';
@@ -31,10 +31,11 @@ export interface DBTranslation {
 
 interface BlogPostDetailClientProps {
   post: BlogPostData;
+  seriesData?: SeriesData | null;
   initialTranslations: DBTranslation[];
 }
 
-export function BlogPostDetailClient({ post, initialTranslations }: BlogPostDetailClientProps) {
+export function BlogPostDetailClient({ post, seriesData, initialTranslations }: BlogPostDetailClientProps) {
   const { locale, t } = useLanguage();
   const [translations, setTranslations] = useState<DBTranslation[]>(initialTranslations);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -177,7 +178,7 @@ export function BlogPostDetailClient({ post, initialTranslations }: BlogPostDeta
         <BlogContent html={currentContent} />
 
         {/* Series Navigation (if in a series) */}
-        {post.seriesId && <SeriesNav blogId={post.id} />}
+        {seriesData && <SeriesNav seriesData={seriesData} currentBlogId={post.id} />}
       </article>
 
       {/* Table of contents sidebar (Desktop) */}
