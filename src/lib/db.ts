@@ -29,7 +29,7 @@ function createPrismaClient(): PrismaClient {
     connectionString: getNormalizedDbUrl(url),
     max: process.env.NODE_ENV === 'production' ? 2 : 5,
     idleTimeoutMillis: 15000,
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: 15000,
   });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({
