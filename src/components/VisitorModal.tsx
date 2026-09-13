@@ -116,13 +116,14 @@ export function VisitorModal() {
     <Dialog
       open={open}
       onOpenChange={(val) => {
+        if (!val) return;
         setOpen(val);
-        if (!val) {
-          sessionStorage.setItem('visitor_logged', 'true');
-        }
       }}
     >
       <DialogContent
+        hideCloseButton
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
         className="max-w-md p-0 overflow-hidden border border-amber-500/20 bg-white/95 backdrop-blur-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] rounded-3xl sm:rounded-3xl"
       >
         {/* Top Decorative Ambient Header */}
