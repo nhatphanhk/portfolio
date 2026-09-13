@@ -19,7 +19,6 @@ import {
   ArrowRight,
   Lock,
   Loader2,
-  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SITE_NAME } from '@/lib/constants';
@@ -128,18 +127,6 @@ export function VisitorModal() {
       >
         {/* Top Decorative Ambient Header */}
         <div className="relative pt-8 pb-6 px-6 sm:px-8 bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-transparent border-b border-amber-500/10 text-center">
-          {/* Dismiss button */}
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              sessionStorage.setItem('visitor_logged', 'true');
-            }}
-            aria-label="Close dialog"
-            className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-black/5 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
 
           {/* Glowing Avatar / Sparkle Icon */}
           <div className="relative mx-auto w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/25 mb-4 group">
