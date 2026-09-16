@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import { ensureAdmin } from '@/lib/auth-utils';
@@ -37,6 +37,7 @@ export async function createCertification(formData: CertificationFormData) {
     },
   });
 
+  revalidateTag('certifications', 'max');
   revalidatePath('/nhatphanhk102/certifications');
   revalidatePath('/certifications');
   revalidatePath('/');
@@ -66,6 +67,7 @@ export async function updateCertification(
     },
   });
 
+  revalidateTag('certifications', 'max');
   revalidatePath('/nhatphanhk102/certifications');
   revalidatePath('/certifications');
   revalidatePath('/');
@@ -75,6 +77,7 @@ export async function updateCertification(
 export async function deleteCertification(id: string) {
   await ensureAdmin();
   await prisma.certification.delete({ where: { id } });
+  revalidateTag('certifications', 'max');
   revalidatePath('/nhatphanhk102/certifications');
   revalidatePath('/certifications');
   revalidatePath('/');
@@ -88,25 +91,31 @@ export async function getAllCertificationsFromDb() {
 }
 
 export async function getPublicCertifications() {
-  try {
-    const certs = await prisma.certification.findMany({
-      orderBy: [{ status: 'asc' }, { issueDate: 'desc' }],
-    });
-    return certs.map(c => ({
-      id: c.id,
-      name: c.name,
-      issuer: c.issuer,
-      issueDate: c.issueDate.toISOString(),
-      expiryDate: c.expiryDate?.toISOString() || undefined,
-      credentialId: c.credentialId || undefined,
-      credentialUrl: c.credentialUrl || undefined,
-      description: c.description || undefined,
-      logoUrl: c.logoUrl || undefined,
-      status: c.status,
-    }));
-  } catch (error) {
-    console.error('Error fetching public certifications from db:', error);
-    return [];
-  }
+  return unstable_cache(
+    async () => {
+      try {
+        const certs = await prisma.certification.findMany({
+          orderBy: [{ status: 'asc' }, { issueDate: 'desc' }],
+        });
+        return certs.map(c => ({
+          id: c.id,
+          name: c.name,
+          issuer: c.issuer,
+          issueDate: c.issueDate.toISOString(),
+          expiryDate: c.expiryDate?.toISOString() || undefined,
+          credentialId: c.credentialId || undefined,
+          credentialUrl: c.credentialUrl || undefined,
+          description: c.description || undefined,
+          logoUrl: c.logoUrl || undefined,
+          status: c.status,
+        }));
+      } catch (error) {
+        console.error('Error fetching public certifications from db:', error);
+        return [];
+      }
+    },
+    ['public-certifications'],
+    { revalidate: 3600, tags: ['certifications'] }
+  )();
 }
 

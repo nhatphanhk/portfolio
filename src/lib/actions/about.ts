@@ -1,13 +1,15 @@
 'use server';
 import { cache } from 'react';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import { ensureAdmin } from '@/lib/auth-utils';
 import { PROFILE, EXPERIENCES } from '@/data/content';
 
 const REVALIDATE = () => {
+  revalidateTag('profile', 'max');
+  revalidateTag('social-links', 'max');
   revalidatePath('/nhatphanhk102/resume');
   revalidatePath('/resume');
   revalidatePath('/');
@@ -34,70 +36,76 @@ const profileSchema = z.object({
 
 export type ProfileFormData = z.infer<typeof profileSchema>;
 
-export const getProfile = cache(async (locale: 'vi' | 'en' = 'vi') => {
-  let dbProfile = null;
-  try {
-    dbProfile = await prisma.profile.findFirst();
-  } catch (error) {
-    console.error('Error fetching profile from db:', error);
-  }
-  const fallback = {
-    id: null as null,
-    name: PROFILE.name,
-    handle: PROFILE.handle,
-    title: PROFILE.title,
-    tagline: PROFILE.tagline,
-    bio: PROFILE.bio,
-    bio2: PROFILE.bio2,
-    careerObjective: null as null,
-    location: PROFILE.location,
-    email: PROFILE.email,
-    phone: null as null,
-    resumeUrl: PROFILE.resumeUrl,
-    avatarUrl: PROFILE.avatarUrl,
-    softSkills: null as null,
-    interests: null as null,
-    fromDb: false as const,
-  };
-  if (!dbProfile) return fallback;
+export const getProfile = async (locale: 'vi' | 'en' = 'vi') => {
+  return unstable_cache(
+    async () => {
+      let dbProfile = null;
+      try {
+        dbProfile = await prisma.profile.findFirst();
+      } catch (error) {
+        console.error('Error fetching profile from db:', error);
+      }
+      const fallback = {
+        id: null as null,
+        name: PROFILE.name,
+        handle: PROFILE.handle,
+        title: PROFILE.title,
+        tagline: PROFILE.tagline,
+        bio: PROFILE.bio,
+        bio2: PROFILE.bio2,
+        careerObjective: null as null,
+        location: PROFILE.location,
+        email: PROFILE.email,
+        phone: null as null,
+        resumeUrl: PROFILE.resumeUrl,
+        avatarUrl: PROFILE.avatarUrl,
+        softSkills: null as null,
+        interests: null as null,
+        fromDb: false as const,
+      };
+      if (!dbProfile) return fallback;
 
-  const { getEntityTranslationFromDb } = await import('@/lib/gemini-translate');
-  const trans = await getEntityTranslationFromDb('profile', dbProfile.id, 'en');
+      const { getEntityTranslationFromDb } = await import('@/lib/gemini-translate');
+      const trans = await getEntityTranslationFromDb('profile', dbProfile.id, 'en');
 
-  const isEn = locale === 'en';
-  const title = isEn && trans?.title ? trans.title : dbProfile.title;
-  const tagline = dbProfile.tagline ?? PROFILE.tagline;
-  const bio = isEn && trans?.description ? trans.description : (dbProfile.bio ?? PROFILE.bio);
-  const careerObjective = isEn && trans?.content ? trans.content : dbProfile.careerObjective;
-  const softSkills = isEn && trans?.excerpt ? trans.excerpt : dbProfile.softSkills;
+      const isEn = locale === 'en';
+      const title = isEn && trans?.title ? trans.title : dbProfile.title;
+      const tagline = dbProfile.tagline ?? PROFILE.tagline;
+      const bio = isEn && trans?.description ? trans.description : (dbProfile.bio ?? PROFILE.bio);
+      const careerObjective = isEn && trans?.content ? trans.content : dbProfile.careerObjective;
+      const softSkills = isEn && trans?.excerpt ? trans.excerpt : dbProfile.softSkills;
 
-  return {
-    id: dbProfile.id,
-    name: dbProfile.name,
-    handle: dbProfile.handle ?? PROFILE.handle,
-    title,
-    tagline,
-    bio,
-    bio2: dbProfile.bio2 ?? PROFILE.bio2,
-    careerObjective,
-    location: dbProfile.location ?? PROFILE.location,
-    email: dbProfile.email ?? PROFILE.email,
-    phone: dbProfile.phone,
-    resumeUrl: dbProfile.resumeUrl ?? PROFILE.resumeUrl,
-    avatarUrl: dbProfile.avatarUrl ?? PROFILE.avatarUrl,
-    softSkills,
-    interests: dbProfile.interests,
-    fromDb: true as const,
-    translations: trans ? {
-      en: {
-        title: trans.title || undefined,
-        bio: trans.description || undefined,
-        careerObjective: trans.content || undefined,
-        softSkills: trans.excerpt || undefined,
-      },
-    } : undefined,
-  };
-});
+      return {
+        id: dbProfile.id,
+        name: dbProfile.name,
+        handle: dbProfile.handle ?? PROFILE.handle,
+        title,
+        tagline,
+        bio,
+        bio2: dbProfile.bio2 ?? PROFILE.bio2,
+        careerObjective,
+        location: dbProfile.location ?? PROFILE.location,
+        email: dbProfile.email ?? PROFILE.email,
+        phone: dbProfile.phone,
+        resumeUrl: dbProfile.resumeUrl ?? PROFILE.resumeUrl,
+        avatarUrl: dbProfile.avatarUrl ?? PROFILE.avatarUrl,
+        softSkills,
+        interests: dbProfile.interests,
+        fromDb: true as const,
+        translations: trans ? {
+          en: {
+            title: trans.title || undefined,
+            bio: trans.description || undefined,
+            careerObjective: trans.content || undefined,
+            softSkills: trans.excerpt || undefined,
+          },
+        } : undefined,
+      };
+    },
+    ['public-profile', locale],
+    { revalidate: 3600, tags: ['profile'] }
+  )();
+};
 
 export async function updateProfile(formData: ProfileFormData) {
   await ensureAdmin();
@@ -123,23 +131,29 @@ export async function updateProfile(formData: ProfileFormData) {
 
 // ─── Social Links ─────────────────────────────────────────────────────────────
 
-export const getSocialLinks = cache(async () => {
-  try {
-    const links = await prisma.socialLink.findMany({ orderBy: { order: 'asc' } });
-    if (links.length > 0) return links;
-  } catch (error) {
-    console.error('Error fetching social links from db:', error);
-  }
-  return PROFILE.socialLinks.map((l, i) => ({
-    id: `static-${i}`,
-    platform: l.platform,
-    url: l.url,
-    iconName: l.iconName as string | null,
-    order: i,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }));
-});
+export const getSocialLinks = async () => {
+  return unstable_cache(
+    async () => {
+      try {
+        const links = await prisma.socialLink.findMany({ orderBy: { order: 'asc' } });
+        if (links.length > 0) return links;
+      } catch (error) {
+        console.error('Error fetching social links from db:', error);
+      }
+      return PROFILE.socialLinks.map((l, i) => ({
+        id: `static-${i}`,
+        platform: l.platform,
+        url: l.url,
+        iconName: l.iconName as string | null,
+        order: i,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+    },
+    ['public-social-links'],
+    { revalidate: 3600, tags: ['profile', 'social-links'] }
+  )();
+};
 
 export async function upsertSocialLink(
   platform: string,

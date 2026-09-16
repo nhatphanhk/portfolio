@@ -1,7 +1,7 @@
 'use server';
 import { cache } from 'react';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import { ensureAdmin } from '@/lib/auth-utils';
@@ -86,6 +86,7 @@ export async function createProject(formData: ProjectFormData) {
     },
   });
 
+  revalidateTag('projects', 'max');
   revalidatePath('/nhatphanhk102/projects');
   revalidatePath('/project');
   revalidatePath('/');
@@ -112,6 +113,7 @@ export async function updateProject(id: string, formData: ProjectFormData) {
     },
   });
 
+  revalidateTag('projects', 'max');
   revalidatePath('/nhatphanhk102/projects');
   revalidatePath('/project');
   revalidatePath(`/project/${rest.slug}`);
@@ -127,11 +129,13 @@ export async function deleteProject(id: string) {
       select: { slug: true },
     });
     if (!project) {
+      revalidateTag('projects', 'max');
       revalidatePath('/nhatphanhk102/projects');
       revalidatePath('/project');
       return { ok: true };
     }
     await prisma.project.delete({ where: { id } });
+    revalidateTag('projects', 'max');
     revalidatePath('/nhatphanhk102/projects');
     revalidatePath('/project');
     revalidatePath(`/project/${project.slug}`);
@@ -158,89 +162,101 @@ export async function getAllProjectsFromDb() {
 }
 
 export async function getPublicProjects(locale: 'vi' | 'en' = 'vi') {
-  try {
-    const projects = await prisma.project.findMany({
-      where: { status: 'PUBLISHED' },
-      orderBy: { createdAt: 'desc' },
-      include: { tags: { include: { tag: true } } },
-    });
+  return unstable_cache(
+    async () => {
+      try {
+        const projects = await prisma.project.findMany({
+          where: { status: 'PUBLISHED' },
+          orderBy: { createdAt: 'desc' },
+          include: { tags: { include: { tag: true } } },
+        });
 
-    const { getBatchEntityTranslationsFromDb } = await import('@/lib/gemini-translate');
-    const translationMap = await getBatchEntityTranslationsFromDb(
-      'project',
-      projects.map(p => p.id),
-      'en'
-    );
+        const { getBatchEntityTranslationsFromDb } = await import('@/lib/gemini-translate');
+        const translationMap = await getBatchEntityTranslationsFromDb(
+          'project',
+          projects.map(p => p.id),
+          'en'
+        );
 
-    return projects.map(p => {
-      const trans = translationMap.get(p.id);
-      const isEn = locale === 'en';
-      return {
-        id: p.id,
-        title: isEn && trans?.title ? trans.title : p.title,
-        slug: p.slug,
-        description: isEn && trans?.description !== undefined ? trans.description : p.description,
-        content: isEn && trans?.content ? trans.content : p.content ?? '',
-        thumbnailUrl: p.thumbnailUrl || undefined,
-        demoUrl: p.demoUrl || undefined,
-        repoUrl: p.repoUrl || undefined,
-        status: p.status === 'PUBLISHED' ? 'active' : 'archived',
-        featured: p.featured,
-        technologies: p.tags.map(t => t.tag.name),
-        publishedAt: p.createdAt.toISOString(),
-        translations: trans ? {
-          en: {
-            title: trans.title || undefined,
-            description: trans.description ?? undefined,
-            content: trans.content ?? undefined,
-          },
-        } : undefined,
-      };
-    });
-  } catch (error) {
-    console.error('Error fetching public projects from db:', error);
-    return [];
-  }
+        return projects.map(p => {
+          const trans = translationMap.get(p.id);
+          const isEn = locale === 'en';
+          return {
+            id: p.id,
+            title: isEn && trans?.title ? trans.title : p.title,
+            slug: p.slug,
+            description: isEn && trans?.description !== undefined ? trans.description : p.description,
+            content: isEn && trans?.content ? trans.content : p.content ?? '',
+            thumbnailUrl: p.thumbnailUrl || undefined,
+            demoUrl: p.demoUrl || undefined,
+            repoUrl: p.repoUrl || undefined,
+            status: p.status === 'PUBLISHED' ? 'active' : 'archived',
+            featured: p.featured,
+            technologies: p.tags.map(t => t.tag.name),
+            publishedAt: p.createdAt.toISOString(),
+            translations: trans ? {
+              en: {
+                title: trans.title || undefined,
+                description: trans.description ?? undefined,
+                content: trans.content ?? undefined,
+              },
+            } : undefined,
+          };
+        });
+      } catch (error) {
+        console.error('Error fetching public projects from db:', error);
+        return [];
+      }
+    },
+    ['public-projects', locale],
+    { revalidate: 3600, tags: ['projects'] }
+  )();
 }
 
-export const getPublicProjectBySlug = cache(async (slug: string, locale: 'vi' | 'en' = 'vi') => {
-  try {
-    const p = await prisma.project.findUnique({
-      where: { slug },
-      include: { tags: { include: { tag: true } } },
-    });
-    if (!p || p.status !== 'PUBLISHED') return null;
+export const getPublicProjectBySlug = async (slug: string, locale: 'vi' | 'en' = 'vi') => {
+  return unstable_cache(
+    async () => {
+      try {
+        const p = await prisma.project.findUnique({
+          where: { slug },
+          include: { tags: { include: { tag: true } } },
+        });
+        if (!p || p.status !== 'PUBLISHED') return null;
 
-    const { getEntityTranslationFromDb } = await import('@/lib/gemini-translate');
-    const trans = await getEntityTranslationFromDb('project', p.id, 'en');
+        const { getEntityTranslationFromDb } = await import('@/lib/gemini-translate');
+        const trans = await getEntityTranslationFromDb('project', p.id, 'en');
 
-    const isEn = locale === 'en';
-    return {
-      id: p.id,
-      title: isEn && trans?.title ? trans.title : p.title,
-      slug: p.slug,
-      description: isEn && trans?.description !== undefined ? trans.description : p.description,
-      content: isEn && trans?.content ? trans.content : p.content ?? '',
-      thumbnailUrl: p.thumbnailUrl || undefined,
-      demoUrl: p.demoUrl || undefined,
-      repoUrl: p.repoUrl || undefined,
-      status: p.status === 'PUBLISHED' ? 'active' : 'archived',
-      featured: p.featured,
-      technologies: p.tags.map(t => t.tag.name),
-      publishedAt: p.createdAt.toISOString(),
-      translations: trans ? {
-        en: {
-          title: trans.title || undefined,
-          description: trans.description ?? undefined,
-          content: trans.content ?? undefined,
-        },
-      } : undefined,
-    };
-  } catch (error) {
-    console.error('Error fetching project by slug from db:', error);
-    return null;
-  }
-});
+        const isEn = locale === 'en';
+        return {
+          id: p.id,
+          title: isEn && trans?.title ? trans.title : p.title,
+          slug: p.slug,
+          description: isEn && trans?.description !== undefined ? trans.description : p.description,
+          content: isEn && trans?.content ? trans.content : p.content ?? '',
+          thumbnailUrl: p.thumbnailUrl || undefined,
+          demoUrl: p.demoUrl || undefined,
+          repoUrl: p.repoUrl || undefined,
+          status: p.status === 'PUBLISHED' ? 'active' : 'archived',
+          featured: p.featured,
+          technologies: p.tags.map(t => t.tag.name),
+          publishedAt: p.createdAt.toISOString(),
+          translations: trans ? {
+            en: {
+              title: trans.title || undefined,
+              description: trans.description ?? undefined,
+              content: trans.content ?? undefined,
+            },
+          } : undefined,
+        };
+      } catch (error) {
+        console.error('Error fetching project by slug from db:', error);
+        return null;
+      }
+    },
+    ['public-project-slug', slug, locale],
+    { revalidate: 3600, tags: ['projects', `project-${slug}`] }
+  )();
+};
 
 /** Action to preview/translate a project using Gemini AI */
 export async function previewTranslateProjectAction(

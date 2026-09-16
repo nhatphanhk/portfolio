@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import { ensureAdmin } from '@/lib/auth-utils';
@@ -39,6 +39,7 @@ export async function createSkill(formData: SkillFormData) {
     data: { ...rest, iconUrl: iconUrl || undefined },
   });
 
+  revalidateTag('skills', 'max');
   revalidatePath('/nhatphanhk102/skills');
   revalidatePath('/skills');
   revalidatePath('/');
@@ -57,6 +58,7 @@ export async function updateSkill(id: string, formData: SkillFormData) {
     data: { ...rest, iconUrl: iconUrl || undefined },
   });
 
+  revalidateTag('skills', 'max');
   revalidatePath('/nhatphanhk102/skills');
   revalidatePath('/skills');
   revalidatePath('/');
@@ -66,6 +68,7 @@ export async function updateSkill(id: string, formData: SkillFormData) {
 export async function deleteSkill(id: string) {
   await ensureAdmin();
   await prisma.skill.delete({ where: { id } });
+  revalidateTag('skills', 'max');
   revalidatePath('/nhatphanhk102/skills');
   revalidatePath('/skills');
   revalidatePath('/');
@@ -79,26 +82,32 @@ export async function getAllSkillsFromDb() {
 }
 
 export async function getPublicSkillsByCategory() {
-  try {
-    const skills = await prisma.skill.findMany({
-      orderBy: [{ category: 'asc' }, { order: 'asc' }],
-    });
-    const grouped: Record<string, any[]> = {};
-    for (const s of skills) {
-      if (!grouped[s.category]) grouped[s.category] = [];
-      grouped[s.category].push({
-        id: s.id,
-        name: s.name,
-        category: s.category,
-        level: s.level || 0,
-        iconUrl: s.iconUrl || undefined,
-        order: s.order,
-      });
-    }
-    return grouped;
-  } catch (error) {
-    console.error('Error fetching public skills from db:', error);
-    return {};
-  }
+  return unstable_cache(
+    async () => {
+      try {
+        const skills = await prisma.skill.findMany({
+          orderBy: [{ category: 'asc' }, { order: 'asc' }],
+        });
+        const grouped: Record<string, any[]> = {};
+        for (const s of skills) {
+          if (!grouped[s.category]) grouped[s.category] = [];
+          grouped[s.category].push({
+            id: s.id,
+            name: s.name,
+            category: s.category,
+            level: s.level || 0,
+            iconUrl: s.iconUrl || undefined,
+            order: s.order,
+          });
+        }
+        return grouped;
+      } catch (error) {
+        console.error('Error fetching public skills from db:', error);
+        return {};
+      }
+    },
+    ['public-skills-category'],
+    { revalidate: 3600, tags: ['skills'] }
+  )();
 }
 
