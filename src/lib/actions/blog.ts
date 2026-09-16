@@ -1,7 +1,7 @@
 'use server';
 import { cache } from 'react';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import { ensureAdmin } from '@/lib/auth-utils';
@@ -112,6 +112,7 @@ export async function createBlog(formData: BlogFormData) {
     });
   }
 
+  revalidateTag('blogs', 'max');
   revalidatePath('/nhatphanhk102/blogs');
   revalidatePath('/blog');
   revalidatePath('/blog/series');
@@ -177,6 +178,7 @@ export async function updateBlog(id: string, formData: BlogFormData) {
     });
   }
 
+  revalidateTag('blogs', 'max');
   revalidatePath('/nhatphanhk102/blogs');
   revalidatePath('/blog');
   revalidatePath('/blog/series');
@@ -193,6 +195,7 @@ export async function deleteBlog(id: string) {
       select: { slug: true, seriesId: true },
     });
     if (!blog) {
+      revalidateTag('blogs', 'max');
       revalidatePath('/nhatphanhk102/blogs');
       revalidatePath('/blog');
       revalidatePath('/blog/series');
@@ -204,6 +207,7 @@ export async function deleteBlog(id: string) {
     }
 
     await prisma.blog.delete({ where: { id } });
+    revalidateTag('blogs', 'max');
     revalidatePath('/nhatphanhk102/blogs');
     revalidatePath('/blog');
     revalidatePath('/blog/series');
@@ -233,81 +237,93 @@ export async function getAllBlogsFromDb() {
 }
 
 export async function getPublicBlogs(locale: 'vi' | 'en' = 'vi') {
-  try {
-    const blogs = await prisma.blog.findMany({
-      where: { status: 'PUBLISHED' },
-      orderBy: { publishedAt: 'desc' },
-      include: {
-        tags: { include: { tag: true } },
-        series: { select: { id: true, title: true, slug: true } },
-      },
-    });
+  return unstable_cache(
+    async () => {
+      try {
+        const blogs = await prisma.blog.findMany({
+          where: { status: 'PUBLISHED' },
+          orderBy: { publishedAt: 'desc' },
+          include: {
+            tags: { include: { tag: true } },
+            series: { select: { id: true, title: true, slug: true } },
+          },
+        });
 
-    let translationMap = new Map<string, any>();
-    if (locale === 'en') {
-      const { getBatchEntityTranslationsFromDb } = await import('@/lib/gemini-translate');
-      translationMap = await getBatchEntityTranslationsFromDb(
-        'blog',
-        blogs.map(b => b.id),
-        'en'
-      );
-    }
+        let translationMap = new Map<string, any>();
+        if (locale === 'en') {
+          const { getBatchEntityTranslationsFromDb } = await import('@/lib/gemini-translate');
+          translationMap = await getBatchEntityTranslationsFromDb(
+            'blog',
+            blogs.map(b => b.id),
+            'en'
+          );
+        }
 
-    return blogs.map(b => {
-      const trans = translationMap.get(b.id);
-      const isEn = locale === 'en';
-      return {
-        id: b.id,
-        title: isEn && trans?.title ? trans.title : b.title,
-        slug: b.slug,
-        excerpt: isEn && trans?.excerpt !== undefined ? trans.excerpt : (b.excerpt || ''),
-        content: isEn && trans?.content ? trans.content : b.content,
-        publishedAt: (b.publishedAt || b.createdAt).toISOString(),
-        readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
-        tags: b.tags.map(t => t.tag.name),
-        thumbnailUrl: b.thumbnailUrl || undefined,
-        status: b.status,
-        seriesId: b.seriesId || undefined,
-        seriesOrder: b.seriesOrder ?? 0,
-        series: b.series ? { id: b.series.id, title: b.series.title, slug: b.series.slug } : undefined,
-      };
-    });
-  } catch (error) {
-    console.error('Error fetching public blogs from db:', error);
-    return [];
-  }
+        return blogs.map(b => {
+          const trans = translationMap.get(b.id);
+          const isEn = locale === 'en';
+          return {
+            id: b.id,
+            title: isEn && trans?.title ? trans.title : b.title,
+            slug: b.slug,
+            excerpt: isEn && trans?.excerpt !== undefined ? trans.excerpt : (b.excerpt || ''),
+            content: isEn && trans?.content ? trans.content : b.content,
+            publishedAt: (b.publishedAt || b.createdAt).toISOString(),
+            readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
+            tags: b.tags.map(t => t.tag.name),
+            thumbnailUrl: b.thumbnailUrl || undefined,
+            status: b.status,
+            seriesId: b.seriesId || undefined,
+            seriesOrder: b.seriesOrder ?? 0,
+            series: b.series ? { id: b.series.id, title: b.series.title, slug: b.series.slug } : undefined,
+          };
+        });
+      } catch (error) {
+        console.error('Error fetching public blogs from db:', error);
+        return [];
+      }
+    },
+    ['public-blogs', locale],
+    { revalidate: 3600, tags: ['blogs'] }
+  )();
 }
 
-export const getPublicBlogBySlug = cache(async (slug: string) => {
-  try {
-    const b = await prisma.blog.findUnique({
-      where: { slug },
-      include: {
-        tags: { include: { tag: true } },
-        series: { select: { id: true, title: true, slug: true } },
-      },
-    });
-    if (!b || b.status !== 'PUBLISHED') return null;
-    return {
-      id: b.id,
-      title: b.title,
-      slug: b.slug,
-      excerpt: b.excerpt || '',
-      content: b.content,
-      publishedAt: (b.publishedAt || b.createdAt).toISOString(),
-      readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
-      tags: b.tags.map(t => t.tag.name),
-      thumbnailUrl: b.thumbnailUrl || undefined,
-      status: b.status,
-      seriesId: b.seriesId || undefined,
-      seriesOrder: b.seriesOrder ?? 0,
-      series: b.series ? { id: b.series.id, title: b.series.title, slug: b.series.slug } : undefined,
-    };
-  } catch (error) {
-    console.error('Error fetching blog by slug from db:', error);
-    return null;
-  }
-});
+export const getPublicBlogBySlug = async (slug: string) => {
+  return unstable_cache(
+    async () => {
+      try {
+        const b = await prisma.blog.findUnique({
+          where: { slug },
+          include: {
+            tags: { include: { tag: true } },
+            series: { select: { id: true, title: true, slug: true } },
+          },
+        });
+        if (!b || b.status !== 'PUBLISHED') return null;
+        return {
+          id: b.id,
+          title: b.title,
+          slug: b.slug,
+          excerpt: b.excerpt || '',
+          content: b.content,
+          publishedAt: (b.publishedAt || b.createdAt).toISOString(),
+          readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
+          tags: b.tags.map(t => t.tag.name),
+          thumbnailUrl: b.thumbnailUrl || undefined,
+          status: b.status,
+          seriesId: b.seriesId || undefined,
+          seriesOrder: b.seriesOrder ?? 0,
+          series: b.series ? { id: b.series.id, title: b.series.title, slug: b.series.slug } : undefined,
+        };
+      } catch (error) {
+        console.error('Error fetching blog by slug from db:', error);
+        return null;
+      }
+    },
+    ['public-blog-slug', slug],
+    { revalidate: 3600, tags: ['blogs', `blog-${slug}`] }
+  )();
+};
 
 /** Create an empty draft and return its id so the editor can redirect immediately */
 export async function createBlogDraft(): Promise<{ ok: boolean; id?: string; error?: string }> {

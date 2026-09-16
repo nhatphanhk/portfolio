@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { ensureAdmin } from '@/lib/auth-utils';
 import { cache } from 'react';
@@ -21,75 +21,81 @@ export interface SiteContentBundle {
 /**
  * Get site content bundle for both English and Vietnamese
  */
-export const getSiteContentBundle = cache(async (): Promise<SiteContentBundle> => {
-  try {
-    const [items, viTranslation, enTranslation] = await Promise.all([
-      prisma.siteContent.findMany(),
-      prisma.contentTranslation.findUnique({
-        where: {
-          entityType_entityId_locale: {
-            entityType: 'site_content',
-            entityId: 'landing',
-            locale: 'vi',
-          },
-        },
-      }),
-      prisma.contentTranslation.findUnique({
-        where: {
-          entityType_entityId_locale: {
-            entityType: 'site_content',
-            entityId: 'landing',
-            locale: 'en',
-          },
-        },
-      }),
-    ]);
-
-    // Build English map
-    const enMap: Record<string, string> = {};
-    for (const def of DEFAULT_SITE_CONTENT) {
-      enMap[def.key] = def.value;
-    }
-    for (const item of items) {
-      enMap[item.key] = item.value;
-    }
-    if (enTranslation?.content) {
+export const getSiteContentBundle = async (): Promise<SiteContentBundle> => {
+  return unstable_cache(
+    async (): Promise<SiteContentBundle> => {
       try {
-        const parsed = JSON.parse(enTranslation.content);
-        Object.assign(enMap, parsed);
-      } catch (e) {
-        console.warn('Failed to parse en site_content translations:', e);
-      }
-    }
+        const [items, viTranslation, enTranslation] = await Promise.all([
+          prisma.siteContent.findMany(),
+          prisma.contentTranslation.findUnique({
+            where: {
+              entityType_entityId_locale: {
+                entityType: 'site_content',
+                entityId: 'landing',
+                locale: 'vi',
+              },
+            },
+          }),
+          prisma.contentTranslation.findUnique({
+            where: {
+              entityType_entityId_locale: {
+                entityType: 'site_content',
+                entityId: 'landing',
+                locale: 'en',
+              },
+            },
+          }),
+        ]);
 
-    // Build Vietnamese map
-    const viMap: Record<string, string> = { ...enMap, ...DEFAULT_VI_SITE_CONTENT };
-    // Non-translatable fields (image URLs, numbers) stay synchronized with DB
-    for (const item of items) {
-      if (!TRANSLATABLE_SITE_CONTENT_KEYS.includes(item.key as any)) {
-        viMap[item.key] = item.value;
-      }
-    }
-    if (viTranslation?.content) {
-      try {
-        const parsed = JSON.parse(viTranslation.content);
-        Object.assign(viMap, parsed);
-      } catch (e) {
-        console.warn('Failed to parse vi site_content translations:', e);
-      }
-    }
+        // Build English map
+        const enMap: Record<string, string> = {};
+        for (const def of DEFAULT_SITE_CONTENT) {
+          enMap[def.key] = def.value;
+        }
+        for (const item of items) {
+          enMap[item.key] = item.value;
+        }
+        if (enTranslation?.content) {
+          try {
+            const parsed = JSON.parse(enTranslation.content);
+            Object.assign(enMap, parsed);
+          } catch (e) {
+            console.warn('Failed to parse en site_content translations:', e);
+          }
+        }
 
-    return { en: enMap, vi: viMap };
-  } catch (error) {
-    console.warn('Error fetching site content bundle from DB, using defaults:', error);
-    const enMap: Record<string, string> = {};
-    for (const def of DEFAULT_SITE_CONTENT) {
-      enMap[def.key] = def.value;
-    }
-    const viMap: Record<string, string> = { ...enMap, ...DEFAULT_VI_SITE_CONTENT };
-    return { en: enMap, vi: viMap };
-  }
-});
+        // Build Vietnamese map
+        const viMap: Record<string, string> = { ...enMap, ...DEFAULT_VI_SITE_CONTENT };
+        // Non-translatable fields (image URLs, numbers) stay synchronized with DB
+        for (const item of items) {
+          if (!TRANSLATABLE_SITE_CONTENT_KEYS.includes(item.key as any)) {
+            viMap[item.key] = item.value;
+          }
+        }
+        if (viTranslation?.content) {
+          try {
+            const parsed = JSON.parse(viTranslation.content);
+            Object.assign(viMap, parsed);
+          } catch (e) {
+            console.warn('Failed to parse vi site_content translations:', e);
+          }
+        }
+
+        return { en: enMap, vi: viMap };
+      } catch (error) {
+        console.warn('Error fetching site content bundle from DB, using defaults:', error);
+        const enMap: Record<string, string> = {};
+        for (const def of DEFAULT_SITE_CONTENT) {
+          enMap[def.key] = def.value;
+        }
+        const viMap: Record<string, string> = { ...enMap, ...DEFAULT_VI_SITE_CONTENT };
+        return { en: enMap, vi: viMap };
+      }
+    },
+    ['public-site-content-bundle'],
+    { revalidate: 3600, tags: ['site-content'] }
+  )();
+};
 
 export type LocalizedSiteContentRecord = Record<string, string> & {
   en?: Record<string, string>;
@@ -173,6 +179,7 @@ export async function updateSiteContentBatch(updates: Array<{ key: string; value
       });
     }
 
+    revalidateTag('site-content', 'max');
     revalidatePath('/');
     revalidatePath('/nhatphanhk102/landing');
     return { ok: true };
@@ -251,6 +258,7 @@ export async function saveSiteContentBundle(bundle: {
       },
     });
 
+    revalidateTag('site-content', 'max');
     revalidatePath('/');
     revalidatePath('/nhatphanhk102/landing');
     return { ok: true };
