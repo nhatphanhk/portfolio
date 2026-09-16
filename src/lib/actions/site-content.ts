@@ -143,6 +143,28 @@ export async function getAllSiteContent(): Promise<SiteContentItem[]> {
       return created.length > 0 ? created : (DEFAULT_SITE_CONTENT as unknown as SiteContentItem[]);
     }
 
+    // Auto-seed any newly added default items that are missing from database
+    const existingKeys = new Set(items.map(item => item.key));
+    const missingDefaults = DEFAULT_SITE_CONTENT.filter(def => !existingKeys.has(def.key));
+    if (missingDefaults.length > 0) {
+      for (const def of missingDefaults) {
+        try {
+          const item = await prisma.siteContent.create({
+            data: {
+              key: def.key,
+              value: def.value,
+              type: def.type,
+              label: def.label,
+              grp: def.grp,
+            },
+          });
+          items.push(item);
+        } catch {
+          // If concurrent or already exists, skip
+        }
+      }
+    }
+
     return items;
   } catch (error) {
     console.error('Error in getAllSiteContent:', error);
