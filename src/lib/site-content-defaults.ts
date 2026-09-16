@@ -15,9 +15,17 @@ export const DEFAULT_SITE_CONTENT: Array<{
   grp: string;
 }> = [
   // Hero section
+  { key: 'hero_badge', value: 'Available for new opportunities', type: 'text', label: 'Hero Status Badge (Optional)', grp: 'hero' },
   { key: 'hero_greeting', value: "Hi, I'm", type: 'text', label: 'Hero Greeting', grp: 'hero' },
+  { key: 'hero_name_highlight', value: 'Phan', type: 'text', label: 'Highlighted First Name / Word', grp: 'hero' },
+  { key: 'hero_name_rest', value: 'Huu Nhat', type: 'text', label: 'Full / Rest of Name', grp: 'hero' },
+  { key: 'hero_title', value: 'Full-Stack Software Engineer', type: 'text', label: 'Hero Professional Title', grp: 'hero' },
+  { key: 'hero_tagline', value: 'Passionate about crafting scalable software architectures, elegant reactive UIs, and AI-driven developer tooling.', type: 'text', label: 'Hero Tagline / Summary', grp: 'hero' },
   { key: 'hero_cta_projects', value: 'View Projects', type: 'text', label: 'Projects Button Label', grp: 'hero' },
+  { key: 'hero_cta_projects_url', value: '/project', type: 'url', label: 'Projects Button Link (URL)', grp: 'hero' },
   { key: 'hero_cta_resume', value: 'Resume', type: 'text', label: 'Resume Button Label', grp: 'hero' },
+  { key: 'hero_cta_resume_url', value: '', type: 'url', label: 'Resume Button Link (URL)', grp: 'hero' },
+  { key: 'hero_scroll_text', value: 'Scroll Down', type: 'text', label: 'Scroll Down Indicator Text', grp: 'hero' },
 
   // About section
   { key: 'about_badge', value: 'About Me', type: 'text', label: 'About Badge Text', grp: 'about' },
@@ -50,9 +58,15 @@ export const DEFAULT_SITE_CONTENT: Array<{
 ];
 
 export const TRANSLATABLE_SITE_CONTENT_KEYS = [
+  'hero_badge',
   'hero_greeting',
+  'hero_name_highlight',
+  'hero_name_rest',
+  'hero_title',
+  'hero_tagline',
   'hero_cta_projects',
   'hero_cta_resume',
+  'hero_scroll_text',
   'about_badge',
   'about_heading',
   'about_skills_badge',
@@ -71,9 +85,15 @@ export const TRANSLATABLE_SITE_CONTENT_KEYS = [
 ] as const;
 
 export const DEFAULT_VI_SITE_CONTENT: Record<string, string> = {
+  hero_badge: 'Sẵn sàng đón nhận cơ hội mới',
   hero_greeting: 'Xin chào, tôi là',
+  hero_name_highlight: 'Phan',
+  hero_name_rest: 'Hữu Nhật',
+  hero_title: 'Kỹ Sư Phần Mềm Full-Stack',
+  hero_tagline: 'Đam mê kiến tạo kiến trúc phần mềm mở rộng, giao diện người dùng mượt mà và công cụ phát triển tối ưu bằng AI.',
   hero_cta_projects: 'Khám phá dự án',
   hero_cta_resume: 'Hồ sơ cá nhân',
+  hero_scroll_text: 'Cuộn xuống',
   about_badge: 'Về tôi',
   about_heading: 'Kiến tạo website, vững bước qua từng dự án.',
   about_skills_badge: 'Công nghệ cốt lõi',

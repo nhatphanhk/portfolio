@@ -30,8 +30,11 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
 
-  const displayTitle = isEn && profile.translations?.en?.title ? profile.translations.en.title : profile.title;
-  const displayTagline = (isEn && (profile as any).translations?.en?.tagline) || profile.tagline;
+  const defaultTitle = isEn && profile.translations?.en?.title ? profile.translations.en.title : profile.title;
+  const defaultTagline = (isEn && (profile as any).translations?.en?.tagline) || profile.tagline;
+
+  const defaultFirst = profile.name ? profile.name.split(' ')[0] : 'Phan';
+  const defaultRest = profile.name ? profile.name.split(' ').slice(1).join(' ') : '';
 
   const getC = (key: string, fallback: string) => {
     if (isEn) {
@@ -39,6 +42,21 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
     }
     return (content as any)?.vi?.[key] || fallback;
   };
+
+  const heroBadge = getC('hero_badge', '');
+  const heroGreeting = getC('hero_greeting', t.landing.heroGreeting);
+  const heroNameHighlight = getC('hero_name_highlight', defaultFirst);
+  const heroNameRest = getC('hero_name_rest', defaultRest);
+  const heroTitle = getC('hero_title', defaultTitle || 'Full-Stack Software Engineer');
+  const heroTagline = getC('hero_tagline', defaultTagline || '');
+
+  const heroCtaProjects = getC('hero_cta_projects', t.landing.heroCtaProjects);
+  const heroCtaProjectsUrl = (content as any)?.hero_cta_projects_url || (content as any)?.en?.hero_cta_projects_url || '/project';
+
+  const heroCtaResume = getC('hero_cta_resume', t.landing.heroCtaResume);
+  const heroCtaResumeUrl = (content as any)?.hero_cta_resume_url || (content as any)?.en?.hero_cta_resume_url || profile.resumeUrl;
+
+  const heroScrollText = getC('hero_scroll_text', t.landing.heroScroll);
 
   // ── Three.js Cosmic Starfield with Soft Circular Sprites ──────────────────
   useEffect(() => {
@@ -192,7 +210,8 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: 'power2.out' } });
       // Animate transforms only for hero headings so Chrome records LCP immediately on initial paint
-      tl.from('[data-hero="name"]', { x: -30, duration: 0.7 })
+      tl.from('[data-hero="badge"]', { opacity: 0, y: -10, duration: 0.5 }, 0)
+        .from('[data-hero="name"]', { x: -30, duration: 0.7 }, 0.1)
         .from('[data-hero="title"]', { x: -20, duration: 0.6 }, '-=0.4')
         .from('[data-hero="tagline"]', { x: -16, duration: 0.5 }, '-=0.3')
         .fromTo('[data-hero="ctas"]', { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.5 }, '-=0.2')
@@ -236,6 +255,23 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
       >
         {/* ══ LEFT — Text Content ══════════════════════════════════════════ */}
         <div className="flex flex-col items-start text-left">
+          {/* Status Badge (Optional / Dynamic) */}
+          {heroBadge && (
+            <div
+              data-hero="badge"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold mb-5 backdrop-blur-md transition-all duration-300"
+              style={{
+                background: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid rgba(52, 211, 153, 0.3)',
+                color: '#34d399',
+                boxShadow: '0 0 20px rgba(16, 185, 129, 0.2)',
+              }}
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>{heroBadge}</span>
+            </div>
+          )}
+
           {/* Greeting & Name */}
           <h1
             data-hero="name"
@@ -248,24 +284,26 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
                 letterSpacing: '0.04em',
               }}
             >
-              {getC('hero_greeting', t.landing.heroGreeting)}
+              {heroGreeting}
             </span>
             <span
               className="block text-6xl sm:text-7xl xl:text-8xl text-gold-shimmer font-black"
               style={{ letterSpacing: '-0.02em' }}
             >
-              {profile.name.split(' ')[0]}
+              {heroNameHighlight}
             </span>
-            <span
-              className="block text-3xl sm:text-4xl xl:text-5xl font-bold mt-3"
-              style={{
-                color: 'oklch(0.97 0.02 85)',
-                letterSpacing: '-0.01em',
-                textShadow: '0 2px 24px rgba(0, 0, 0, 0.8)',
-              }}
-            >
-              {profile.name.split(' ').slice(1).join(' ')}
-            </span>
+            {heroNameRest && (
+              <span
+                className="block text-3xl sm:text-4xl xl:text-5xl font-bold mt-3"
+                style={{
+                  color: 'oklch(0.97 0.02 85)',
+                  letterSpacing: '-0.01em',
+                  textShadow: '0 2px 24px rgba(0, 0, 0, 0.8)',
+                }}
+              >
+                {heroNameRest}
+              </span>
+            )}
           </h1>
 
           {/* Title */}
@@ -277,7 +315,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
               textShadow: '0 2px 20px rgba(0, 0, 0, 0.7)',
             }}
           >
-            {displayTitle}
+            {heroTitle}
           </p>
 
           {/* Divider accent line */}
@@ -290,16 +328,18 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
           />
 
           {/* Tagline */}
-          <p
-            data-hero="tagline"
-            className="text-base sm:text-lg xl:text-xl max-w-md mb-10 leading-relaxed font-normal"
-            style={{
-              color: 'oklch(0.84 0.05 255)',
-              textShadow: '0 1px 12px rgba(0, 0, 0, 0.7)',
-            }}
-          >
-            {displayTagline}
-          </p>
+          {heroTagline && (
+            <p
+              data-hero="tagline"
+              className="text-base sm:text-lg xl:text-xl max-w-md mb-10 leading-relaxed font-normal"
+              style={{
+                color: 'oklch(0.84 0.05 255)',
+                textShadow: '0 1px 12px rgba(0, 0, 0, 0.7)',
+              }}
+            >
+              {heroTagline}
+            </p>
+          )}
 
           {/* CTA Buttons */}
           <div
@@ -308,7 +348,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
           >
             <Link
               id="hero-view-projects"
-              href="/project"
+              href={heroCtaProjectsUrl}
               className="group inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all duration-200 hover:gap-3 hover:scale-105 active:scale-95"
               style={{
                 background: 'linear-gradient(135deg, #fde047 0%, #f59e0b 60%, #d97706 100%)',
@@ -316,13 +356,13 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
                 boxShadow: '0 4px 25px rgba(245, 158, 11, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.5)',
               }}
             >
-              {getC('hero_cta_projects', t.landing.heroCtaProjects)}
+              {heroCtaProjects}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
 
-            {profile.resumeUrl && (
+            {heroCtaResumeUrl && (
               <a
-                href={profile.resumeUrl}
+                href={heroCtaResumeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all duration-200 hover:scale-105 active:scale-95"
@@ -335,7 +375,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
                 }}
               >
                 <Download className="h-4 w-4" />
-                {getC('hero_cta_resume', t.landing.heroCtaResume)}
+                {heroCtaResume}
               </a>
             )}
           </div>
@@ -454,7 +494,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
           className="text-[10px] font-bold tracking-widest uppercase"
           style={{ color: 'oklch(0.65 0.10 255)' }}
         >
-          {t.landing.heroScroll}
+          {heroScrollText}
         </span>
         <ChevronDown
           className="h-4 w-4 animate-bounce"

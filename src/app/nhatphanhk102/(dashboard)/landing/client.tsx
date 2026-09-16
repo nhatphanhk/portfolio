@@ -316,7 +316,9 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {section.fields.map(field => {
                   const isMultiline =
-                    field.key === 'about_heading' || field.key === 'about_author_quote';
+                    field.key === 'about_heading' ||
+                    field.key === 'about_author_quote' ||
+                    field.key === 'hero_tagline';
                   const translatable = isTranslatable(field.key);
                   const enRefValue = itemsEn[field.key] ?? '';
 
