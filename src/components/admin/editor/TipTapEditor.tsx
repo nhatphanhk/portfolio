@@ -9,10 +9,19 @@ import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import Highlight from '@tiptap/extension-highlight';
 import Heading from '@tiptap/extension-heading';
+import { TableKit } from '@tiptap/extension-table';
+import { Mathematics } from '@tiptap/extension-mathematics';
+import { Markdown } from '@tiptap/markdown';
+
 import { EditorToolbar } from './EditorToolbar';
 import { CodeBlockComponent } from './CodeBlockComponent';
+import { Callout } from './extensions/callout';
+import { SlashCommand } from './extensions/slash-command';
+import { SmartPaste } from './extensions/smart-paste';
 import { useEffect, useState } from 'react';
 import { ImageUploadModal } from './ImageUploadModal';
+
+import 'katex/dist/katex.min.css';
 
 const lowlight = createLowlight(common);
 
@@ -22,7 +31,11 @@ interface TipTapEditorProps {
   placeholder?: string;
 }
 
-export function TipTapEditor({ content, onChange, placeholder = 'Write something...' }: TipTapEditorProps) {
+export function TipTapEditor({
+  content,
+  onChange,
+  placeholder = 'Gõ / để chèn khối (bảng, sơ đồ, công thức...), hoặc dán bất cứ thứ gì: ảnh clipboard, Markdown, code...',
+}: TipTapEditorProps) {
   const [imageModalOpen, setImageModalOpen] = useState(false);
 
   const editor = useEditor({
@@ -41,14 +54,33 @@ export function TipTapEditor({ content, onChange, placeholder = 'Write something
       }).configure({ lowlight }),
       Image.configure({
         inline: false,
-        allowBase64: false,
+        allowBase64: true, // Allow initial parsing of Word/Docs images; SmartPaste immediately uploads & replaces
         HTMLAttributes: {
-          class: 'rounded-lg max-w-full my-4 border border-border shadow-sm',
+          class: 'rounded-xl max-w-full my-4 border border-border shadow-sm mx-auto',
         },
       }),
       Link.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder }),
       Highlight,
+      Markdown,
+      TableKit.configure({
+        table: {
+          resizable: true,
+          HTMLAttributes: {
+            class: 'border-collapse table-auto w-full my-4 text-sm',
+          },
+        },
+      }),
+      Mathematics.configure({
+        katexOptions: {
+          throwOnError: false,
+        },
+      }),
+      Callout,
+      SlashCommand.configure({
+        onOpenImageModal: () => setImageModalOpen(true),
+      }),
+      SmartPaste,
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -58,35 +90,6 @@ export function TipTapEditor({ content, onChange, placeholder = 'Write something
       attributes: {
         class:
           'prose prose-sm sm:prose-base dark:prose-invert max-w-none focus:outline-none min-h-[600px] p-8 sm:p-10 bg-card text-card-foreground',
-      },
-      handleDrop(view, event, _slice, moved) {
-        if (!moved && event.dataTransfer?.files?.length) {
-          const file = event.dataTransfer.files[0];
-          if (!file.type.startsWith('image/')) return false;
-
-          // Trigger upload via API
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('fileType', 'blog');
-
-          fetch('/api/upload', { method: 'POST', body: formData })
-            .then(r => r.json())
-            .then(data => {
-              if (data.url) {
-                const { schema } = view.state;
-                const coords = view.posAtCoords({ left: event.clientX, top: event.clientY });
-                if (coords) {
-                  const node = schema.nodes.image.create({ src: data.url, alt: file.name });
-                  const transaction = view.state.tr.insert(coords.pos, node);
-                  view.dispatch(transaction);
-                }
-              }
-            })
-            .catch(() => {});
-
-          return true;
-        }
-        return false;
       },
     },
   });

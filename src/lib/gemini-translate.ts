@@ -58,7 +58,7 @@ Translate the following blog post into natural, idiomatic, high-quality ${target
 CRITICAL REQUIREMENTS:
 1. Preserve technical terminology naturally (e.g., React, TypeScript, Docker, API, Backend, Frontend, Next.js, Cloud, Prisma, PostgreSQL, etc.).
 2. For HTML content: PRESERVE ALL HTML tags, attributes, class names, and code syntax intact. ONLY translate the readable human text between the tags.
-3. Keep code blocks and inline code (<pre>, <code>) completely untranslated, keeping the original code intact.
+3. Keep code blocks and inline code (<pre>, <code>) completely untranslated, keeping the original code intact. Specifically, NEVER alter code inside <code class="language-mermaid"> or attributes like data-latex, data-type, data-callout.
 4. Translate the ENTIRE content without summarizing, truncating, or skipping any sections or paragraphs.
 5. If content is empty, return empty string for content.
 6. Return ONLY a valid JSON object matching this schema:

@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Upload, Images, X, Check, Loader2, ImagePlus } from 'lucide-react';
 import Image from 'next/image';
 import { getMediaLibrary } from '@/lib/actions/media';
+import { uploadBlogImage } from '@/lib/upload';
 import { toast } from 'sonner';
 
 type MediaItem = {
@@ -76,22 +77,11 @@ export function ImageUploadModal({ open, onClose, onSelect }: ImageUploadModalPr
 
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', preview.file);
-      formData.append('fileType', 'blog');
-
-      const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error(data.error || 'Upload failed');
-        return;
-      }
-
+      const data = await uploadBlogImage(preview.file, 'blog');
       onSelect(data.url, altText || preview.file.name.replace(/\.[^.]+$/, ''));
       onClose();
-    } catch {
-      toast.error('Upload failed. Please try again.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Upload failed. Please try again.');
     } finally {
       setUploading(false);
     }

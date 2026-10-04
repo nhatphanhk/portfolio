@@ -265,6 +265,11 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
 
   const doSave = useCallback(
     (data: FormData) => {
+      if (data.content.includes('src="data:image/') || data.content.includes('src="blob:')) {
+        toast.warning('Ảnh đang được tải lên máy chủ. Vui lòng chờ vài giây trước khi lưu!');
+        return;
+      }
+
       startTransition(async () => {
         const payload: FormData = {
           ...data,

@@ -1,9 +1,12 @@
 'use client';
 
 import DOMPurify from 'dompurify';
-import { useEffect, useState } from 'react';
-
+import { useEffect, useState, useRef } from 'react';
+import { useTheme } from 'next-themes';
 import { slugifyHeading, type Heading } from '@/lib/blog-utils';
+import { hydrateRichContent } from '@/lib/rich-content';
+
+import 'katex/dist/katex.min.css';
 
 export type { Heading };
 
@@ -11,8 +14,18 @@ function processHtml(html: string): string {
   if (typeof window === 'undefined') return html;
 
   const cleanHtml = DOMPurify.sanitize(html, {
-    ADD_TAGS: ['iframe'],
-    ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling'],
+    ADD_TAGS: ['iframe', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
+    ADD_ATTR: [
+      'allow',
+      'allowfullscreen',
+      'frameborder',
+      'scrolling',
+      'data-callout',
+      'data-type',
+      'data-latex',
+      'data-math-hydrated',
+      'data-mermaid-hydrated',
+    ],
   });
 
   const div = document.createElement('div');
@@ -42,13 +55,23 @@ interface BlogContentProps {
 
 export function BlogContent({ html, className = '' }: BlogContentProps) {
   const [processedHtml, setProcessedHtml] = useState<string>('');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     setProcessedHtml(processHtml(html));
   }, [html]);
 
+  useEffect(() => {
+    if (containerRef.current && processedHtml) {
+      const isDark = resolvedTheme === 'dark';
+      hydrateRichContent(containerRef.current, isDark);
+    }
+  }, [processedHtml, resolvedTheme]);
+
   return (
-    <div 
+    <div
+      ref={containerRef}
       className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none ${className}`}
       dangerouslySetInnerHTML={{ __html: processedHtml || html }}
     />

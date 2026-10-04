@@ -355,7 +355,106 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .page-enter {
+  .page-enter,
+  .realistic-sun-orb,
+  .solar-rays-layer {
     animation: none;
   }
+}
+
+/* ── Callout / GitHub Alert Blocks in Content & Editor ── */
+.callout,
+.prose [data-callout] {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  border-width: 1px;
+  border-style: solid;
+  transition: all 0.2s ease;
+}
+
+.callout > :first-child,
+.prose [data-callout] > :first-child {
+  margin-top: 0;
+}
+
+.callout > :last-child,
+.prose [data-callout] > :last-child {
+  margin-bottom: 0;
+}
+
+.callout-note,
+.prose [data-callout="note"] {
+  background-color: oklch(0.42 0.22 255 / 8%);
+  border-color: oklch(0.42 0.22 255 / 30%);
+  color: inherit;
+}
+
+.callout-tip,
+.prose [data-callout="tip"] {
+  background-color: oklch(0.65 0.18 150 / 8%);
+  border-color: oklch(0.65 0.18 150 / 30%);
+  color: inherit;
+}
+
+.callout-warning,
+.prose [data-callout="warning"] {
+  background-color: oklch(0.72 0.18 78 / 10%);
+  border-color: oklch(0.72 0.18 78 / 35%);
+  color: inherit;
+}
+
+.callout-danger,
+.prose [data-callout="danger"] {
+  background-color: oklch(0.577 0.245 27.325 / 10%);
+  border-color: oklch(0.577 0.245 27.325 / 35%);
+  color: inherit;
+}
+
+/* ── Prose Table Enhancements ── */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+}
+
+.prose table th {
+  background-color: var(--muted);
+  font-weight: 600;
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--border);
+}
+
+.prose table td {
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--border);
+}
+
+.prose table tr:nth-child(even) {
+  background-color: oklch(0.95 0.01 80 / 30%);
+}
+
+.dark .prose table tr:nth-child(even) {
+  background-color: oklch(0.2 0.03 255 / 30%);
+}
+
+/* ── Mermaid Diagrams in Content ── */
+.mermaid-diagram {
+  max-width: 100%;
+  transition: transform 0.2s ease;
+}
+
+.mermaid-diagram svg {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* ── Math Formulas ── */
+.katex-display {
+  margin: 1.25rem 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5rem 0;
 }
