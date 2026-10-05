@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '@/lib/i18n/context';
 import { BlogContent } from '@/components/blog/BlogContent';
 import { BlogOutline } from '@/components/blog/BlogOutline';
@@ -39,6 +39,27 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations }: 
   const { locale, t } = useLanguage();
   const [translations, setTranslations] = useState<DBTranslation[]>(initialTranslations);
   const [isTranslating, setIsTranslating] = useState(false);
+
+  // Unique view tracking per visitor session
+  useEffect(() => {
+    if (typeof window === 'undefined' || !post?.id) return;
+    const sessionKey = `viewed_blog_${post.id}`;
+    if (sessionStorage.getItem(sessionKey)) return;
+
+    fetch(`/api/blogs/${post.id}/view`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data?.ok) {
+          sessionStorage.setItem(sessionKey, 'true');
+        }
+      })
+      .catch(err => {
+        console.warn('View tracking error:', err);
+      });
+  }, [post?.id]);
 
   // Active translation based on user's current locale
   const activeTranslation = useMemo(() => {
@@ -96,8 +117,9 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations }: 
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-10">
-      <article className="flex-1 min-w-0 max-w-4xl">
+    <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start">
+      {/* Article in elevated reading canvas to guarantee visual focus */}
+      <article className="reading-canvas flex-1 min-w-0 max-w-4xl p-6 sm:p-10 md:p-12 w-full">
         {/* Article header */}
         <header className="mb-10">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -163,7 +185,7 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations }: 
           </div>
 
           {currentExcerpt && (
-            <p className="mt-6 text-lg text-muted-foreground leading-relaxed italic border-l-4 border-primary/30 pl-4">
+            <p className="mt-6 text-lg text-muted-foreground leading-relaxed italic border-l-4 border-primary/30 pl-4 bg-muted/30 py-3 rounded-r-lg">
               {currentExcerpt}
             </p>
           )}
@@ -183,7 +205,7 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations }: 
 
       {/* Table of contents sidebar (Desktop) */}
       <aside className="hidden lg:block w-80 shrink-0">
-        <div className="sticky top-28">
+        <div className="sticky top-28 p-5 rounded-2xl bg-card border border-border/80 shadow-xs">
           <BlogOutline headings={headings} readTime={post.readTime} />
         </div>
       </aside>

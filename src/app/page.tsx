@@ -8,7 +8,6 @@ import { getProfile, getSocialLinks } from '@/lib/actions/about';
 import { getPublicProjects } from '@/lib/actions/project';
 import { getPublicBlogs } from '@/lib/actions/blog';
 import { getPublicCertifications } from '@/lib/actions/certification';
-import { getPublicSkillsByCategory } from '@/lib/actions/skill';
 import { getSiteContentRecord } from '@/lib/actions/site-content';
 import { getServerLocale } from '@/lib/i18n/server';
 
@@ -41,20 +40,19 @@ export const revalidate = 3600;
 
 export default async function Home() {
   const locale = await getServerLocale();
-  const [profile, socialLinks, projects, blogs, certs, skillsByCategory, siteContent] = await Promise.all([
+  const [profile, socialLinks, projects, blogs, certs, siteContent] = await Promise.all([
     getProfile(locale),
     getSocialLinks(),
     getPublicProjects(locale),
     getPublicBlogs(locale),
     getPublicCertifications(),
-    getPublicSkillsByCategory(),
     getSiteContentRecord(locale),
   ]);
 
   return (
     <MainLayout>
       <HeroSection profile={profile} socialLinks={socialLinks} content={siteContent} />
-      <AboutSection profile={profile} skillsByCategory={skillsByCategory} content={siteContent} />
+      <AboutSection profile={profile} content={siteContent} />
       <BPSCSection projects={projects} blogs={blogs} certs={certs} content={siteContent} />
     </MainLayout>
   );

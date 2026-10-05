@@ -1,11 +1,17 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Download, ArrowRight, ChevronDown } from 'lucide-react';
 import gsap from 'gsap';
 import DynamicIcon from '@/components/ui/DynamicIcon';
 import { useLanguage } from '@/lib/i18n/context';
+
+const RealisticSun = dynamic(
+  () => import('./RealisticSun').then(mod => mod.RealisticSun),
+  { ssr: false }
+);
 
 interface HeroSectionProps {
   profile: {
@@ -29,6 +35,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
   const { isEn, t } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
+  const [webglFailed, setWebglFailed] = useState(false);
 
   const defaultTitle = isEn && profile.translations?.en?.title ? profile.translations.en.title : profile.title;
   const defaultTagline = (isEn && (profile as any).translations?.en?.tagline) || profile.tagline;
@@ -425,62 +432,47 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
         <div
           data-hero="sun-container"
           className="relative hidden lg:flex items-center justify-center"
-          style={{ minHeight: '520px' }}
+          style={{ minHeight: '580px' }}
         >
-          {/* ── Layer 1: Coronal Solar Rays (Emanating DIRECTLY from the Sun's Center) ── */}
-          <div className="solar-rays-layer" aria-hidden="true" />
-
-          {/* ── Layer 2: Deep Ambient Volumetric Corona Glow (Wide Warm Atmosphere, Dimmed) ── */}
+          {/* Ambient Warm Atmosphere Glow */}
           <div
             className="absolute rounded-full pointer-events-none"
             style={{
-              width: '140%',
-              height: '140%',
-              background: 'radial-gradient(circle, rgba(255, 179, 0, 0.14) 0%, rgba(245, 124, 0, 0.07) 40%, rgba(230, 81, 0, 0.02) 65%, transparent 80%)',
-              filter: 'blur(60px)',
+              width: '130%',
+              height: '130%',
+              background: 'radial-gradient(circle, rgba(255, 179, 0, 0.14) 0%, rgba(245, 124, 0, 0.06) 35%, rgba(230, 81, 0, 0.02) 60%, transparent 75%)',
+              filter: 'blur(50px)',
               animation: 'corona-pulse 7s ease-in-out infinite',
             }}
             aria-hidden="true"
           />
 
-          {/* ── Layer 3: Mid-Coronal Flare Ring (Softened) ── */}
-          <div
-            className="absolute rounded-full pointer-events-none"
-            style={{
-              width: '115%',
-              height: '115%',
-              background: 'radial-gradient(circle, rgba(255, 214, 0, 0.18) 0%, rgba(255, 145, 0, 0.08) 50%, transparent 72%)',
-              filter: 'blur(30px)',
-              animation: 'corona-pulse 5s ease-in-out infinite 0.5s',
-            }}
-            aria-hidden="true"
-          />
-
-          {/* ── Layer 4: Realistic Photosphere Body (Warm & Gentle) ── */}
-          <div className="realistic-sun-orb" aria-hidden="true">
-            {/* Horizontal Anamorphic Optical Flare Streak (Softened) */}
-            <div
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-              style={{
-                width: '140%',
-                height: '1.5px',
-                background: 'linear-gradient(90deg, transparent 0%, rgba(255, 245, 157, 0.45) 50%, transparent 100%)',
-                filter: 'blur(1px)',
-                boxShadow: '0 0 10px 1px rgba(255, 213, 79, 0.4)',
-              }}
-            />
-
-            {/* Soft Warm Solar Core Spot */}
-            <div
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
-              style={{
-                width: '32%',
-                height: '32%',
-                background: 'radial-gradient(circle, #fffde7 0%, rgba(255, 249, 196, 0.7) 40%, rgba(255, 236, 179, 0.3) 75%, transparent 100%)',
-                filter: 'blur(4px)',
-              }}
-            />
-          </div>
+          {!webglFailed ? (
+            <RealisticSun onFallback={() => setWebglFailed(true)} />
+          ) : (
+            /* Fallback CSS Sun Orb */
+            <div className="realistic-sun-orb" aria-hidden="true">
+              <div
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                style={{
+                  width: '140%',
+                  height: '1.5px',
+                  background: 'linear-gradient(90deg, transparent 0%, rgba(255, 245, 157, 0.45) 50%, transparent 100%)',
+                  filter: 'blur(1px)',
+                  boxShadow: '0 0 10px 1px rgba(255, 213, 79, 0.4)',
+                }}
+              />
+              <div
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
+                style={{
+                  width: '32%',
+                  height: '32%',
+                  background: 'radial-gradient(circle, #fffde7 0%, rgba(255, 249, 196, 0.7) 40%, rgba(255, 236, 179, 0.3) 75%, transparent 100%)',
+                  filter: 'blur(4px)',
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
 

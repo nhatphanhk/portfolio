@@ -9,10 +9,21 @@ import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import Highlight from '@tiptap/extension-highlight';
 import Heading from '@tiptap/extension-heading';
+import { TableKit } from '@tiptap/extension-table';
+import { Mathematics } from '@tiptap/extension-mathematics';
+import { Markdown } from '@tiptap/markdown';
+
 import { EditorToolbar } from './EditorToolbar';
 import { CodeBlockComponent } from './CodeBlockComponent';
+import { Callout } from './extensions/callout';
+import { SlashCommand } from './extensions/slash-command';
+import { SmartPaste } from './extensions/smart-paste';
 import { useEffect, useState } from 'react';
 import { ImageUploadModal } from './ImageUploadModal';
+import { MarkdownCheatsheetModal } from './MarkdownCheatsheetModal';
+import { codeBlockInputRules } from './extensions/code-block-shortcuts';
+
+import 'katex/dist/katex.min.css';
 
 const lowlight = createLowlight(common);
 
@@ -22,8 +33,13 @@ interface TipTapEditorProps {
   placeholder?: string;
 }
 
-export function TipTapEditor({ content, onChange, placeholder = 'Write something...' }: TipTapEditorProps) {
+export function TipTapEditor({
+  content,
+  onChange,
+  placeholder = 'Gõ / để chèn khối (bảng, sơ đồ, công thức...), hoặc dán bất cứ thứ gì: ảnh clipboard, Markdown, code...',
+}: TipTapEditorProps) {
   const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -38,17 +54,40 @@ export function TipTapEditor({ content, onChange, placeholder = 'Write something
         addNodeView() {
           return ReactNodeViewRenderer(CodeBlockComponent);
         },
+        // ```ts / ```py / ```mermaid ... with alias normalization + Mermaid starter
+        addInputRules() {
+          return codeBlockInputRules(this.type);
+        },
       }).configure({ lowlight }),
       Image.configure({
         inline: false,
-        allowBase64: false,
+        allowBase64: true, // Allow initial parsing of Word/Docs images; SmartPaste immediately uploads & replaces
         HTMLAttributes: {
-          class: 'rounded-lg max-w-full my-4 border border-border shadow-sm',
+          class: 'rounded-xl max-w-full my-4 border border-border shadow-sm mx-auto',
         },
       }),
       Link.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder }),
       Highlight,
+      Markdown,
+      TableKit.configure({
+        table: {
+          resizable: true,
+          HTMLAttributes: {
+            class: 'border-collapse table-auto w-full my-4 text-sm',
+          },
+        },
+      }),
+      Mathematics.configure({
+        katexOptions: {
+          throwOnError: false,
+        },
+      }),
+      Callout,
+      SlashCommand.configure({
+        onOpenImageModal: () => setImageModalOpen(true),
+      }),
+      SmartPaste,
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -58,35 +97,6 @@ export function TipTapEditor({ content, onChange, placeholder = 'Write something
       attributes: {
         class:
           'prose prose-sm sm:prose-base dark:prose-invert max-w-none focus:outline-none min-h-[600px] p-8 sm:p-10 bg-card text-card-foreground',
-      },
-      handleDrop(view, event, _slice, moved) {
-        if (!moved && event.dataTransfer?.files?.length) {
-          const file = event.dataTransfer.files[0];
-          if (!file.type.startsWith('image/')) return false;
-
-          // Trigger upload via API
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('fileType', 'blog');
-
-          fetch('/api/upload', { method: 'POST', body: formData })
-            .then(r => r.json())
-            .then(data => {
-              if (data.url) {
-                const { schema } = view.state;
-                const coords = view.posAtCoords({ left: event.clientX, top: event.clientY });
-                if (coords) {
-                  const node = schema.nodes.image.create({ src: data.url, alt: file.name });
-                  const transaction = view.state.tr.insert(coords.pos, node);
-                  view.dispatch(transaction);
-                }
-              }
-            })
-            .catch(() => {});
-
-          return true;
-        }
-        return false;
       },
     },
   });
@@ -104,13 +114,33 @@ export function TipTapEditor({ content, onChange, placeholder = 'Write something
 
   return (
     <div className="w-full border border-border/80 rounded-2xl overflow-hidden bg-card shadow-lg shadow-slate-900/5 ring-1 ring-black/5">
-      <EditorToolbar editor={editor} onInsertImage={() => setImageModalOpen(true)} />
+      <EditorToolbar
+        editor={editor}
+        onInsertImage={() => setImageModalOpen(true)}
+        onOpenCheatsheet={() => setCheatsheetOpen(true)}
+      />
       <EditorContent editor={editor} />
+      <div className="flex items-center justify-between gap-3 px-4 py-2 border-t border-border/60 bg-muted/30 text-[11px] text-muted-foreground">
+        <span>
+          Gõ <kbd className="px-1 py-0.5 rounded border border-border bg-card font-mono">/</kbd> để chèn khối ·{' '}
+          <kbd className="px-1 py-0.5 rounded border border-border bg-card font-mono">&gt; [!NOTE]</kbd>{' '}
+          <kbd className="px-1 py-0.5 rounded border border-border bg-card font-mono">```ts</kbd>{' '}
+          <kbd className="px-1 py-0.5 rounded border border-border bg-card font-mono">## </kbd> để viết nhanh
+        </span>
+        <button
+          type="button"
+          onClick={() => setCheatsheetOpen(true)}
+          className="shrink-0 font-semibold text-primary hover:underline cursor-pointer"
+        >
+          Xem luật Markdown →
+        </button>
+      </div>
       <ImageUploadModal
         open={imageModalOpen}
         onClose={() => setImageModalOpen(false)}
         onSelect={handleImageSelect}
       />
+      <MarkdownCheatsheetModal open={cheatsheetOpen} onOpenChange={setCheatsheetOpen} />
     </div>
   );
 }

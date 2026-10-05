@@ -1,5 +1,5 @@
 'use server';
-import { cache } from 'react';
+
 
 import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/db';
@@ -19,7 +19,7 @@ const blogSchema = z.object({
       'Slug must be lowercase letters, numbers, and hyphens only'
     ),
   excerpt: z.string().max(500).optional(),
-  content: z.string().min(1),
+  content: z.string().default(''),
   thumbnailUrl: z.string().url().optional().or(z.literal('')),
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']),
   tags: z.string().optional(), // comma-separated tag names
@@ -117,7 +117,7 @@ export async function createBlog(formData: BlogFormData) {
   revalidatePath('/blog');
   revalidatePath('/blog/series');
   revalidatePath('/');
-  return { ok: true };
+  return { ok: true, id: newBlog.id };
 }
 
 export async function updateBlog(id: string, formData: BlogFormData) {

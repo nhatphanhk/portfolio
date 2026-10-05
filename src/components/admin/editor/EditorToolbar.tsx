@@ -10,6 +10,7 @@ import {
   Heading3,
   List,
   ListOrdered,
+  Code,
   Code2,
   Quote,
   Link as LinkIcon,
@@ -19,12 +20,19 @@ import {
   Redo,
   Highlighter,
   AlignLeft,
+  Table as TableIcon,
+  GitFork,
+  Sigma,
+  Info,
+  Trash2,
+  BookOpen,
 } from 'lucide-react';
 import { useCallback } from 'react';
 
 interface EditorToolbarProps {
   editor: Editor | null;
   onInsertImage?: () => void;
+  onOpenCheatsheet?: () => void;
 }
 
 function Divider() {
@@ -50,10 +58,8 @@ function IconButton({
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`p-1.5 rounded-md transition-colors ${
-        isActive
-          ? 'bg-primary/15 text-primary'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+      className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+        isActive ? 'bg-primary/15 text-primary font-bold' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
       } ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
     >
       {children}
@@ -61,11 +67,11 @@ function IconButton({
   );
 }
 
-export function EditorToolbar({ editor, onInsertImage }: EditorToolbarProps) {
+export function EditorToolbar({ editor, onInsertImage, onOpenCheatsheet }: EditorToolbarProps) {
   const setLink = useCallback(() => {
     if (!editor) return;
     const previousUrl = editor.getAttributes('link').href as string | undefined;
-    const url = window.prompt('URL', previousUrl);
+    const url = window.prompt('URL liên kết:', previousUrl);
 
     if (url === null) return;
     if (url === '') {
@@ -75,7 +81,33 @@ export function EditorToolbar({ editor, onInsertImage }: EditorToolbarProps) {
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   }, [editor]);
 
+  const insertMermaid = useCallback(() => {
+    if (!editor) return;
+    const template = `graph TD\n    A[Bắt đầu] --> B{Điều kiện}\n    B -->|Đúng| C[Xử lý]\n    B -->|Sai| D[Kết thúc]\n    C --> D`;
+    editor.chain().focus().toggleCodeBlock({ language: 'mermaid' }).insertContent(template).run();
+  }, [editor]);
+
+  const insertMath = useCallback(() => {
+    if (!editor) return;
+    const latex = window.prompt('Nhập công thức LaTeX (hoặc gõ $$ trong văn bản):', 'E = mc^2');
+    if (latex) {
+      (editor.chain().focus() as any)
+        .insertContent({
+          type: 'blockMath',
+          attrs: { latex },
+        })
+        .run();
+    }
+  }, [editor]);
+
+  const insertTable = useCallback(() => {
+    if (!editor) return;
+    (editor.chain().focus() as any).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+  }, [editor]);
+
   if (!editor) return null;
+
+  const isTableActive = editor.isActive('table');
 
   return (
     <div className="flex flex-wrap items-center gap-0.5 p-2 border-b border-border bg-muted/30">
@@ -175,14 +207,96 @@ export function EditorToolbar({ editor, onInsertImage }: EditorToolbarProps) {
 
       <Divider />
 
-      {/* Block elements */}
+      {/* Code, Mermaid, Math, Callout */}
+      <IconButton
+        onClick={() => editor.chain().focus().toggleCode().run()}
+        disabled={!editor.can().toggleCode()}
+        isActive={editor.isActive('code')}
+        title="Inline Code (Mã nội dòng)"
+      >
+        <Code className="w-4 h-4" />
+      </IconButton>
       <IconButton
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-        isActive={editor.isActive('codeBlock')}
-        title="Code Block"
+        isActive={editor.isActive('codeBlock') && !editor.isActive('codeBlock', { language: 'mermaid' })}
+        title="Code Block (Khối mã nguồn)"
       >
         <Code2 className="w-4 h-4" />
       </IconButton>
+      <IconButton
+        onClick={insertMermaid}
+        isActive={editor.isActive('codeBlock', { language: 'mermaid' })}
+        title="Sơ đồ Mermaid (Flowchart, Sequence...)"
+      >
+        <GitFork className="w-4 h-4 text-cyan-500" />
+      </IconButton>
+      <IconButton onClick={insertMath} title="Công thức toán LaTeX / KaTeX">
+        <Sigma className="w-4 h-4 text-purple-500" />
+      </IconButton>
+      <IconButton
+        onClick={() => (editor.chain().focus() as any).toggleCallout({ type: 'note' }).run()}
+        isActive={editor.isActive('callout')}
+        title="Hộp ghi chú (Callout)"
+      >
+        <Info className="w-4 h-4 text-blue-500" />
+      </IconButton>
+
+      <Divider />
+
+      {/* Table & controls */}
+      <IconButton
+        onClick={insertTable}
+        isActive={isTableActive}
+        title="Chèn bảng dữ liệu (3x3)"
+      >
+        <TableIcon className="w-4 h-4 text-emerald-500" />
+      </IconButton>
+
+      {isTableActive && (
+        <div className="flex items-center gap-1 bg-emerald-500/10 px-1.5 py-0.5 rounded-lg border border-emerald-500/20 text-xs">
+          <button
+            type="button"
+            onClick={() => (editor.chain().focus() as any).addRowAfter().run()}
+            className="px-1.5 py-0.5 rounded hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium"
+            title="Thêm hàng dưới"
+          >
+            +Hàng
+          </button>
+          <button
+            type="button"
+            onClick={() => (editor.chain().focus() as any).addColumnAfter().run()}
+            className="px-1.5 py-0.5 rounded hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium"
+            title="Thêm cột phải"
+          >
+            +Cột
+          </button>
+          <button
+            type="button"
+            onClick={() => (editor.chain().focus() as any).deleteRow().run()}
+            className="px-1.5 py-0.5 rounded hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
+            title="Xóa hàng"
+          >
+            -Hàng
+          </button>
+          <button
+            type="button"
+            onClick={() => (editor.chain().focus() as any).deleteColumn().run()}
+            className="px-1.5 py-0.5 rounded hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
+            title="Xóa cột"
+          >
+            -Cột
+          </button>
+          <button
+            type="button"
+            onClick={() => (editor.chain().focus() as any).deleteTable().run()}
+            className="p-1 rounded hover:bg-rose-500/20 text-rose-600"
+            title="Xóa bảng"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       <IconButton
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
         isActive={editor.isActive('blockquote')}
@@ -201,29 +315,31 @@ export function EditorToolbar({ editor, onInsertImage }: EditorToolbarProps) {
       <Divider />
 
       {/* Links & Media */}
-      <IconButton
-        onClick={setLink}
-        isActive={editor.isActive('link')}
-        title="Insert Link"
-      >
+      <IconButton onClick={setLink} isActive={editor.isActive('link')} title="Chèn liên kết">
         <LinkIcon className="w-4 h-4" />
       </IconButton>
-      <IconButton
-        onClick={() => onInsertImage?.()}
-        title="Insert Image (upload or library)"
-      >
+      <IconButton onClick={() => onInsertImage?.()} title="Chèn ảnh (Tải lên hoặc Thư viện)">
         <ImageIcon className="w-4 h-4" />
       </IconButton>
 
       <Divider />
 
       {/* Horizontal rule */}
-      <IconButton
-        onClick={() => editor.chain().focus().setHorizontalRule().run()}
-        title="Horizontal Rule"
-      >
+      <IconButton onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Đường kẻ ngang">
         <Minus className="w-4 h-4" />
       </IconButton>
+
+      {onOpenCheatsheet && (
+        <button
+          type="button"
+          onClick={onOpenCheatsheet}
+          title="Hướng dẫn & luật viết nhanh Markdown"
+          className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-colors cursor-pointer shrink-0"
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          Markdown
+        </button>
+      )}
     </div>
   );
 }

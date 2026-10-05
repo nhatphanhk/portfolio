@@ -1,19 +1,19 @@
 'use client';
 
-import { useState, useTransition, useMemo } from 'react';
-import { FileText, Plus, Pencil, Trash2, Loader2, Search, Filter, Layers, ChevronDown } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { FileText, Plus, Pencil, Trash2, Search, Filter, Layers, ChevronDown, Eye } from 'lucide-react';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
 import { PaginationControl } from '@/components/ui/PaginationControl';
-import { deleteBlog, createBlogDraft } from '@/lib/actions/blog';
+import { deleteBlog } from '@/lib/actions/blog';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { toast } from 'sonner';
 
 type Blog = {
   id: string;
   title: string;
   slug: string;
   status: string;
+  viewCount?: number;
   publishedAt: Date | null;
   excerpt: string | null;
   content: string;
@@ -30,7 +30,6 @@ interface AdminBlogsClientProps {
 
 export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
   const router = useRouter();
-  const [isCreating, startCreateTransition] = useTransition();
   const [deleteTarget, setDeleteTarget] = useState<Blog | null>(null);
 
   const [search, setSearch] = useState('');
@@ -56,17 +55,6 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
     });
     return Array.from(map.entries()).map(([id, title]) => ({ id, title }));
   }, [blogs]);
-
-  const handleNewPost = () => {
-    startCreateTransition(async () => {
-      const result = await createBlogDraft();
-      if (result.ok && result.id) {
-        router.push(`/nhatphanhk102/blogs/editor/${result.id}`);
-      } else {
-        toast.error('Failed to create draft. Please try again.');
-      }
-    });
-  };
 
   const filtered = useMemo(() => {
     return blogs.filter(blog => {
@@ -105,16 +93,14 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
           <h1 className="text-2xl font-bold text-foreground">Blog Posts</h1>
           <p className="text-sm text-muted-foreground">{blogs.length} posts total</p>
         </div>
-        <button
+        <Link
           id="create-blog-btn"
-          type="button"
-          onClick={handleNewPost}
-          disabled={isCreating}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/90 disabled:opacity-60 transition-colors self-start sm:self-auto cursor-pointer"
+          href="/nhatphanhk102/blogs/editor/new"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/90 transition-colors self-start sm:self-auto cursor-pointer"
         >
-          {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-          {isCreating ? 'Creating…' : 'New Post'}
-        </button>
+          <Plus className="h-4 w-4" />
+          New Post
+        </Link>
       </div>
 
       {/* Search & Filter Bar */}
@@ -220,6 +206,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
                   <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">Title & Series</th>
                   <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden md:table-cell">Tags</th>
                   <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden sm:table-cell">Published</th>
+                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden lg:table-cell">Views</th>
                   <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">Status</th>
                   <th className="px-4 py-3.5 text-right font-semibold text-slate-700 dark:text-slate-300">Actions</th>
                 </tr>
@@ -272,6 +259,12 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
                             year: 'numeric',
                           })
                         : '—'}
+                    </td>
+                    <td className="px-4 py-3.5 text-muted-foreground hidden lg:table-cell">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-md bg-muted text-foreground">
+                        <Eye className="w-3.5 h-3.5 text-primary" />
+                        {(blog.viewCount ?? 0).toLocaleString()}
+                      </span>
                     </td>
                     <td className="px-4 py-3.5">
                       <span
