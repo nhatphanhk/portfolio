@@ -127,4 +127,93 @@ export async function hydrateRichContent(container: HTMLElement, isDark: boolean
       }
     });
   }
+
+  // 3. Hydrate standard Code Blocks (add Header with Language badge & Copy button)
+  const codeBlocks = container.querySelectorAll<HTMLElement>('pre > code:not(.language-mermaid)');
+  if (codeBlocks.length > 0) {
+    let hljsInstance: any = null;
+
+    for (const codeEl of Array.from(codeBlocks)) {
+      const pre = codeEl.closest('pre');
+      if (!pre || pre.getAttribute('data-code-hydrated') === 'true') continue;
+      pre.setAttribute('data-code-hydrated', 'true');
+
+      // Extract language from class (e.g. language-typescript -> TypeScript)
+      const classList = Array.from(codeEl.classList);
+      const langClass = classList.find(c => c.startsWith('language-'));
+      const rawLang = langClass ? langClass.replace('language-', '') : '';
+      const displayLang = rawLang ? rawLang.toUpperCase() : 'CODE';
+
+      // Highlight syntax with highlight.js if not already highlighted
+      if (!codeEl.querySelector('.hljs-keyword') && rawLang) {
+        try {
+          if (!hljsInstance) {
+            hljsInstance = (await import('highlight.js')).default;
+          }
+          if (hljsInstance.getLanguage(rawLang)) {
+            const rawText = codeEl.textContent || '';
+            const highlighted = hljsInstance.highlight(rawText, { language: rawLang }).value;
+            codeEl.innerHTML = highlighted;
+          }
+        } catch {
+          // Fallback to existing content
+        }
+      }
+
+      // Build outer container
+      const containerEl = document.createElement('div');
+      containerEl.className = 'code-block-container not-prose';
+
+      // Build header
+      const headerEl = document.createElement('div');
+      headerEl.className = 'code-block-header';
+
+      const langSpan = document.createElement('span');
+      langSpan.className = 'code-block-lang';
+      langSpan.textContent = displayLang;
+
+      const copyBtn = document.createElement('button');
+      copyBtn.type = 'button';
+      copyBtn.className = 'code-block-copy-btn';
+      copyBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+        </svg>
+        <span>Copy</span>
+      `;
+
+      copyBtn.addEventListener('click', async () => {
+        const textToCopy = codeEl.textContent || '';
+        try {
+          await navigator.clipboard.writeText(textToCopy);
+          copyBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 6 9 17l-5-5"/>
+            </svg>
+            <span style="color: #34d399; font-weight: 600;">Copied!</span>
+          `;
+          setTimeout(() => {
+            copyBtn.innerHTML = `
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+              </svg>
+              <span>Copy</span>
+            `;
+          }, 2000);
+        } catch (copyErr) {
+          console.error('Failed to copy code:', copyErr);
+        }
+      });
+
+      headerEl.appendChild(langSpan);
+      headerEl.appendChild(copyBtn);
+
+      // Insert container in place of pre, then append header and pre inside container
+      pre.parentNode?.insertBefore(containerEl, pre);
+      containerEl.appendChild(headerEl);
+      containerEl.appendChild(pre);
+    }
+  }
 }

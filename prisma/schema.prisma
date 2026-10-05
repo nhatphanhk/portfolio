@@ -48,11 +48,27 @@ model Blog {
   seriesId    String?
   seriesOrder Int?         @default(0)
   series      BlogSeries?  @relation(fields: [seriesId], references: [id])
+  views       BlogView[]
 
   @@index([status])
   @@index([publishedAt])
   @@index([slug])
   @@map("blogs")
+}
+
+model BlogView {
+  id         String   @id @default(uuid())
+  blogId     String
+  blog       Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  identifier String
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@unique([blogId, identifier])
+  @@index([blogId])
+  @@index([identifier])
+  @@map("blog_views")
 }
 
 model BlogTag {

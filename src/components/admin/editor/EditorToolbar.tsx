@@ -10,6 +10,7 @@ import {
   Heading3,
   List,
   ListOrdered,
+  Code,
   Code2,
   Quote,
   Link as LinkIcon,
@@ -24,12 +25,14 @@ import {
   Sigma,
   Info,
   Trash2,
+  BookOpen,
 } from 'lucide-react';
 import { useCallback } from 'react';
 
 interface EditorToolbarProps {
   editor: Editor | null;
   onInsertImage?: () => void;
+  onOpenCheatsheet?: () => void;
 }
 
 function Divider() {
@@ -64,7 +67,7 @@ function IconButton({
   );
 }
 
-export function EditorToolbar({ editor, onInsertImage }: EditorToolbarProps) {
+export function EditorToolbar({ editor, onInsertImage, onOpenCheatsheet }: EditorToolbarProps) {
   const setLink = useCallback(() => {
     if (!editor) return;
     const previousUrl = editor.getAttributes('link').href as string | undefined;
@@ -206,9 +209,17 @@ export function EditorToolbar({ editor, onInsertImage }: EditorToolbarProps) {
 
       {/* Code, Mermaid, Math, Callout */}
       <IconButton
+        onClick={() => editor.chain().focus().toggleCode().run()}
+        disabled={!editor.can().toggleCode()}
+        isActive={editor.isActive('code')}
+        title="Inline Code (Mã nội dòng)"
+      >
+        <Code className="w-4 h-4" />
+      </IconButton>
+      <IconButton
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
         isActive={editor.isActive('codeBlock') && !editor.isActive('codeBlock', { language: 'mermaid' })}
-        title="Code Block"
+        title="Code Block (Khối mã nguồn)"
       >
         <Code2 className="w-4 h-4" />
       </IconButton>
@@ -317,6 +328,18 @@ export function EditorToolbar({ editor, onInsertImage }: EditorToolbarProps) {
       <IconButton onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Đường kẻ ngang">
         <Minus className="w-4 h-4" />
       </IconButton>
+
+      {onOpenCheatsheet && (
+        <button
+          type="button"
+          onClick={onOpenCheatsheet}
+          title="Hướng dẫn & luật viết nhanh Markdown"
+          className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-colors cursor-pointer shrink-0"
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          Markdown
+        </button>
+      )}
     </div>
   );
 }

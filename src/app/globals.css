@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 
+@plugin '@tailwindcss/typography';
 @plugin 'tailwindcss-animate';
 
 body {
@@ -146,6 +147,42 @@ body {
 
 /* ── Selection ── */
 ::selection { background: oklch(0.72 0.18 78 / 30%); color: oklch(0.12 0.04 255); }
+
+/* ── Admin editor inputs ── */
+.editor-input:-webkit-autofill,
+.editor-input:-webkit-autofill:hover,
+.editor-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  -webkit-box-shadow: 0 0 0 1000px var(--card) inset;
+  caret-color: var(--foreground);
+  transition: background-color 9999s ease-in-out 0s;
+}
+.editor-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+}
+
+/* ── Blog reading canvas (separates article from page background) ── */
+.reading-canvas {
+  position: relative;
+  background: var(--card);
+  border: 1px solid color-mix(in oklch, var(--border) 80%, transparent);
+  border-radius: 1.5rem;
+  box-shadow:
+    0 1px 2px oklch(0.16 0.04 255 / 4%),
+    0 12px 40px -12px oklch(0.16 0.04 255 / 12%);
+  overflow: hidden;
+}
+.reading-canvas::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--gold-light), var(--accent));
+}
+
 
 /* ═══════════════════════════════════════════════
    COSMIC DEEP SPACE & REALISTIC SUN SYSTEM
@@ -457,4 +494,285 @@ body {
   overflow-x: auto;
   overflow-y: hidden;
   padding: 0.5rem 0;
+}
+
+/* ── Typography & Blog Content Styles ── */
+.prose {
+  color: var(--foreground);
+  line-height: 1.75;
+}
+
+/* Headings */
+.prose h1 {
+  font-size: 2.25rem !important;
+  font-weight: 800 !important;
+  line-height: 1.25 !important;
+  margin-top: 2.5rem !important;
+  margin-bottom: 1.25rem !important;
+  color: var(--foreground) !important;
+  letter-spacing: -0.025em !important;
+}
+
+.prose h2 {
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+  margin-top: 2.25rem !important;
+  margin-bottom: 0.85rem !important;
+  padding-bottom: 0.5rem !important;
+  border-bottom: 1px solid var(--border) !important;
+  color: var(--foreground) !important;
+  letter-spacing: -0.02em !important;
+}
+
+.prose h3 {
+  font-size: 1.35rem !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  margin-top: 1.75rem !important;
+  margin-bottom: 0.65rem !important;
+  color: var(--foreground) !important;
+  letter-spacing: -0.01em !important;
+}
+
+.prose h4 {
+  font-size: 1.15rem !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  margin-top: 1.25rem !important;
+  margin-bottom: 0.5rem !important;
+  color: var(--foreground) !important;
+}
+
+/* Paragraphs & Text */
+.prose p {
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.8;
+}
+
+.prose strong,
+.prose b {
+  font-weight: 700 !important;
+  color: var(--foreground) !important;
+}
+
+.prose em,
+.prose i {
+  font-style: italic;
+}
+
+/* Inline Code */
+.prose :not(pre) > code {
+  font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 0.875em !important;
+  font-weight: 600 !important;
+  color: oklch(0.35 0.18 255) !important;
+  background-color: oklch(0.93 0.02 255 / 60%) !important;
+  border: 1px solid oklch(0.85 0.04 255 / 60%) !important;
+  padding: 0.2em 0.45em !important;
+  border-radius: 0.375rem !important;
+  white-space: break-spaces;
+}
+
+.dark .prose :not(pre) > code {
+  color: oklch(0.85 0.16 85) !important;
+  background-color: oklch(0.24 0.05 255 / 60%) !important;
+  border-color: oklch(0.36 0.06 255 / 60%) !important;
+}
+
+/* Remove default backticks added by tailwind typography */
+.prose :not(pre) > code::before,
+.prose :not(pre) > code::after {
+  content: none !important;
+}
+
+/* Blockquotes */
+.prose blockquote {
+  font-style: italic;
+  border-left: 4px solid var(--primary) !important;
+  padding-left: 1.25rem;
+  margin: 1.5rem 0;
+  color: var(--muted-foreground);
+  background: oklch(from var(--primary) l c h / 5%);
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+/* Lists */
+.prose ul {
+  list-style-type: disc !important;
+  padding-left: 1.5rem !important;
+  margin: 1.25rem 0 !important;
+}
+
+.prose ol {
+  list-style-type: decimal !important;
+  padding-left: 1.5rem !important;
+  margin: 1.25rem 0 !important;
+}
+
+.prose li {
+  margin: 0.4rem 0 !important;
+  padding-left: 0.25rem !important;
+}
+
+.prose li::marker {
+  color: var(--primary) !important;
+}
+
+/* Links */
+.prose a {
+  color: var(--primary) !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 500;
+  transition: opacity 0.15s ease;
+}
+
+.prose a:hover {
+  opacity: 0.8;
+}
+
+/* Code Blocks */
+.prose pre {
+  font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  background-color: #12131a !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.75rem !important;
+  padding: 1.15rem 1.25rem !important;
+  overflow-x: auto !important;
+  margin: 1.5rem 0 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.7 !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.25);
+}
+
+.prose pre code {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  color: inherit !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* ── Code Block Container & Top Header (Public Blog Hydration) ── */
+.code-block-container {
+  margin: 1.75rem 0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background-color: #12131a;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background-color: #1a1b26;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.code-block-lang {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+.code-block-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #cbd5e1;
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.code-block-copy-btn:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.code-block-container pre {
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* ── Highlight.js Syntax Highlighting Theme (Tokyo Night / One Dark) ── */
+.hljs {
+  color: #f1f5f9;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst {
+  color: #c084fc !important;
+  font-weight: 600;
+}
+
+.hljs-string,
+.hljs-title.class_,
+.hljs-doctag {
+  color: #34d399 !important;
+}
+
+.hljs-title,
+.hljs-section,
+.hljs-function {
+  color: #60a5fa !important;
+  font-weight: 600;
+}
+
+.hljs-number,
+.hljs-literal,
+.hljs-variable,
+.hljs-template-variable {
+  color: #fb923c !important;
+}
+
+.hljs-type,
+.hljs-built_in,
+.hljs-builtin-name {
+  color: #38bdf8 !important;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: #64748b !important;
+  font-style: italic;
+}
+
+.hljs-tag,
+.hljs-name,
+.hljs-attribute {
+  color: #f43f5e !important;
+}
+
+.hljs-attr {
+  color: #fcd34d !important;
+}
+
+.hljs-symbol,
+.hljs-bullet {
+  color: #a78bfa !important;
+}
+
+.hljs-params {
+  color: #e2e8f0 !important;
 }

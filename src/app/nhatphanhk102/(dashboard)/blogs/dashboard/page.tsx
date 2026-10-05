@@ -1,13 +1,33 @@
 import { getAllBlogsFromDb } from '@/lib/actions/blog';
-import { FileText, BarChart3, TrendingUp, Archive, Eye, Tag } from 'lucide-react';
+import {
+  FileText,
+  BarChart3,
+  TrendingUp,
+  Archive,
+  Eye,
+  Tag,
+  ExternalLink,
+  ShieldCheck,
+  Flame,
+  Pencil,
+} from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = { title: 'Blog Dashboard — Admin' };
+export const metadata: Metadata = { title: 'Blog Dashboard & Analytics — Admin' };
 
-function StatCard({ title, value, icon: Icon, color = 'default', sub }: {
-  title: string; value: number | string; icon: React.ComponentType<{ className?: string }>;
-  color?: 'default' | 'green' | 'yellow' | 'blue' | 'purple'; sub?: string;
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  color = 'default',
+  sub,
+}: {
+  title: string;
+  value: number | string;
+  icon: React.ComponentType<{ className?: string }>;
+  color?: 'default' | 'green' | 'yellow' | 'blue' | 'purple';
+  sub?: string;
 }) {
   const colors = {
     default: 'bg-muted text-muted-foreground',
@@ -34,11 +54,11 @@ function MiniBar({ label, value, max, color }: { label: string; value: number; m
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
     <div className="flex items-center gap-3">
-      <span className="text-xs text-muted-foreground w-20 shrink-0 truncate">{label}</span>
+      <span className="text-xs text-muted-foreground w-24 shrink-0 truncate">{label}</span>
       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs font-medium text-foreground w-6 text-right">{value}</span>
+      <span className="text-xs font-medium text-foreground w-8 text-right">{value}</span>
     </div>
   );
 }
@@ -51,6 +71,11 @@ export default async function BlogDashboardPage() {
   const draft = blogs.filter(b => b.status === 'DRAFT').length;
   const archived = blogs.filter(b => b.status === 'ARCHIVED').length;
   const totalViews = blogs.reduce((sum, b) => sum + (b.viewCount ?? 0), 0);
+
+  // Sort blogs by views descending for leaderboard & view breakdown
+  const blogsByViews = [...blogs].sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0));
+  const topViewedPosts = blogsByViews.slice(0, 5);
+  const maxViews = Math.max(...blogs.map(b => b.viewCount ?? 0), 1);
 
   // Tag distribution
   const tagMap = new Map<string, number>();
@@ -83,24 +108,103 @@ export default async function BlogDashboardPage() {
     <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-6xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Blog Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Overview and analytics for your blog posts</p>
+          <h1 className="text-2xl font-bold text-foreground">Blog Dashboard & Analytics</h1>
+          <p className="text-sm text-muted-foreground">Tổng quan bài viết và thống kê lượt xem đã lọc Unique View</p>
         </div>
         <Link
           href="/nhatphanhk102/blogs"
-          className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
         >
-          <FileText className="h-4 w-4" /> View All Posts
+          <FileText className="h-4 w-4" /> Quản lý bài viết
         </Link>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <StatCard title="Total Posts" value={total} icon={FileText} />
-        <StatCard title="Published" value={published} icon={TrendingUp} color="green" sub="Live on site" />
-        <StatCard title="Drafts" value={draft} icon={BarChart3} color="yellow" sub="In progress" />
-        <StatCard title="Archived" value={archived} icon={Archive} color="purple" sub="Hidden" />
-        <StatCard title="Total Views" value={totalViews.toLocaleString()} icon={Eye} color="blue" sub="All time" />
+        <StatCard title="Tổng bài viết" value={total} icon={FileText} />
+        <StatCard title="Công khai" value={published} icon={TrendingUp} color="green" sub="Hiển thị trên web" />
+        <StatCard title="Bản nháp" value={draft} icon={BarChart3} color="yellow" sub="Đang biên tập" />
+        <StatCard title="Lưu trữ" value={archived} icon={Archive} color="purple" sub="Tạm ẩn" />
+        <StatCard
+          title="Tổng Lượt xem"
+          value={totalViews.toLocaleString()}
+          icon={Eye}
+          color="blue"
+          sub="Lọc 1 view/tài khoản"
+        />
+      </div>
+
+      {/* Top Performing Posts by Unique Views */}
+      <div className="p-6 rounded-xl border border-border bg-card">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Flame className="h-5 w-5 text-amber-500" />
+            <div>
+              <h2 className="font-semibold text-foreground">Top Bài viết có Lượt xem cao nhất</h2>
+              <p className="text-xs text-muted-foreground">Xếp hạng theo số lượt xem thực tế duy nhất</p>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            Lọc Unique View
+          </span>
+        </div>
+
+        {total === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Chưa có bài viết nào.</p>
+        ) : (
+          <div className="space-y-3.5">
+            {topViewedPosts.map((blog, idx) => {
+              const views = blog.viewCount ?? 0;
+              const pct = maxViews > 0 ? Math.round((views / maxViews) * 100) : 0;
+              const totalPct = totalViews > 0 ? ((views / totalViews) * 100).toFixed(1) : '0';
+
+              return (
+                <div key={blog.id} className="p-3.5 rounded-lg border border-border/80 bg-muted/20 space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                          idx === 0
+                            ? 'bg-amber-500 text-white shadow-xs'
+                            : idx === 1
+                              ? 'bg-slate-300 text-slate-800'
+                              : idx === 2
+                                ? 'bg-amber-700/60 text-white'
+                                : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {idx + 1}
+                      </span>
+                      <Link
+                        href={`/nhatphanhk102/blogs/editor/${blog.id}`}
+                        className="font-medium text-sm text-foreground hover:text-primary transition-colors truncate"
+                      >
+                        {blog.title}
+                      </Link>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-foreground px-2 py-0.5 rounded-md bg-card border border-border">
+                        <Eye className="w-3.5 h-3.5 text-primary" />
+                        {views.toLocaleString()} views
+                      </span>
+                      <span className="text-xs text-muted-foreground">({totalPct}%)</span>
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-primary to-amber-500 rounded-full transition-all"
+                      style={{ width: `${Math.max(pct, views > 0 ? 3 : 0)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -108,8 +212,8 @@ export default async function BlogDashboardPage() {
         <div className="p-6 rounded-xl border border-border bg-card">
           <div className="flex items-center gap-2 mb-5">
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            <h2 className="font-semibold text-foreground">Posts by Month</h2>
-            <span className="text-xs text-muted-foreground ml-auto">Last 6 months</span>
+            <h2 className="font-semibold text-foreground">Số bài viết theo tháng</h2>
+            <span className="text-xs text-muted-foreground ml-auto">6 tháng gần nhất</span>
           </div>
           <div className="flex items-end gap-2 h-32">
             {postsByMonth.map(m => {
@@ -134,10 +238,10 @@ export default async function BlogDashboardPage() {
         <div className="p-6 rounded-xl border border-border bg-card">
           <div className="flex items-center gap-2 mb-5">
             <Tag className="h-4 w-4 text-muted-foreground" />
-            <h2 className="font-semibold text-foreground">Top Tags</h2>
+            <h2 className="font-semibold text-foreground">Thẻ Tags phổ biến</h2>
           </div>
           {topTags.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No tags yet</p>
+            <p className="text-sm text-muted-foreground">Chưa có tag nào</p>
           ) : (
             <div className="space-y-3">
               {topTags.map(([name, count]) => (
@@ -148,51 +252,180 @@ export default async function BlogDashboardPage() {
         </div>
       </div>
 
-      {/* Status breakdown */}
+      {/* Detailed Blog Post Views Table */}
       <div className="p-6 rounded-xl border border-border bg-card">
-        <h2 className="font-semibold text-foreground mb-4">Status Breakdown</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <div>
+            <h2 className="font-semibold text-foreground">Thống kê Lượt xem chi tiết từng bài blog</h2>
+            <p className="text-xs text-muted-foreground">
+              Toàn bộ bài viết sắp xếp theo số lượt xem giảm dần
+            </p>
+          </div>
+          <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 text-xs text-foreground flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+            <span>Mỗi tài khoản/người dùng chỉ tính 1 view duy nhất, ấn lại lần 2 không tính thêm.</span>
+          </div>
+        </div>
+
         {total === 0 ? (
-          <p className="text-sm text-muted-foreground">No posts yet. <Link href="/nhatphanhk102/blogs" className="text-primary underline">Create your first post.</Link></p>
+          <p className="text-sm text-muted-foreground py-6 text-center">
+            Chưa có bài viết nào.{' '}
+            <Link href="/nhatphanhk102/blogs" className="text-primary underline">
+              Tạo bài viết đầu tiên.
+            </Link>
+          </p>
         ) : (
-          <div className="space-y-3">
-            <MiniBar label="Published" value={published} max={total} color="bg-green-500" />
-            <MiniBar label="Draft" value={draft} max={total} color="bg-yellow-500" />
-            <MiniBar label="Archived" value={archived} max={total} color="bg-purple-500" />
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 border-b border-border text-muted-foreground text-xs uppercase tracking-wider">
+                <tr>
+                  <th className="text-left px-3 py-3 font-semibold">#</th>
+                  <th className="text-left px-3 py-3 font-semibold">Bài viết</th>
+                  <th className="text-left px-3 py-3 font-semibold">Trạng thái</th>
+                  <th className="text-left px-3 py-3 font-semibold">Lượt xem (Unique)</th>
+                  <th className="text-left px-3 py-3 font-semibold">% Đóng góp</th>
+                  <th className="text-left px-3 py-3 font-semibold hidden md:table-cell">Ngày đăng</th>
+                  <th className="text-right px-3 py-3 font-semibold">Hành động</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {blogsByViews.map((blog, idx) => {
+                  const views = blog.viewCount ?? 0;
+                  const contribution = totalViews > 0 ? ((views / totalViews) * 100).toFixed(1) : '0';
+
+                  return (
+                    <tr key={blog.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-3 py-3 text-xs text-muted-foreground font-mono">{idx + 1}</td>
+                      <td className="px-3 py-3">
+                        <Link
+                          href={`/nhatphanhk102/blogs/editor/${blog.id}`}
+                          className="font-medium text-foreground hover:text-primary transition-colors line-clamp-1"
+                        >
+                          {blog.title}
+                        </Link>
+                        <span className="font-mono text-[11px] text-muted-foreground block">/{blog.slug}</span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span
+                          className={`px-2 py-0.5 text-xs rounded-full font-medium ${
+                            blog.status === 'PUBLISHED'
+                              ? 'bg-green-500/10 text-green-700 dark:text-green-400'
+                              : blog.status === 'DRAFT'
+                                ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                                : 'bg-muted text-muted-foreground'
+                          }`}
+                        >
+                          {blog.status}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 font-semibold">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted text-foreground">
+                          <Eye className="w-3.5 h-3.5 text-primary" />
+                          {views.toLocaleString()}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-xs text-muted-foreground">{contribution}%</td>
+                      <td className="px-3 py-3 text-xs text-muted-foreground hidden md:table-cell">
+                        {blog.publishedAt
+                          ? new Date(blog.publishedAt).toLocaleDateString('vi-VN', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            })
+                          : '—'}
+                      </td>
+                      <td className="px-3 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {blog.status === 'PUBLISHED' && (
+                            <Link
+                              href={`/blog/${blog.slug}`}
+                              target="_blank"
+                              title="Xem bài viết trên web"
+                              className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </Link>
+                          )}
+                          <Link
+                            href={`/nhatphanhk102/blogs/editor/${blog.id}`}
+                            title="Chỉnh sửa bài viết"
+                            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
 
-      {/* Recent posts */}
-      <div className="p-6 rounded-xl border border-border bg-card">
-        <h2 className="font-semibold text-foreground mb-4">Recent Posts</h2>
-        {recent.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No posts yet.</p>
-        ) : (
-          <div className="space-y-0 divide-y divide-border">
-            {recent.map(blog => (
-              <div key={blog.id} className="flex items-center justify-between py-3 gap-4">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{blog.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {blog.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {blog.viewCount > 0 && (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Eye className="h-3 w-3" />{blog.viewCount}
+      {/* Status breakdown & Recent posts */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="p-6 rounded-xl border border-border bg-card">
+          <h2 className="font-semibold text-foreground mb-4">Phân bố Trạng thái</h2>
+          {total === 0 ? (
+            <p className="text-sm text-muted-foreground">Chưa có bài viết.</p>
+          ) : (
+            <div className="space-y-3">
+              <MiniBar label="Công khai (Published)" value={published} max={total} color="bg-green-500" />
+              <MiniBar label="Bản nháp (Draft)" value={draft} max={total} color="bg-amber-500" />
+              <MiniBar label="Lưu trữ (Archived)" value={archived} max={total} color="bg-purple-500" />
+            </div>
+          )}
+        </div>
+
+        <div className="p-6 rounded-xl border border-border bg-card">
+          <h2 className="font-semibold text-foreground mb-4">Bài viết mới cập nhật</h2>
+          {recent.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Chưa có bài viết.</p>
+          ) : (
+            <div className="space-y-0 divide-y divide-border">
+              {recent.map(blog => (
+                <div key={blog.id} className="flex items-center justify-between py-3 gap-4">
+                  <div className="min-w-0">
+                    <Link
+                      href={`/nhatphanhk102/blogs/editor/${blog.id}`}
+                      className="text-sm font-medium text-foreground hover:text-primary transition-colors truncate block"
+                    >
+                      {blog.title}
+                    </Link>
+                    <p className="text-xs text-muted-foreground">
+                      {blog.createdAt.toLocaleDateString('vi-VN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                      })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {(blog.viewCount ?? 0) > 0 && (
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        {blog.viewCount}
+                      </span>
+                    )}
+                    <span
+                      className={`px-2 py-0.5 text-xs rounded-full ${
+                        blog.status === 'PUBLISHED'
+                          ? 'bg-green-500/10 text-green-700 dark:text-green-400'
+                          : blog.status === 'DRAFT'
+                            ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                            : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {blog.status}
                     </span>
-                  )}
-                  <span className={`px-2 py-0.5 text-xs rounded-full ${
-                    blog.status === 'PUBLISHED' ? 'bg-green-500/10 text-green-600 dark:text-green-400'
-                    : blog.status === 'DRAFT' ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400'
-                    : 'bg-muted text-muted-foreground'
-                  }`}>{blog.status}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );

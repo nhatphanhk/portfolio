@@ -25,6 +25,7 @@ function processHtml(html: string): string {
       'data-latex',
       'data-math-hydrated',
       'data-mermaid-hydrated',
+      'data-code-hydrated',
     ],
   });
 

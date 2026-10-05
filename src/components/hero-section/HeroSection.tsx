@@ -432,15 +432,15 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
         <div
           data-hero="sun-container"
           className="relative hidden lg:flex items-center justify-center"
-          style={{ minHeight: '520px' }}
+          style={{ minHeight: '580px' }}
         >
           {/* Ambient Warm Atmosphere Glow */}
           <div
             className="absolute rounded-full pointer-events-none"
             style={{
-              width: '140%',
-              height: '140%',
-              background: 'radial-gradient(circle, rgba(255, 179, 0, 0.12) 0%, rgba(245, 124, 0, 0.05) 40%, rgba(230, 81, 0, 0.015) 65%, transparent 80%)',
+              width: '130%',
+              height: '130%',
+              background: 'radial-gradient(circle, rgba(255, 179, 0, 0.14) 0%, rgba(245, 124, 0, 0.06) 35%, rgba(230, 81, 0, 0.02) 60%, transparent 75%)',
               filter: 'blur(50px)',
               animation: 'corona-pulse 7s ease-in-out infinite',
             }}

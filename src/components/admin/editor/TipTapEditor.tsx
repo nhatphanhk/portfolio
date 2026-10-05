@@ -20,6 +20,8 @@ import { SlashCommand } from './extensions/slash-command';
 import { SmartPaste } from './extensions/smart-paste';
 import { useEffect, useState } from 'react';
 import { ImageUploadModal } from './ImageUploadModal';
+import { MarkdownCheatsheetModal } from './MarkdownCheatsheetModal';
+import { codeBlockInputRules } from './extensions/code-block-shortcuts';
 
 import 'katex/dist/katex.min.css';
 
@@ -37,6 +39,7 @@ export function TipTapEditor({
   placeholder = 'Gõ / để chèn khối (bảng, sơ đồ, công thức...), hoặc dán bất cứ thứ gì: ảnh clipboard, Markdown, code...',
 }: TipTapEditorProps) {
   const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -50,6 +53,10 @@ export function TipTapEditor({
       CodeBlockLowlight.extend({
         addNodeView() {
           return ReactNodeViewRenderer(CodeBlockComponent);
+        },
+        // ```ts / ```py / ```mermaid ... with alias normalization + Mermaid starter
+        addInputRules() {
+          return codeBlockInputRules(this.type);
         },
       }).configure({ lowlight }),
       Image.configure({
@@ -107,13 +114,33 @@ export function TipTapEditor({
 
   return (
     <div className="w-full border border-border/80 rounded-2xl overflow-hidden bg-card shadow-lg shadow-slate-900/5 ring-1 ring-black/5">
-      <EditorToolbar editor={editor} onInsertImage={() => setImageModalOpen(true)} />
+      <EditorToolbar
+        editor={editor}
+        onInsertImage={() => setImageModalOpen(true)}
+        onOpenCheatsheet={() => setCheatsheetOpen(true)}
+      />
       <EditorContent editor={editor} />
+      <div className="flex items-center justify-between gap-3 px-4 py-2 border-t border-border/60 bg-muted/30 text-[11px] text-muted-foreground">
+        <span>
+          Gõ <kbd className="px-1 py-0.5 rounded border border-border bg-card font-mono">/</kbd> để chèn khối ·{' '}
+          <kbd className="px-1 py-0.5 rounded border border-border bg-card font-mono">&gt; [!NOTE]</kbd>{' '}
+          <kbd className="px-1 py-0.5 rounded border border-border bg-card font-mono">```ts</kbd>{' '}
+          <kbd className="px-1 py-0.5 rounded border border-border bg-card font-mono">## </kbd> để viết nhanh
+        </span>
+        <button
+          type="button"
+          onClick={() => setCheatsheetOpen(true)}
+          className="shrink-0 font-semibold text-primary hover:underline cursor-pointer"
+        >
+          Xem luật Markdown →
+        </button>
+      </div>
       <ImageUploadModal
         open={imageModalOpen}
         onClose={() => setImageModalOpen(false)}
         onSelect={handleImageSelect}
       />
+      <MarkdownCheatsheetModal open={cheatsheetOpen} onOpenChange={setCheatsheetOpen} />
     </div>
   );
 }

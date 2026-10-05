@@ -7,8 +7,10 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    // DIRECT_URL: dùng cho migrations (tránh lỗi advisory lock với pooled connection)
-    // DATABASE_URL: dùng cho runtime queries (pooled, hiệu năng cao)
-    url: process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? "",
+    // If DIRECT_URL is configured for local localhost but local DB isn't used, prefer DATABASE_URL
+    url:
+      process.env.DIRECT_URL && !process.env.DIRECT_URL.includes("localhost")
+        ? process.env.DIRECT_URL
+        : (process.env.DATABASE_URL ?? process.env.DIRECT_URL ?? ""),
   },
 });
