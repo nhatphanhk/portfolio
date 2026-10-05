@@ -205,7 +205,7 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations }: 
 
       {/* Table of contents sidebar (Desktop) */}
       <aside className="hidden lg:block w-80 shrink-0">
-        <div className="sticky top-28 p-5 rounded-2xl bg-card border border-border/80 shadow-xs">
+        <div className="sticky top-28">
           <BlogOutline headings={headings} readTime={post.readTime} />
         </div>
       </aside>
