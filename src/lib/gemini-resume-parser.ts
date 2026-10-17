@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ParsedResumeData } from './pdf-resume-parser';
+import { isUnrecoverableGeminiError } from './gemini-errors.ts';
 
 /**
  * Parses raw CV/Resume text using Google Gemini AI, structuring and refining
@@ -115,7 +116,12 @@ ${rawText.slice(0, 30000)}
           responseMimeType: 'application/json',
         },
       });
-      const response = await model.generateContent(prompt);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        const timer = setTimeout(() => reject(new Error('Gemini API call timed out after 30s')), 30000);
+        // Ensure timer doesn't block Node process exit if possible
+        if (typeof timer.unref === 'function') timer.unref();
+      });
+      const response = await Promise.race([model.generateContent(prompt), timeoutPromise]);
       const text = response.response.text();
       const cleaned = text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
       const parsed = JSON.parse(cleaned);
@@ -131,7 +137,11 @@ ${rawText.slice(0, 30000)}
       };
     } catch (err: any) {
       lastError = err;
-      console.warn(`Resume parsing model ${modelName} failed, trying fallback...`, err.message);
+      console.warn(`Resume parsing model ${modelName} failed:`, err.message);
+      if (isUnrecoverableGeminiError(err?.status || 0, { message: err?.message })) {
+        console.warn('Unrecoverable error during resume parsing, aborting candidate models.');
+        break;
+      }
     }
   }
 

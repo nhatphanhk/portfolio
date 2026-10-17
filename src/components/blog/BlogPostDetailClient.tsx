@@ -33,9 +33,10 @@ interface BlogPostDetailClientProps {
   post: BlogPostData;
   seriesData?: SeriesData | null;
   initialTranslations: DBTranslation[];
+  isAdmin?: boolean;
 }
 
-export function BlogPostDetailClient({ post, seriesData, initialTranslations }: BlogPostDetailClientProps) {
+export function BlogPostDetailClient({ post, seriesData, initialTranslations, isAdmin = false }: BlogPostDetailClientProps) {
   const { locale, t } = useLanguage();
   const [translations, setTranslations] = useState<DBTranslation[]>(initialTranslations);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -142,7 +143,7 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations }: 
                     <Globe className="w-3.5 h-3.5" />
                     Bản dịch tiếng Việt (Lưu sẵn DB)
                   </span>
-                ) : (
+                ) : isAdmin ? (
                   <button
                     type="button"
                     onClick={handleRequestAITranslation}
@@ -156,7 +157,7 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations }: 
                     )}
                     {isTranslating ? 'Đang dịch AI...' : 'Dịch sang Tiếng Việt & Lưu DB'}
                   </button>
-                )}
+                ) : null}
               </div>
             )}
           </div>

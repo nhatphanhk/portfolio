@@ -83,6 +83,10 @@ export const RATE_LIMIT_PRESETS = {
   FORM_SUBMIT: { limit: 5, windowMs: 10 * 60 * 1000 },
   /** Gemini AI resume parsing: 5 requests per 10 minutes */
   AI_PARSING: { limit: 5, windowMs: 10 * 60 * 1000 },
+  /** Gemini AI content translation: 5 requests per 10 minutes */
+  TRANSLATION: { limit: 5, windowMs: 10 * 60 * 1000 },
+  /** Unique blog view tracking: 15 requests per minute */
+  VIEW_TRACKING: { limit: 15, windowMs: 60 * 1000 },
   /** File upload: 10 requests per 5 minutes */
   UPLOAD: { limit: 10, windowMs: 5 * 60 * 1000 },
   /** Admin account setup: 3 requests per 15 minutes */
@@ -90,4 +94,42 @@ export const RATE_LIMIT_PRESETS = {
   /** Swagger API spec: 30 requests per minute */
   DOCS_SPEC: { limit: 30, windowMs: 60 * 1000 },
 } as const;
+
+/**
+ * Validates external URLs against private, internal, or cloud metadata IP ranges to prevent SSRF.
+ */
+export function isSafePublicUrl(urlString: string): boolean {
+  try {
+    const url = new URL(urlString);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return false;
+    const hostname = url.hostname.toLowerCase();
+    if (
+      hostname === 'localhost' ||
+      hostname === '0.0.0.0' ||
+      hostname.startsWith('127.') || // Loopback 127.0.0.0/8
+      hostname === '::1' ||
+      hostname === '[::1]' ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('169.254.') || // Cloud metadata (AWS, GCP, Azure)
+      hostname.endsWith('.internal') ||
+      hostname.endsWith('.local')
+    ) {
+      return false;
+    }
+
+    // Check 172.16.0.0 - 172.31.255.255
+    const parts = hostname.split('.');
+    if (parts.length === 4 && parts[0] === '172') {
+      const second = parseInt(parts[1], 10);
+      if (!isNaN(second) && second >= 16 && second <= 31) {
+        return false;
+      }
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
 

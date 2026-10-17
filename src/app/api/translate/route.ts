@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ensureAdmin } from '@/lib/auth-utils';
+import { checkRateLimit, getClientIp, RATE_LIMIT_PRESETS } from '@/lib/rate-limit';
 import {
   generateBlogTranslationWithDetails,
   saveBlogTranslationToDb,
@@ -16,6 +17,15 @@ import {
 export async function POST(req: Request) {
   try {
     await ensureAdmin();
+
+    const ip = getClientIp(req);
+    // Rate limit: 5 AI translations per 10 minutes per IP
+    if (!checkRateLimit(`translate:${ip}`, RATE_LIMIT_PRESETS.TRANSLATION.limit, RATE_LIMIT_PRESETS.TRANSLATION.windowMs)) {
+      return NextResponse.json(
+        { ok: false, error: 'Too many translation requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
 
     const body = await req.json();
     const {

@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
-import { auth } from '@/auth';
-import { checkRateLimit, getClientIp, RATE_LIMIT_PRESETS } from '@/lib/rate-limit';
+import { ensureAdmin } from '@/lib/auth-utils';
+import { checkRateLimit, getClientIp, RATE_LIMIT_PRESETS, isSafePublicUrl } from '@/lib/rate-limit';
 import { prisma } from '@/lib/db';
 import path from 'path';
 import fs from 'fs/promises';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const ip = getClientIp(request);
     if (!checkRateLimit(`upload:${ip}`, RATE_LIMIT_PRESETS.UPLOAD.limit, RATE_LIMIT_PRESETS.UPLOAD.windowMs)) {
       return NextResponse.json(
@@ -21,6 +15,8 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       );
     }
+
+    const adminUser = await ensureAdmin();
 
     const reqContentType = request.headers.get('content-type') || '';
     let fileBuffer: Buffer;
@@ -32,8 +28,8 @@ export async function POST(request: NextRequest) {
     if (reqContentType.includes('application/json')) {
       const body = await request.json();
       const imageUrl = body.imageUrl;
-      if (!imageUrl || typeof imageUrl !== 'string' || !/^https?:\/\//i.test(imageUrl)) {
-        return NextResponse.json({ error: 'Invalid or missing image URL' }, { status: 400 });
+      if (!imageUrl || typeof imageUrl !== 'string' || !isSafePublicUrl(imageUrl)) {
+        return NextResponse.json({ error: 'Invalid, insecure, or private image URL' }, { status: 400 });
       }
       fileType = body.fileType || 'blog';
 
@@ -105,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     // Resolve uploader DB id
     const dbUser = await prisma.user.findFirst({
-      where: { email: session.user?.email ?? '' },
+      where: { email: adminUser.email ?? '' },
       select: { id: true },
     });
 
