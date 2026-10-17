@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { ensureAdmin } from '@/lib/auth-utils';
 import { parseResumePdfText } from '@/lib/pdf-resume-parser';
-import { checkRateLimit, getClientIp, RATE_LIMIT_PRESETS } from '@/lib/rate-limit';
+import { checkRateLimit, getClientIp, RATE_LIMIT_PRESETS, isSafePublicUrl } from '@/lib/rate-limit';
 import { put } from '@vercel/blob';
 import path from 'path';
 import fs from 'fs/promises';
@@ -34,11 +34,6 @@ if (typeof (global as any).Path2D === 'undefined') {
 // pdf-parse dynamic import to avoid any build-time packaging conflicts
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const ip = getClientIp(request);
     if (!checkRateLimit(`parse-pdf:${ip}`, RATE_LIMIT_PRESETS.AI_PARSING.limit, RATE_LIMIT_PRESETS.AI_PARSING.windowMs)) {
       return NextResponse.json(
@@ -46,6 +41,8 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       );
     }
+
+    await ensureAdmin();
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -102,6 +99,9 @@ export async function POST(request: NextRequest) {
         fileName = path.basename(filePath);
         fileSize = buffer.length;
       } else if (trimmedUrl.startsWith('http')) {
+        if (!isSafePublicUrl(trimmedUrl)) {
+          return NextResponse.json({ error: 'Đường dẫn URL không an toàn hoặc thuộc mạng nội bộ' }, { status: 400 });
+        }
         const fetchRes = await fetch(trimmedUrl);
         if (!fetchRes.ok) {
           return NextResponse.json({ error: 'Không thể tải file PDF từ URL này' }, { status: 400 });

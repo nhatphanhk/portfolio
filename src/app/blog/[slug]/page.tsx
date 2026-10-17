@@ -1,5 +1,6 @@
 import { MainLayout } from '@/components';
 import { notFound } from 'next/navigation';
+import { auth } from '@/auth';
 import { getPublicBlogBySlug, getBlogTranslations } from '@/lib/actions/blog';
 import { getSeriesForBlog } from '@/lib/actions/series';
 import { BlogPostDetailClient } from '@/components/blog/BlogPostDetailClient';
@@ -39,11 +40,14 @@ export default async function BlogPostPage({ params }: Props) {
 
   if (!post) notFound();
 
-  // Fetch pre-saved translations and series data directly on the server in parallel
-  const [translations, seriesData] = await Promise.all([
+  // Fetch session, pre-saved translations, and series data in parallel
+  const [session, translations, seriesData] = await Promise.all([
+    auth(),
     getBlogTranslations(post.id),
     post.seriesId ? getSeriesForBlog(post.id) : Promise.resolve(null),
   ]);
+
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === 'ADMIN';
 
   return (
     <MainLayout>
@@ -60,6 +64,7 @@ export default async function BlogPostPage({ params }: Props) {
         <BlogPostDetailClient
           post={post}
           seriesData={seriesData}
+          isAdmin={isAdmin}
           initialTranslations={translations.map(t => ({
             locale: t.locale,
             title: t.title,

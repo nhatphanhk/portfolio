@@ -21,6 +21,9 @@ const CANDIDATE_MODELS = [
   'gemini-3.5-flash',
 ];
 
+import { isUnrecoverableGeminiError } from './gemini-errors.ts';
+export { isUnrecoverableGeminiError };
+
 /**
  * Translates blog content using Google Gemini REST API with candidate models,
  * adaptive timeout, and maxOutputTokens protection for long articles.
@@ -98,7 +101,11 @@ ${hasContent ? rawContent : '(No content)'}
       const data = await res.json();
       if (!res.ok) {
         lastErrorMessage = data.error?.message || `HTTP ${res.status}: ${res.statusText}`;
-        console.warn(`Gemini model ${model} failed (${lastErrorMessage}), trying fallback...`);
+        console.warn(`Gemini model ${model} failed (${lastErrorMessage})`);
+        if (isUnrecoverableGeminiError(res.status, data)) {
+          console.warn(`Encountered unrecoverable Gemini error (${lastErrorMessage}), aborting model fallback cycle.`);
+          break;
+        }
         continue;
       }
 
@@ -139,7 +146,10 @@ ${hasContent ? rawContent : '(No content)'}
       };
     } catch (err: any) {
       lastErrorMessage = err.message || 'Connection failed';
-      console.warn(`Gemini model ${model} exception (${lastErrorMessage}), trying fallback...`);
+      console.warn(`Gemini model ${model} exception (${lastErrorMessage})`);
+      if (isUnrecoverableGeminiError(0, { message: err.message })) {
+        break;
+      }
     }
   }
 
@@ -436,7 +446,11 @@ async function runGeminiJsonPrompt<T>(
       const data = await res.json();
       if (!res.ok) {
         lastErrorMessage = data.error?.message || `HTTP ${res.status}: ${res.statusText}`;
-        console.warn(`Gemini model ${model} failed (${lastErrorMessage}), trying fallback...`);
+        console.warn(`Gemini model ${model} failed (${lastErrorMessage})`);
+        if (isUnrecoverableGeminiError(res.status, data)) {
+          console.warn(`Encountered unrecoverable Gemini error (${lastErrorMessage}), aborting model fallback cycle.`);
+          break;
+        }
         continue;
       }
 
@@ -455,7 +469,10 @@ async function runGeminiJsonPrompt<T>(
       return { ok: true, data: parsed };
     } catch (err: any) {
       lastErrorMessage = err.message || 'Connection failed';
-      console.warn(`Gemini model ${model} exception (${lastErrorMessage}), trying fallback...`);
+      console.warn(`Gemini model ${model} exception (${lastErrorMessage})`);
+      if (isUnrecoverableGeminiError(0, { message: err.message })) {
+        break;
+      }
     }
   }
 

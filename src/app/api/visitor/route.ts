@@ -11,6 +11,16 @@ const visitorSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+
+    // Rate limit: 5 requests per 10 minutes per IP (enforced before body parsing to prevent DoS)
+    if (!checkRateLimit(`visitor:${ip}`, RATE_LIMIT_PRESETS.FORM_SUBMIT.limit, RATE_LIMIT_PRESETS.FORM_SUBMIT.windowMs)) {
+      return NextResponse.json(
+        { ok: false, error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const parsed = visitorSchema.safeParse(body);
 
@@ -21,16 +31,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const ip = getClientIp(req);
-
-    // Rate limit: 5 requests per 10 minutes per IP
-    if (!checkRateLimit(`visitor:${ip}`, RATE_LIMIT_PRESETS.FORM_SUBMIT.limit, RATE_LIMIT_PRESETS.FORM_SUBMIT.windowMs)) {
-      return NextResponse.json(
-        { ok: false, error: 'Too many requests. Please try again later.' },
-        { status: 429 }
-      );
-    }
-
     await prisma.contact.create({
       data: {
         name: parsed.data.name,
@@ -38,6 +38,8 @@ export async function POST(req: NextRequest) {
         subject: 'Visitor Log',
         message: parsed.data.reason,
         status: 'UNREAD',
+        ipAddress: ip !== 'unknown' ? ip : null,
+        userAgent: req.headers.get('user-agent') || null,
       },
     });
 

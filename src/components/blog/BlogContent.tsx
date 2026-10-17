@@ -3,15 +3,16 @@
 import DOMPurify from 'dompurify';
 import { useEffect, useState, useRef } from 'react';
 import { useTheme } from 'next-themes';
-import { slugifyHeading, type Heading } from '@/lib/blog-utils';
+import { slugifyHeading, sanitizeBasicServer, type Heading } from '@/lib/blog-utils';
 import { hydrateRichContent } from '@/lib/rich-content';
 
 import 'katex/dist/katex.min.css';
 
 export type { Heading };
+export { sanitizeBasicServer };
 
 function processHtml(html: string): string {
-  if (typeof window === 'undefined') return html;
+  if (typeof window === 'undefined') return sanitizeBasicServer(html);
 
   const cleanHtml = DOMPurify.sanitize(html, {
     ADD_TAGS: ['iframe', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
@@ -74,7 +75,7 @@ export function BlogContent({ html, className = '' }: BlogContentProps) {
     <div
       ref={containerRef}
       className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none ${className}`}
-      dangerouslySetInnerHTML={{ __html: processedHtml || html }}
+      dangerouslySetInnerHTML={{ __html: processedHtml || sanitizeBasicServer(html) }}
     />
   );
 }

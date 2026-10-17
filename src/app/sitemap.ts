@@ -2,14 +2,20 @@ import type { MetadataRoute } from 'next';
 import { SITE_URL } from '@/lib/constants';
 import { getPublicBlogs } from '@/lib/actions/blog';
 import { getPublicProjects } from '@/lib/actions/project';
+import { getPublicSeries } from '@/lib/actions/series';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [blogs, projects] = await Promise.all([getPublicBlogs(), getPublicProjects()]);
+  const [blogs, projects, seriesList] = await Promise.all([
+    getPublicBlogs(),
+    getPublicProjects(),
+    getPublicSeries(),
+  ]);
 
   const staticRoutes: MetadataRoute.Sitemap = [
     '',
     '/resume',
     '/blog',
+    '/blog/series',
     '/project',
     '/skills',
     '/certifications',
@@ -35,5 +41,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...blogRoutes, ...projectRoutes];
+  const seriesRoutes: MetadataRoute.Sitemap = seriesList.map(s => ({
+    url: `${SITE_URL}/blog/series/${s.slug}`,
+    lastModified: new Date(s.updatedAt || s.createdAt),
+    changeFrequency: 'weekly',
+    priority: 0.6,
+  }));
+
+  return [...staticRoutes, ...blogRoutes, ...projectRoutes, ...seriesRoutes];
 }

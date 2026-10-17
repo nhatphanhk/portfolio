@@ -20,6 +20,23 @@ const contactSchema = z.object({
  */
 export async function POST(req: NextRequest) {
   try {
+    // Get client IP for logging and rate limiting
+    const ip = getClientIp(req);
+
+    // Rate limit: 5 requests per 10 minutes per IP (enforced before body parsing to prevent DoS)
+    if (!checkRateLimit(`contact:${ip}`, RATE_LIMIT_PRESETS.FORM_SUBMIT.limit, RATE_LIMIT_PRESETS.FORM_SUBMIT.windowMs)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'RATE_LIMIT_EXCEEDED',
+            message: 'Too many requests. Please try again later.',
+          },
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const parsed = contactSchema.safeParse(body);
 
@@ -38,23 +55,6 @@ export async function POST(req: NextRequest) {
     }
 
     const { name, email, subject, message } = parsed.data;
-
-    // Get client IP for logging and rate limiting
-    const ip = getClientIp(req);
-
-    // Rate limit: 5 requests per 10 minutes per IP
-    if (!checkRateLimit(`contact:${ip}`, RATE_LIMIT_PRESETS.FORM_SUBMIT.limit, RATE_LIMIT_PRESETS.FORM_SUBMIT.windowMs)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'RATE_LIMIT_EXCEEDED',
-            message: 'Too many requests. Please try again later.',
-          },
-        },
-        { status: 429 }
-      );
-    }
 
 
     await prisma.contact.create({

@@ -1,9 +1,8 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { ensureAdmin } from '@/lib/auth-utils';
-import { cache } from 'react';
 import { z } from 'zod';
 
 import { slugify } from '@/lib/utils';
@@ -38,6 +37,7 @@ export async function createSeries(data: SeriesFormData) {
       },
     });
 
+    revalidateTag('series', 'max');
     revalidatePath('/nhatphanhk102/blogs/series');
     revalidatePath('/blog');
     revalidatePath('/blog/series');
@@ -73,6 +73,7 @@ export async function updateSeries(id: string, data: SeriesFormData) {
       },
     });
 
+    revalidateTag('series', 'max');
     revalidatePath('/nhatphanhk102/blogs/series');
     revalidatePath('/blog');
     revalidatePath('/blog/series');
@@ -100,8 +101,10 @@ export async function deleteSeries(id: string) {
       where: { id },
     });
 
+    revalidateTag('series', 'max');
     revalidatePath('/nhatphanhk102/blogs/series');
     revalidatePath('/blog');
+    revalidatePath('/blog/series');
     return { ok: true };
   } catch (error) {
     console.error('Error deleting series:', error);
@@ -138,69 +141,16 @@ export async function getAllSeries() {
   }
 }
 
-export const getPublicSeries = cache(async (locale: 'vi' | 'en' = 'vi') => {
-  try {
-    const seriesList = await prisma.blogSeries.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        blogs: {
-          where: { status: 'PUBLISHED' },
-          select: { id: true, title: true, slug: true, seriesOrder: true },
-          orderBy: [
-            { seriesOrder: { sort: 'asc', nulls: 'last' } },
-            { publishedAt: { sort: 'asc', nulls: 'last' } },
-            { createdAt: 'asc' },
-          ],
-        },
-      },
-    });
-
-    const { getBatchEntityTranslationsFromDb } = await import('@/lib/gemini-translate');
-    const translationMap = await getBatchEntityTranslationsFromDb(
-      'series',
-      seriesList.map(s => s.id),
-      'en'
-    );
-
-    const isEn = locale === 'en';
-    return seriesList.map(s => {
-      const trans = translationMap.get(s.id);
-      return {
-        ...s,
-        title: isEn && trans?.title ? trans.title : s.title,
-        description: isEn && trans?.description !== undefined ? trans.description : s.description,
-        translations: trans ? {
-          en: {
-            title: trans.title || undefined,
-            description: trans.description ?? undefined,
-          },
-        } : undefined,
-      };
-    });
-  } catch (error) {
-    console.error('Error fetching public series:', error);
-    return [];
-  }
-});
-
-export const getSeriesForBlog = cache(async (blogId: string, locale: 'vi' | 'en' = 'vi') => {
-  try {
-    const blog = await prisma.blog.findUnique({
-      where: { id: blogId },
-      select: {
-        seriesId: true,
-        seriesOrder: true,
-        series: {
+export async function getPublicSeries(locale: 'vi' | 'en' = 'vi') {
+  return unstable_cache(
+    async () => {
+      try {
+        const seriesList = await prisma.blogSeries.findMany({
+          orderBy: { createdAt: 'desc' },
           include: {
             blogs: {
               where: { status: 'PUBLISHED' },
-              select: {
-                id: true,
-                title: true,
-                slug: true,
-                seriesOrder: true,
-                publishedAt: true,
-              },
+              select: { id: true, title: true, slug: true, seriesOrder: true },
               orderBy: [
                 { seriesOrder: { sort: 'asc', nulls: 'last' } },
                 { publishedAt: { sort: 'asc', nulls: 'last' } },
@@ -208,97 +158,168 @@ export const getSeriesForBlog = cache(async (blogId: string, locale: 'vi' | 'en'
               ],
             },
           },
-        },
-      },
-    });
+        });
 
-    if (!blog?.series) return null;
+        const { getBatchEntityTranslationsFromDb } = await import('@/lib/gemini-translate');
+        const translationMap = await getBatchEntityTranslationsFromDb(
+          'series',
+          seriesList.map(s => s.id),
+          'en'
+        );
 
-    let seriesTitle = blog.series.title;
-    if (locale === 'en' && blog.seriesId) {
-      const { getEntityTranslationFromDb } = await import('@/lib/gemini-translate');
-      const trans = await getEntityTranslationFromDb('series', blog.seriesId, 'en');
-      if (trans?.title) {
-        seriesTitle = trans.title;
+        const isEn = locale === 'en';
+        return seriesList.map(s => {
+          const trans = translationMap.get(s.id);
+          return {
+            ...s,
+            title: isEn && trans?.title ? trans.title : s.title,
+            description: isEn && trans?.description !== undefined ? trans.description : s.description,
+            translations: trans ? {
+              en: {
+                title: trans.title || undefined,
+                description: trans.description ?? undefined,
+              },
+            } : undefined,
+          };
+        });
+      } catch (error) {
+        console.error('Error fetching public series:', error);
+        return [];
       }
-    }
+    },
+    [`public-series-${locale}`],
+    { revalidate: 3600, tags: ['series'] }
+  )();
+}
 
-    return {
-      seriesTitle,
-      seriesSlug: blog.series.slug,
-      currentBlogId: blogId,
-      currentIndex: blog.series.blogs.findIndex(b => b.id === blogId),
-      totalParts: blog.series.blogs.length,
-      posts: blog.series.blogs.map(b => ({
-        ...b,
-        publishedAt: b.publishedAt ? b.publishedAt.toISOString() : null,
-      })),
-    };
-  } catch (error) {
-    console.error('Error getting series for blog:', error);
-    return null;
-  }
-});
-
-export const getPublicSeriesBySlug = cache(async (slug: string, locale: 'vi' | 'en' = 'vi') => {
-  try {
-    const series = await prisma.blogSeries.findUnique({
-      where: { slug },
-      include: {
-        blogs: {
-          where: { status: 'PUBLISHED' },
-          orderBy: [
-            { seriesOrder: { sort: 'asc', nulls: 'last' } },
-            { publishedAt: { sort: 'asc', nulls: 'last' } },
-            { createdAt: 'asc' },
-          ],
-          include: {
-            tags: { include: { tag: true } },
+export async function getSeriesForBlog(blogId: string, locale: 'vi' | 'en' = 'vi') {
+  return unstable_cache(
+    async () => {
+      try {
+        const blog = await prisma.blog.findUnique({
+          where: { id: blogId },
+          select: {
+            seriesId: true,
+            seriesOrder: true,
+            series: {
+              include: {
+                blogs: {
+                  where: { status: 'PUBLISHED' },
+                  select: {
+                    id: true,
+                    title: true,
+                    slug: true,
+                    seriesOrder: true,
+                    publishedAt: true,
+                  },
+                  orderBy: [
+                    { seriesOrder: { sort: 'asc', nulls: 'last' } },
+                    { publishedAt: { sort: 'asc', nulls: 'last' } },
+                    { createdAt: 'asc' },
+                  ],
+                },
+              },
+            },
           },
-        },
-      },
-    });
+        });
 
-    if (!series) return null;
+        if (!blog?.series) return null;
 
-    const { getEntityTranslationFromDb } = await import('@/lib/gemini-translate');
-    const trans = await getEntityTranslationFromDb('series', series.id, 'en');
+        let seriesTitle = blog.series.title;
+        if (locale === 'en' && blog.seriesId) {
+          const { getEntityTranslationFromDb } = await import('@/lib/gemini-translate');
+          const trans = await getEntityTranslationFromDb('series', blog.seriesId, 'en');
+          if (trans?.title) {
+            seriesTitle = trans.title;
+          }
+        }
 
-    const isEn = locale === 'en';
-    const title = isEn && trans?.title ? trans.title : series.title;
-    const description = isEn && trans?.description !== undefined ? trans.description : series.description;
+        return {
+          seriesTitle,
+          seriesSlug: blog.series.slug,
+          currentBlogId: blogId,
+          currentIndex: blog.series.blogs.findIndex(b => b.id === blogId),
+          totalParts: blog.series.blogs.length,
+          posts: blog.series.blogs.map(b => ({
+            ...b,
+            publishedAt: b.publishedAt ? b.publishedAt.toISOString() : null,
+          })),
+        };
+      } catch (error) {
+        console.error('Error getting series for blog:', error);
+        return null;
+      }
+    },
+    [`series-for-blog-${blogId}-${locale}`],
+    { revalidate: 3600, tags: ['series', `series-blog-${blogId}`] }
+  )();
+}
 
-    return {
-      id: series.id,
-      title,
-      slug: series.slug,
-      description,
-      coverUrl: series.coverUrl,
-      createdAt: series.createdAt.toISOString(),
-      updatedAt: series.updatedAt.toISOString(),
-      translations: trans ? {
-        en: {
-          title: trans.title || undefined,
-          description: trans.description ?? undefined,
-        },
-      } : undefined,
-      blogs: series.blogs.map(b => ({
-        id: b.id,
-        title: b.title,
-        slug: b.slug,
-        excerpt: b.excerpt || '',
-        seriesOrder: b.seriesOrder ?? 0,
-        publishedAt: (b.publishedAt || b.createdAt).toISOString(),
-        readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
-        tags: b.tags.map(t => t.tag.name),
-        thumbnailUrl: b.thumbnailUrl || undefined,
-      })),
-    };
-  } catch (error) {
-    console.error('Error fetching series by slug:', error);
-    return null;
-  }
-});
+export async function getPublicSeriesBySlug(slug: string, locale: 'vi' | 'en' = 'vi') {
+  return unstable_cache(
+    async () => {
+      try {
+        const series = await prisma.blogSeries.findUnique({
+          where: { slug },
+          include: {
+            blogs: {
+              where: { status: 'PUBLISHED' },
+              orderBy: [
+                { seriesOrder: { sort: 'asc', nulls: 'last' } },
+                { publishedAt: { sort: 'asc', nulls: 'last' } },
+                { createdAt: 'asc' },
+              ],
+              include: {
+                tags: { include: { tag: true } },
+              },
+            },
+          },
+        });
+
+        if (!series) return null;
+
+        const { getEntityTranslationFromDb } = await import('@/lib/gemini-translate');
+        const trans = await getEntityTranslationFromDb('series', series.id, 'en');
+
+        const isEn = locale === 'en';
+        const title = isEn && trans?.title ? trans.title : series.title;
+        const description = isEn && trans?.description !== undefined ? trans.description : series.description;
+
+        return {
+          id: series.id,
+          title,
+          slug: series.slug,
+          description,
+          coverUrl: series.coverUrl,
+          createdAt: series.createdAt.toISOString(),
+          updatedAt: series.updatedAt.toISOString(),
+          translations: trans ? {
+            en: {
+              title: trans.title || undefined,
+              description: trans.description ?? undefined,
+            },
+          } : undefined,
+          blogs: series.blogs.map(b => ({
+            id: b.id,
+            title: b.title,
+            slug: b.slug,
+            excerpt: b.excerpt || '',
+            seriesOrder: b.seriesOrder ?? 0,
+            publishedAt: (b.publishedAt || b.createdAt).toISOString(),
+            readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
+            tags: b.tags.map(t => t.tag.name),
+            thumbnailUrl: b.thumbnailUrl || undefined,
+          })),
+        };
+      } catch (error) {
+        console.error('Error fetching series by slug:', error);
+        return null;
+      }
+    },
+    [`public-series-slug-${slug}-${locale}`],
+    { revalidate: 3600, tags: ['series', `series-slug-${slug}`] }
+  )();
+}
 
 /**
  * Smartly manages series order when a blog is assigned or reordered in a series:
@@ -491,6 +512,7 @@ export async function saveSeriesTranslationAction(
       return { ok: false, error: 'Failed to save series translation' };
     }
 
+    revalidateTag('series', 'max');
     revalidatePath('/blog/series');
     revalidatePath('/nhatphanhk102/blogs/series');
     return { ok: true };

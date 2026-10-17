@@ -1,4 +1,4 @@
-import { slugify } from '@/lib/utils';
+import { slugify } from './utils.ts';
 
 export interface Heading {
   id: string;
@@ -8,6 +8,17 @@ export interface Heading {
 
 export function slugifyHeading(text: string): string {
   return slugify(text);
+}
+
+/**
+ * Basic server-side sanitization to prevent XSS during SSR before DOMPurify runs on client.
+ */
+export function sanitizeBasicServer(html: string): string {
+  if (!html) return '';
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/\s+on\w+\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+)/gi, '')
+    .replace(/javascript:/gi, 'blocked:');
 }
 
 export function extractHeadings(html: string): Heading[] {

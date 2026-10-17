@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { auth } from '@/auth';
-import { getClientIp } from '@/lib/rate-limit';
+import { checkRateLimit, getClientIp, RATE_LIMIT_PRESETS } from '@/lib/rate-limit';
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -9,6 +9,13 @@ interface Params {
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
+    const ip = getClientIp(req);
+
+    // Rate limit: 15 view tracking requests per minute per IP
+    if (!checkRateLimit(`view:${ip}`, RATE_LIMIT_PRESETS.VIEW_TRACKING.limit, RATE_LIMIT_PRESETS.VIEW_TRACKING.windowMs)) {
+      return NextResponse.json({ ok: false, error: 'Rate limit exceeded' }, { status: 429 });
+    }
+
     const { id: blogId } = await params;
     if (!blogId) {
       return NextResponse.json({ ok: false, error: 'Missing blogId' }, { status: 400 });
@@ -104,7 +111,15 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     return res;
-  } catch (error) {
+  } catch (error: any) {
+    // Graceful handling of concurrent unique constraint collision (P2002)
+    if (error?.code === 'P2002') {
+      return NextResponse.json({ ok: true, isNewView: false, counted: false });
+    }
+    // If blog record is missing (P2025)
+    if (error?.code === 'P2025') {
+      return NextResponse.json({ ok: false, error: 'Blog post not found' }, { status: 404 });
+    }
     console.error('Error tracking blog view:', error);
     return NextResponse.json({ ok: false, error: 'Internal server error' }, { status: 500 });
   }
