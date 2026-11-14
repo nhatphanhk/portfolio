@@ -6,6 +6,7 @@ import { BlogListClient } from '@/components/blog/BlogListClient';
 import { UserBreadcrumb } from '@/components/UserBreadcrumb';
 import type { Metadata } from 'next';
 import { buildOpenGraph } from '@/lib/constants';
+import { getServerLocale } from '@/lib/i18n/server';
 
 const BLOG_DESCRIPTION =
   'Articles on web development, TypeScript, React, Next.js, system design, and engineering best practices.';
@@ -19,10 +20,8 @@ export const metadata: Metadata = {
 export const revalidate = 3600;
 
 export default async function BlogPage() {
-  const [posts, seriesList] = await Promise.all([
-    getPublicBlogs(),
-    getPublicSeries(),
-  ]);
+  const locale = await getServerLocale();
+  const [posts, seriesList] = await Promise.all([getPublicBlogs(locale), getPublicSeries(locale)]);
 
   return (
     <MainLayout>

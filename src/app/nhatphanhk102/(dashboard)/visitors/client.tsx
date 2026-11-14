@@ -5,6 +5,7 @@ import { Users, Trash2, Search, Calendar, Mail, MessageSquare, TrendingUp, Clock
 import { deleteVisitorLog } from '@/lib/actions/contact';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
 import { PaginationControl } from '@/components/ui/PaginationControl';
+import { formatDate } from '@/lib/utils';
 
 type VisitorLog = {
   id: string;
@@ -250,11 +251,7 @@ export function VisitorLogsClient({ logs }: Props) {
                     <td className="px-4 py-3.5 text-muted-foreground text-xs hidden sm:table-cell">
                       <div>
                         <p>
-                          {new Date(log.createdAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
+                          {formatDate(log.createdAt, 'vi')}
                         </p>
                         <p className="opacity-60">
                           {new Date(log.createdAt).toLocaleTimeString('en-US', {

@@ -47,3 +47,9 @@ export function extractHeadings(html: string): Heading[] {
 
   return headings;
 }
+
+/** Estimated reading time in whole minutes (200 wpm) from HTML content; markup is not counted. */
+export function estimateReadMinutes(html: string): number {
+  const words = html.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 200));
+}

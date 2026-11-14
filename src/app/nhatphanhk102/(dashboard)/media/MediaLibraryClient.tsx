@@ -7,6 +7,7 @@ import { deleteMedia } from '@/lib/actions/media';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { toast } from 'sonner';
+import { formatDate } from '@/lib/utils';
 
 type MediaItem = {
   id: string;
@@ -284,11 +285,7 @@ export function MediaLibraryClient({ media: initialMedia }: MediaLibraryClientPr
             <div className="space-y-1">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Uploaded</p>
               <p className="text-xs text-foreground">
-                {new Date(selectedItem.createdAt).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
+                {formatDate(selectedItem.createdAt, 'vi')}
               </p>
             </div>
 

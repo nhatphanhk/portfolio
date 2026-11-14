@@ -36,7 +36,27 @@ const profileSchema = z.object({
 
 export type ProfileFormData = z.infer<typeof profileSchema>;
 
-export const getProfile = async (locale: 'vi' | 'en' = 'vi') => {
+/** What the public site shows before the admin has saved a profile row. */
+const PROFILE_FALLBACK = {
+  id: null as null,
+  name: PROFILE.name,
+  handle: PROFILE.handle,
+  title: PROFILE.title,
+  tagline: PROFILE.tagline,
+  bio: PROFILE.bio,
+  bio2: PROFILE.bio2,
+  careerObjective: null as null,
+  location: PROFILE.location,
+  email: PROFILE.email,
+  phone: null as null,
+  resumeUrl: PROFILE.resumeUrl,
+  avatarUrl: PROFILE.avatarUrl,
+  softSkills: null as null,
+  interests: null as null,
+  fromDb: false as const,
+};
+
+export const getProfile = async (locale: 'vi' | 'en' = 'en') => {
   return unstable_cache(
     async () => {
       let dbProfile = null;
@@ -45,24 +65,7 @@ export const getProfile = async (locale: 'vi' | 'en' = 'vi') => {
       } catch (error) {
         console.error('Error fetching profile from db:', error);
       }
-      const fallback = {
-        id: null as null,
-        name: PROFILE.name,
-        handle: PROFILE.handle,
-        title: PROFILE.title,
-        tagline: PROFILE.tagline,
-        bio: PROFILE.bio,
-        bio2: PROFILE.bio2,
-        careerObjective: null as null,
-        location: PROFILE.location,
-        email: PROFILE.email,
-        phone: null as null,
-        resumeUrl: PROFILE.resumeUrl,
-        avatarUrl: PROFILE.avatarUrl,
-        softSkills: null as null,
-        interests: null as null,
-        fromDb: false as const,
-      };
+      const fallback = PROFILE_FALLBACK;
       if (!dbProfile) return fallback;
 
       const { getEntityTranslationFromDb } = await import('@/lib/gemini-translate');
@@ -187,6 +190,24 @@ export async function deleteSocialLink(id: string) {
   return { ok: true };
 }
 
+// ─── Admin readers (uncached, original language) ──────────────────────────────
+
+export async function getProfileForAdmin() {
+  await ensureAdmin();
+  const dbProfile = await prisma.profile.findFirst();
+  return dbProfile ?? PROFILE_FALLBACK;
+}
+
+export async function getSocialLinksForAdmin() {
+  await ensureAdmin();
+  return prisma.socialLink.findMany({ orderBy: { order: 'asc' } });
+}
+
+export async function getExperiencesForAdmin() {
+  await ensureAdmin();
+  return prisma.experience.findMany({ orderBy: { order: 'asc' } });
+}
+
 // ─── Experience ───────────────────────────────────────────────────────────────
 
 const expSchema = z.object({
@@ -202,7 +223,7 @@ const expSchema = z.object({
 
 export type ExperienceFormData = z.infer<typeof expSchema>;
 
-export async function getExperiences(locale: 'vi' | 'en' = 'vi') {
+export async function getExperiences(locale: 'vi' | 'en' = 'en') {
   try {
     const exps = await prisma.experience.findMany({ orderBy: { order: 'asc' } });
     if (exps.length > 0) {

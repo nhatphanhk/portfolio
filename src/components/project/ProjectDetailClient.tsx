@@ -3,6 +3,7 @@
 import React from 'react';
 import { ExternalLink, Github, Calendar, Tag, CheckCircle } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/context';
+import { formatDate } from '@/lib/utils';
 
 interface ProjectDetailClientProps {
   project: {
@@ -167,11 +168,7 @@ export function ProjectDetailClient({ project }: ProjectDetailClientProps) {
               <div>
                 <p className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">Published</p>
                 <p className="font-medium text-foreground text-xs mt-0.5">
-                  {new Date(project.publishedAt).toLocaleDateString(isEn ? 'en-US' : 'vi-VN', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
+                  {formatDate(project.publishedAt, isEn ? 'en' : 'vi', 'long')}
                 </p>
               </div>
             </div>

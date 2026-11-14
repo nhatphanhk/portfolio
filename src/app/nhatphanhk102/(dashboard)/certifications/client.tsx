@@ -6,6 +6,7 @@ import { CertificationDialog } from '@/components/admin/CertificationDialog';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { deleteCertification } from '@/lib/actions/certification';
+import { formatDate } from '@/lib/utils';
 
 type Certification = {
   id: string;
@@ -29,10 +30,6 @@ export function AdminCertificationsClient({ certifications }: { certifications: 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
-
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-  };
 
   const toInputDate = (date: Date) => {
     return new Date(date).toISOString().split('T')[0];
@@ -151,9 +148,9 @@ export function AdminCertificationsClient({ certifications }: { certifications: 
                       </div>
                     </td>
                     <td className="px-4 py-3.5 hidden sm:table-cell text-muted-foreground">
-                      <div>{formatDate(cert.issueDate)}</div>
+                      <div>{formatDate(cert.issueDate, 'vi', 'monthYear')}</div>
                       {cert.expiryDate && (
-                        <div className="text-xs opacity-75">Expires: {formatDate(cert.expiryDate)}</div>
+                        <div className="text-xs opacity-75">Expires: {formatDate(cert.expiryDate, 'vi', 'monthYear')}</div>
                       )}
                     </td>
                     <td className="px-4 py-3.5 hidden md:table-cell">

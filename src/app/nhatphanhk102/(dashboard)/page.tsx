@@ -6,6 +6,7 @@ import { getAllSkillsFromDb } from '@/lib/actions/skill';
 import { getAllCertificationsFromDb } from '@/lib/actions/certification';
 import { getAllContactsFromDb } from '@/lib/actions/contact';
 import type { Metadata } from 'next';
+import { formatDate } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Dashboard — Admin' };
 
@@ -80,11 +81,7 @@ export default async function DashboardPage() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground truncate">{post.title}</p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(post.createdAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
+                    {formatDate(post.createdAt, 'vi')}
                   </p>
                 </div>
                 <span className={`px-2 py-0.5 text-xs rounded-full shrink-0 ${post.status === 'PUBLISHED' ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-muted text-muted-foreground'}`}>

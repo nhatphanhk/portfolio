@@ -108,6 +108,7 @@ export async function updateProject(id: string, formData: ProjectFormData) {
     const { tags, thumbnailUrl, demoUrl, repoUrl, ...rest } = parsed.data;
     const tagIds = await syncTags(tags ? tags.split(',') : []);
 
+    const previous = await prisma.project.findUnique({ where: { id }, select: { slug: true, publishedAt: true } });
     await prisma.project.update({
       where: { id },
       data: {
@@ -115,6 +116,8 @@ export async function updateProject(id: string, formData: ProjectFormData) {
         thumbnailUrl: thumbnailUrl || null,
         demoUrl: demoUrl || null,
         repoUrl: repoUrl || null,
+        // Stamp the first publish; keep the date on later edits/unpublish
+        publishedAt: rest.status === 'PUBLISHED' ? (previous?.publishedAt ?? new Date()) : undefined,
         tags: { deleteMany: {}, create: tagIds.map(tagId => ({ tagId })) },
       },
     });
@@ -123,6 +126,7 @@ export async function updateProject(id: string, formData: ProjectFormData) {
     revalidatePath('/nhatphanhk102/projects');
     revalidatePath('/project');
     revalidatePath(`/project/${rest.slug}`);
+    if (previous?.slug && previous.slug !== rest.slug) revalidatePath(`/project/${previous.slug}`);
     revalidatePath('/');
     return { ok: true };
   } catch (err) {
@@ -171,7 +175,7 @@ export async function getAllProjectsFromDb() {
   }
 }
 
-export async function getPublicProjects(locale: 'vi' | 'en' = 'vi') {
+export async function getPublicProjects(locale: 'vi' | 'en' = 'en') {
   return unstable_cache(
     async () => {
       try {
@@ -223,7 +227,7 @@ export async function getPublicProjects(locale: 'vi' | 'en' = 'vi') {
   )();
 }
 
-export const getPublicProjectBySlug = async (slug: string, locale: 'vi' | 'en' = 'vi') => {
+export const getPublicProjectBySlug = async (slug: string, locale: 'vi' | 'en' = 'en') => {
   return unstable_cache(
     async () => {
       try {
@@ -317,7 +321,11 @@ export async function saveProjectTranslationAction(
       return { ok: false, error: 'Failed to save project translation' };
     }
 
+    const saved = await prisma.project.findUnique({ where: { id: projectId }, select: { slug: true } });
+    revalidateTag('projects', 'max');
     revalidatePath('/project');
+    revalidatePath('/');
+    if (saved?.slug) revalidatePath(`/project/${saved.slug}`);
     revalidatePath('/nhatphanhk102/projects');
     return { ok: true };
   } catch (error) {

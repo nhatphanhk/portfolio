@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { formatDate } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Blog Dashboard & Analytics — Admin' };
 
@@ -327,11 +328,7 @@ export default async function BlogDashboardPage() {
                       <td className="px-3 py-3 text-xs text-muted-foreground">{contribution}%</td>
                       <td className="px-3 py-3 text-xs text-muted-foreground hidden md:table-cell">
                         {blog.publishedAt
-                          ? new Date(blog.publishedAt).toLocaleDateString('vi-VN', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                            })
+                          ? formatDate(blog.publishedAt, 'vi', 'numeric')
                           : '—'}
                       </td>
                       <td className="px-3 py-3 text-right">
@@ -395,11 +392,7 @@ export default async function BlogDashboardPage() {
                       {blog.title}
                     </Link>
                     <p className="text-xs text-muted-foreground">
-                      {blog.createdAt.toLocaleDateString('vi-VN', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                      })}
+                      {formatDate(blog.createdAt, 'vi', 'numeric')}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">

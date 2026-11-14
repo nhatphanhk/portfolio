@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath, revalidateTag } from 'next/cache';
+import { prisma } from '@/lib/db';
 import { ensureAdmin } from '@/lib/auth-utils';
 import { checkRateLimit, getClientIp, RATE_LIMIT_PRESETS } from '@/lib/rate-limit';
 import {
@@ -13,6 +15,50 @@ import {
   generateSiteContentTranslationWithDetails,
   saveSiteContentTranslationsToDb,
 } from '@/lib/gemini-translate';
+
+/** Saved translations feed cached public pages; purge the matching caches so they show up at once. */
+async function revalidateTranslatedEntity(entityType: string, id?: string) {
+  const slugOf = async (find: () => Promise<{ slug: string } | null>) => (id ? (await find().catch(() => null))?.slug : undefined);
+  switch (entityType) {
+    case 'blog': {
+      revalidateTag('blogs', 'max');
+      revalidateTag('series', 'max');
+      revalidatePath('/blog');
+      revalidatePath('/');
+      const slug = await slugOf(() => prisma.blog.findUnique({ where: { id }, select: { slug: true } }));
+      if (slug) revalidatePath(`/blog/${slug}`);
+      break;
+    }
+    case 'project': {
+      revalidateTag('projects', 'max');
+      revalidatePath('/project');
+      revalidatePath('/');
+      const slug = await slugOf(() => prisma.project.findUnique({ where: { id }, select: { slug: true } }));
+      if (slug) revalidatePath(`/project/${slug}`);
+      break;
+    }
+    case 'series': {
+      revalidateTag('series', 'max');
+      revalidateTag('blogs', 'max');
+      revalidatePath('/blog/series');
+      revalidatePath('/blog');
+      const slug = await slugOf(() => prisma.blogSeries.findUnique({ where: { id }, select: { slug: true } }));
+      if (slug) revalidatePath(`/blog/series/${slug}`);
+      break;
+    }
+    case 'profile':
+    case 'experience':
+      revalidateTag('profile', 'max');
+      revalidateTag('social-links', 'max');
+      revalidatePath('/resume');
+      revalidatePath('/');
+      break;
+    case 'site_content':
+      revalidateTag('site-content', 'max');
+      revalidatePath('/');
+      break;
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -96,6 +142,7 @@ export async function POST(req: Request) {
           );
         }
 
+        await revalidateTranslatedEntity(entityType, id);
         return NextResponse.json({ ok: true });
       }
 
@@ -115,6 +162,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: false, error: 'AI translation failed' }, { status: 500 });
       }
 
+      await revalidateTranslatedEntity('blog', id);
       return NextResponse.json({ ok: true, translation, data: translation });
     }
 
@@ -164,6 +212,7 @@ export async function POST(req: Request) {
           );
         }
 
+        await revalidateTranslatedEntity(entityType, id);
         return NextResponse.json({ ok: true });
       }
     }
@@ -212,6 +261,7 @@ export async function POST(req: Request) {
           );
         }
 
+        await revalidateTranslatedEntity(entityType, id);
         return NextResponse.json({ ok: true });
       }
     }
@@ -265,6 +315,7 @@ export async function POST(req: Request) {
           );
         }
 
+        await revalidateTranslatedEntity(entityType, id);
         return NextResponse.json({ ok: true });
       }
     }
@@ -315,6 +366,7 @@ export async function POST(req: Request) {
           );
         }
 
+        await revalidateTranslatedEntity(entityType, id);
         return NextResponse.json({ ok: true });
       }
     }
@@ -351,6 +403,7 @@ export async function POST(req: Request) {
           );
         }
 
+        await revalidateTranslatedEntity(entityType, id);
         return NextResponse.json({ ok: true });
       }
     }

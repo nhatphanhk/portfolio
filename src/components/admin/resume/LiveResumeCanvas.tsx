@@ -25,6 +25,7 @@ import {
   SECTION_META,
   DEFAULT_HARVARD_ORDER,
 } from '@/lib/resume-layout';
+import { formatDate } from '@/lib/utils';
 
 const CATEGORY_LABELS: Record<string, string> = {
   LANGUAGE: 'Programming Languages',
@@ -821,13 +822,13 @@ export function LiveResumeCanvas({
                       title={isEditMode ? 'Nhấp để đổi mốc thời gian' : undefined}
                     >
                       {exp.startDate
-                        ? new Date(exp.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                        ? formatDate(exp.startDate, 'en', 'monthYear')
                         : ''}{' '}
                       –{' '}
                       {exp.isCurrent
                         ? 'Present'
                         : exp.endDate
-                        ? new Date(exp.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                        ? formatDate(exp.endDate, 'en', 'monthYear')
                         : ''}
                     </span>
                   </div>

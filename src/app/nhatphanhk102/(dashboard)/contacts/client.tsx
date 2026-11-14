@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { deleteContact, updateContactStatus } from '@/lib/actions/contact';
+import { formatDate } from '@/lib/utils';
 
 type Contact = {
   id: string;
@@ -223,11 +224,7 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
                     <td className="px-4 py-3.5 hidden sm:table-cell text-muted-foreground">
                       <div className="flex items-center gap-1.5 text-xs">
                         <Calendar className="h-3 w-3 text-muted-foreground/70" />
-                        {new Date(contact.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
+                        {formatDate(contact.createdAt, 'vi')}
                       </div>
                     </td>
                     <td className="px-4 py-3.5">
@@ -313,7 +310,7 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
                   </a>
                 </div>
                 <div className="text-right text-xs text-muted-foreground">
-                  <p>{new Date(viewTarget.createdAt).toLocaleDateString()}</p>
+                  <p>{formatDate(viewTarget.createdAt, 'vi', 'numeric')}</p>
                   <p>{new Date(viewTarget.createdAt).toLocaleTimeString()}</p>
                 </div>
               </div>

@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { ensureAdmin } from '@/lib/auth-utils';
 import { smartReorderSeriesBlogs, compactSeriesOrders } from '@/lib/actions/series';
 import { slugify } from '@/lib/utils';
+import { estimateReadMinutes } from '@/lib/blog-utils';
 
 const blogSchema = z.object({
   title: z.string().min(3).max(255),
@@ -114,6 +115,7 @@ export async function createBlog(formData: BlogFormData) {
     }
 
     revalidateTag('blogs', 'max');
+    revalidateTag('series', 'max');
     revalidatePath('/nhatphanhk102/blogs');
     revalidatePath('/blog');
     revalidatePath('/blog/series');
@@ -144,7 +146,7 @@ export async function updateBlog(id: string, formData: BlogFormData) {
 
     const oldBlog = await prisma.blog.findUnique({
       where: { id },
-      select: { seriesId: true, seriesOrder: true, slug: true },
+      select: { seriesId: true, seriesOrder: true, slug: true, publishedAt: true },
     });
 
     const parsedSeriesOrder =
@@ -158,15 +160,9 @@ export async function updateBlog(id: string, formData: BlogFormData) {
         seriesId: targetSeriesId,
         seriesOrder: parsedSeriesOrder,
         thumbnailUrl: thumbnailUrl || null,
-        publishedAt:
-          rest.status === 'PUBLISHED'
-            ? ((
-                await prisma.blog.findUnique({
-                  where: { id },
-                  select: { publishedAt: true },
-                })
-              )?.publishedAt ?? new Date())
-            : null,
+        // First publish stamps the date; unpublish/republish keeps it so ordering and the
+        // sitemap do not jump around.
+        publishedAt: rest.status === 'PUBLISHED' ? (oldBlog?.publishedAt ?? new Date()) : undefined,
         tags: {
           deleteMany: {},
           create: tagIds.map(tagId => ({ tagId })),
@@ -185,10 +181,12 @@ export async function updateBlog(id: string, formData: BlogFormData) {
     }
 
     revalidateTag('blogs', 'max');
+    revalidateTag('series', 'max');
     revalidatePath('/nhatphanhk102/blogs');
     revalidatePath('/blog');
     revalidatePath('/blog/series');
     revalidatePath(`/blog/${rest.slug}`);
+    if (oldBlog?.slug && oldBlog.slug !== rest.slug) revalidatePath(`/blog/${oldBlog.slug}`);
     revalidatePath('/');
     return { ok: true };
   } catch (err) {
@@ -206,6 +204,7 @@ export async function deleteBlog(id: string) {
     });
     if (!blog) {
       revalidateTag('blogs', 'max');
+    revalidateTag('series', 'max');
       revalidatePath('/nhatphanhk102/blogs');
       revalidatePath('/blog');
       revalidatePath('/blog/series');
@@ -218,6 +217,7 @@ export async function deleteBlog(id: string) {
 
     await prisma.blog.delete({ where: { id } });
     revalidateTag('blogs', 'max');
+    revalidateTag('series', 'max');
     revalidatePath('/nhatphanhk102/blogs');
     revalidatePath('/blog');
     revalidatePath('/blog/series');
@@ -246,7 +246,7 @@ export async function getAllBlogsFromDb() {
   }
 }
 
-export async function getPublicBlogs(locale: 'vi' | 'en' = 'vi') {
+export async function getPublicBlogs(locale: 'vi' | 'en' = 'en') {
   return unstable_cache(
     async () => {
       try {
@@ -277,9 +277,8 @@ export async function getPublicBlogs(locale: 'vi' | 'en' = 'vi') {
             title: isEn && trans?.title ? trans.title : b.title,
             slug: b.slug,
             excerpt: isEn && trans?.excerpt !== undefined ? trans.excerpt : (b.excerpt || ''),
-            content: isEn && trans?.content ? trans.content : b.content,
             publishedAt: (b.publishedAt || b.createdAt).toISOString(),
-            readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
+            readTime: estimateReadMinutes(b.content),
             tags: b.tags.map(t => t.tag.name),
             thumbnailUrl: b.thumbnailUrl || undefined,
             status: b.status,
@@ -298,7 +297,7 @@ export async function getPublicBlogs(locale: 'vi' | 'en' = 'vi') {
   )();
 }
 
-export const getPublicBlogBySlug = async (slug: string, locale: 'vi' | 'en' = 'vi') => {
+export const getPublicBlogBySlug = async (slug: string, locale: 'vi' | 'en' = 'en') => {
   return unstable_cache(
     async () => {
       try {
@@ -326,7 +325,7 @@ export const getPublicBlogBySlug = async (slug: string, locale: 'vi' | 'en' = 'v
           excerpt: isEn && trans?.excerpt ? trans.excerpt : (b.excerpt || ''),
           content: isEn && trans?.content ? trans.content : b.content,
           publishedAt: (b.publishedAt || b.createdAt).toISOString(),
-          readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
+          readTime: estimateReadMinutes(b.content),
           tags: b.tags.map(t => t.tag.name),
           thumbnailUrl: b.thumbnailUrl || undefined,
           status: b.status,
@@ -433,7 +432,12 @@ export async function saveBlogTranslationAction(
       return { ok: false, error: 'Failed to save translation to database' };
     }
 
+    const saved = await prisma.blog.findUnique({ where: { id: blogId }, select: { slug: true } });
+    revalidateTag('blogs', 'max');
+    revalidateTag('series', 'max');
     revalidatePath('/blog');
+    revalidatePath('/');
+    if (saved?.slug) revalidatePath(`/blog/${saved.slug}`);
     revalidatePath(`/nhatphanhk102/blogs/editor/${blogId}`);
     return { ok: true };
   } catch (error) {

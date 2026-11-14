@@ -1,10 +1,11 @@
 import { getProfile, getSocialLinks } from '@/lib/actions/about';
+import { getServerLocale } from '@/lib/i18n/server';
 import FooterClient from './FooterClient';
 
 const Footer = async () => {
   const year = new Date().getFullYear();
-  const profile = await getProfile();
-  const socialLinks = await getSocialLinks();
+  const locale = await getServerLocale();
+  const [profile, socialLinks] = await Promise.all([getProfile(locale), getSocialLinks()]);
 
   return (
     <FooterClient

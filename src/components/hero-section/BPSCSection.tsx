@@ -9,6 +9,7 @@ import type { getPublicCertifications } from '@/lib/actions/certification';
 import { useLanguage } from '@/lib/i18n/context';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { formatDate } from '@/lib/utils';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -289,16 +290,12 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
                   <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3 text-muted-foreground/60" />
-                      {new Date(post.publishedAt).toLocaleDateString(isEn ? 'en-US' : 'vi-VN', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
+                      {formatDate(post.publishedAt, isEn ? 'en' : 'vi')}
                     </span>
                     <span className="text-border">·</span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3 text-muted-foreground/60" />
-                      {post.readTime}
+                      {post.readTime} {t('common.readingTime')}
                     </span>
                   </div>
                 </div>

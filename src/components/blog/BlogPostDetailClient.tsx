@@ -8,6 +8,7 @@ import { SeriesNav, type SeriesData } from '@/components/blog/SeriesNav';
 import { extractHeadings } from '@/lib/blog-utils';
 import { Clock, Sparkles, Loader2, Globe } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatDate } from '@/lib/utils';
 
 export interface BlogPostData {
   id: string;
@@ -16,7 +17,7 @@ export interface BlogPostData {
   excerpt: string;
   content: string;
   publishedAt: string;
-  readTime: string;
+  readTime: number;
   tags: string[];
   seriesId?: string;
   series?: { id: string; title: string; slug: string } | null;
@@ -168,16 +169,12 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations, is
 
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <time dateTime={post.publishedAt}>
-              {new Date(post.publishedAt).toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-              })}
+              {formatDate(post.publishedAt, locale, 'long')}
             </time>
             <span>·</span>
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              {post.readTime}
+              {post.readTime} {t('common.readingTime')}
             </span>
           </div>
 
@@ -190,7 +187,7 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations, is
 
         {/* Mobile Table of Contents */}
         <div className="lg:hidden mb-8">
-          <BlogOutline headings={headings} readTime={post.readTime} />
+          <BlogOutline headings={headings} readTime={`${post.readTime} ${t('common.readingTime')}`} />
         </div>
 
         {/* Article content */}
@@ -203,7 +200,7 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations, is
       {/* Table of contents sidebar (Desktop) */}
       <aside className="hidden lg:block w-80 shrink-0">
         <div className="sticky top-28">
-          <BlogOutline headings={headings} readTime={post.readTime} />
+          <BlogOutline headings={headings} readTime={`${post.readTime} ${t('common.readingTime')}`} />
         </div>
       </aside>
     </div>

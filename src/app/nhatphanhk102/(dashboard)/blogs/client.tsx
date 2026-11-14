@@ -7,6 +7,7 @@ import { PaginationControl } from '@/components/ui/PaginationControl';
 import { deleteBlog } from '@/lib/actions/blog';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { formatDate } from '@/lib/utils';
 
 type Blog = {
   id: string;
@@ -253,11 +254,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
                     </td>
                     <td className="px-4 py-3.5 text-muted-foreground hidden sm:table-cell">
                       {blog.publishedAt
-                        ? new Date(blog.publishedAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })
+                        ? formatDate(blog.publishedAt, 'vi')
                         : '—'}
                     </td>
                     <td className="px-4 py-3.5 text-muted-foreground hidden lg:table-cell">

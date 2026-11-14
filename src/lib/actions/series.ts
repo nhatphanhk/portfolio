@@ -6,6 +6,7 @@ import { ensureAdmin } from '@/lib/auth-utils';
 import { z } from 'zod';
 
 import { slugify } from '@/lib/utils';
+import { estimateReadMinutes } from '@/lib/blog-utils';
 
 const seriesSchema = z.object({
   title: z.string().min(2, 'Title required').max(255),
@@ -38,6 +39,7 @@ export async function createSeries(data: SeriesFormData) {
     });
 
     revalidateTag('series', 'max');
+    revalidateTag('blogs', 'max');
     revalidatePath('/nhatphanhk102/blogs/series');
     revalidatePath('/blog');
     revalidatePath('/blog/series');
@@ -62,6 +64,7 @@ export async function updateSeries(id: string, data: SeriesFormData) {
   const slug = parsed.data.slug?.trim() || slugify(parsed.data.title);
 
   try {
+    const previous = await prisma.blogSeries.findUnique({ where: { id }, select: { slug: true } });
     await prisma.blogSeries.update({
       where: { id },
       data: {
@@ -74,9 +77,12 @@ export async function updateSeries(id: string, data: SeriesFormData) {
     });
 
     revalidateTag('series', 'max');
+    revalidateTag('blogs', 'max');
     revalidatePath('/nhatphanhk102/blogs/series');
     revalidatePath('/blog');
     revalidatePath('/blog/series');
+    revalidatePath(`/blog/series/${slug}`);
+    if (previous?.slug && previous.slug !== slug) revalidatePath(`/blog/series/${previous.slug}`);
     return { ok: true };
   } catch (error: unknown) {
     console.error('Error updating series:', error);
@@ -91,6 +97,7 @@ export async function updateSeries(id: string, data: SeriesFormData) {
 export async function deleteSeries(id: string) {
   await ensureAdmin();
   try {
+    const existing = await prisma.blogSeries.findUnique({ where: { id }, select: { slug: true } });
     // Unlink blogs first
     await prisma.blog.updateMany({
       where: { seriesId: id },
@@ -102,9 +109,11 @@ export async function deleteSeries(id: string) {
     });
 
     revalidateTag('series', 'max');
+    revalidateTag('blogs', 'max');
     revalidatePath('/nhatphanhk102/blogs/series');
     revalidatePath('/blog');
     revalidatePath('/blog/series');
+    if (existing?.slug) revalidatePath(`/blog/series/${existing.slug}`);
     return { ok: true };
   } catch (error) {
     console.error('Error deleting series:', error);
@@ -141,11 +150,12 @@ export async function getAllSeries() {
   }
 }
 
-export async function getPublicSeries(locale: 'vi' | 'en' = 'vi') {
+export async function getPublicSeries(locale: 'vi' | 'en' = 'en') {
   return unstable_cache(
     async () => {
       try {
         const seriesList = await prisma.blogSeries.findMany({
+          where: { blogs: { some: { status: 'PUBLISHED' } } },
           orderBy: { createdAt: 'desc' },
           include: {
             blogs: {
@@ -192,7 +202,7 @@ export async function getPublicSeries(locale: 'vi' | 'en' = 'vi') {
   )();
 }
 
-export async function getSeriesForBlog(blogId: string, locale: 'vi' | 'en' = 'vi') {
+export async function getSeriesForBlog(blogId: string, locale: 'vi' | 'en' = 'en') {
   return unstable_cache(
     async () => {
       try {
@@ -255,7 +265,7 @@ export async function getSeriesForBlog(blogId: string, locale: 'vi' | 'en' = 'vi
   )();
 }
 
-export async function getPublicSeriesBySlug(slug: string, locale: 'vi' | 'en' = 'vi') {
+export async function getPublicSeriesBySlug(slug: string, locale: 'vi' | 'en' = 'en') {
   return unstable_cache(
     async () => {
       try {
@@ -306,7 +316,7 @@ export async function getPublicSeriesBySlug(slug: string, locale: 'vi' | 'en' = 
             excerpt: b.excerpt || '',
             seriesOrder: b.seriesOrder ?? 0,
             publishedAt: (b.publishedAt || b.createdAt).toISOString(),
-            readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
+            readTime: estimateReadMinutes(b.content),
             tags: b.tags.map(t => t.tag.name),
             thumbnailUrl: b.thumbnailUrl || undefined,
           })),
@@ -513,6 +523,7 @@ export async function saveSeriesTranslationAction(
     }
 
     revalidateTag('series', 'max');
+    revalidateTag('blogs', 'max');
     revalidatePath('/blog/series');
     revalidatePath('/nhatphanhk102/blogs/series');
     return { ok: true };

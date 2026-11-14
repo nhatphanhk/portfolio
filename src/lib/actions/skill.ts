@@ -55,7 +55,7 @@ export async function updateSkill(id: string, formData: SkillFormData) {
   const { iconUrl, ...rest } = parsed.data;
   await prisma.skill.update({
     where: { id },
-    data: { ...rest, iconUrl: iconUrl || undefined },
+    data: { ...rest, iconUrl: iconUrl || null },
   });
 
   revalidateTag('skills', 'max');

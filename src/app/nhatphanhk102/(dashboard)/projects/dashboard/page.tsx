@@ -2,6 +2,7 @@ import { getAllProjectsFromDb } from '@/lib/actions/project';
 import { Code, Star, BarChart3, Archive, TrendingUp, Tag, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { formatDate } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Projects Dashboard — Admin' };
 
@@ -217,7 +218,7 @@ export default async function ProjectsDashboardPage() {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {project.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {formatDate(project.createdAt, 'vi')}
                   </p>
                 </div>
                 <span className={`px-2 py-0.5 text-xs rounded-full shrink-0 ${

@@ -6,15 +6,15 @@ import { useSearchParams } from 'next/navigation';
 import { ArrowRight, Clock, Layers, Search, FileText } from 'lucide-react';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { useLanguage } from '@/lib/i18n/context';
+import { formatDate } from '@/lib/utils';
 
 export type PublicBlog = {
   id: string;
   title: string;
   slug: string;
   excerpt: string;
-  content: string;
   publishedAt: string;
-  readTime: string;
+  readTime: number;
   tags: string[];
   thumbnailUrl?: string;
   status: string;
@@ -39,7 +39,7 @@ interface BlogListClientProps {
 }
 
 export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('ALL');
@@ -302,15 +302,11 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
               <div className="flex items-center justify-between text-sm text-muted-foreground pt-4 border-t border-border/60">
                 <div className="flex items-center gap-4 text-xs">
                   <span>
-                    {new Date(featured.publishedAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
+                    {formatDate(featured.publishedAt, locale, 'long')}
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5" />
-                    {featured.readTime}
+                    {featured.readTime} {t('common.readingTime')}
                   </span>
                 </div>
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-foreground group-hover:gap-2 transition-all">
@@ -375,15 +371,11 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
 
                   <div className="flex items-center justify-between text-xs text-muted-foreground pt-4 border-t border-border/60 mt-auto">
                     <span>
-                      {new Date(post.publishedAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
+                      {formatDate(post.publishedAt, locale)}
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {post.readTime}
+                      {post.readTime} {t('common.readingTime')}
                     </span>
                   </div>
                 </article>

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { isVercelBlobUrl } from '@/lib/utils';
+import { isVercelBlobUrl, formatDate } from '@/lib/utils';
 import {
   Layers,
   BookOpen,
@@ -22,7 +22,7 @@ export interface SeriesDetailPost {
   excerpt: string;
   seriesOrder: number;
   publishedAt: string;
-  readTime: string;
+  readTime: number;
   tags: string[];
   thumbnailUrl?: string;
 }
@@ -49,7 +49,7 @@ interface SeriesDetailClientProps {
 }
 
 export function SeriesDetailClient({ series }: SeriesDetailClientProps) {
-  const { t, isEn } = useLanguage();
+  const { t, isEn, locale } = useLanguage();
 
   const title =
     isEn && series.translations?.en?.title
@@ -63,7 +63,7 @@ export function SeriesDetailClient({ series }: SeriesDetailClientProps) {
 
   // Compute total read time in minutes
   const totalMinutes = series.blogs.reduce((acc, b) => {
-    const mins = parseInt(b.readTime.split(' ')[0], 10) || 3;
+    const mins = b.readTime || 3;
     return acc + mins;
   }, 0);
 
@@ -177,16 +177,12 @@ export function SeriesDetailClient({ series }: SeriesDetailClientProps) {
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5" />
-                            {blog.readTime}
+                            {blog.readTime} {t('common.readingTime')}
                           </span>
                           <span>•</span>
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5" />
-                            {new Date(blog.publishedAt).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
+                            {formatDate(blog.publishedAt, locale)}
                           </span>
                         </div>
                       </div>

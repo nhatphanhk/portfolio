@@ -3,6 +3,7 @@
 import React from 'react';
 import { ExternalLink, Calendar, CheckCircle, XCircle } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/context';
+import { formatDate } from '@/lib/utils';
 
 interface CertificationItem {
   id: string;
@@ -25,7 +26,6 @@ export default function CertificationsClient({ certifications }: CertificationsC
   const { t, locale } = useLanguage();
   const active = certifications.filter(c => c.status === 'ACTIVE');
   const expired = certifications.filter(c => c.status === 'EXPIRED');
-  const dateLocale = locale === 'vi' ? 'vi-VN' : 'en-US';
 
   return (
     <>
@@ -82,18 +82,12 @@ export default function CertificationsClient({ certifications }: CertificationsC
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
                       {t('certifications.issued')}{' '}
-                      {new Date(cert.issueDate).toLocaleDateString(dateLocale, {
-                        month: 'short',
-                        year: 'numeric',
-                      })}
+                      {formatDate(cert.issueDate, locale, 'monthYear')}
                     </span>
                     {cert.expiryDate && (
                       <span className="text-muted-foreground/60">
                         · {t('certifications.expired')}{' '}
-                        {new Date(cert.expiryDate).toLocaleDateString(dateLocale, {
-                          month: 'short',
-                          year: 'numeric',
-                        })}
+                        {formatDate(cert.expiryDate, locale, 'monthYear')}
                       </span>
                     )}
                   </div>
@@ -151,19 +145,13 @@ export default function CertificationsClient({ certifications }: CertificationsC
                 <div className="text-xs text-muted-foreground/70">
                   <span>
                     {t('certifications.issued')}{' '}
-                    {new Date(cert.issueDate).toLocaleDateString(dateLocale, {
-                      month: 'short',
-                      year: 'numeric',
-                    })}
+                    {formatDate(cert.issueDate, locale, 'monthYear')}
                   </span>
                   {cert.expiryDate && (
                     <span>
                       {' '}
                       · {t('certifications.expired')}{' '}
-                      {new Date(cert.expiryDate).toLocaleDateString(dateLocale, {
-                        month: 'short',
-                        year: 'numeric',
-                      })}
+                      {formatDate(cert.expiryDate, locale, 'monthYear')}
                     </span>
                   )}
                 </div>

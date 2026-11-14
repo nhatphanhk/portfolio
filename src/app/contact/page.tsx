@@ -25,8 +25,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export const revalidate = 3600;
 
 export default async function ContactPage() {
+  const locale = await getServerLocale();
   const [profile, socialLinks] = await Promise.all([
-    getProfile(),
+    getProfile(locale),
     getSocialLinks(),
   ]);
 

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { en, type TranslationDict } from './locales/en';
 import { vi } from './locales/vi';
 
@@ -20,41 +21,36 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'portfolio_locale';
 const COOKIE_NAME = 'NEXT_LOCALE';
 
+/**
+ * The NEXT_LOCALE cookie is the single source of truth for the active language.
+ * The server reads it (or Accept-Language on a first visit) in `getServerLocale()` and
+ * passes the result in as `initialLocale`, so server and client always render the same
+ * language and there is no post-hydration flash.
+ */
 export function LanguageProvider({
   children,
-  initialLocale,
+  initialLocale = 'en',
 }: {
   children: React.ReactNode;
   initialLocale?: Locale;
 }) {
-  const [locale, setLocaleState] = useState<Locale>(initialLocale ?? 'en');
+  const router = useRouter();
+  const [locale, setLocaleState] = useState<Locale>(initialLocale);
 
-  useEffect(() => {
-    // 1. Read from localStorage or cookie
-    const stored = (typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY)) as Locale | null;
-    if (stored === 'en' || stored === 'vi') {
-      if (stored !== locale) {
-        setLocaleState(stored);
-      }
-    } else if (!initialLocale) {
-      // Check browser language
-      const browserLang = navigator.language?.toLowerCase();
-      if (browserLang?.startsWith('vi')) {
-        setLocaleState('vi');
-      }
-    }
-  }, [initialLocale, locale]);
-
-  const setLocale = useCallback((newLocale: Locale) => {
-    setLocaleState(newLocale);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, newLocale);
+  const setLocale = useCallback(
+    (newLocale: Locale) => {
+      setLocaleState(newLocale);
+      if (typeof window === 'undefined') return;
       document.cookie = `${COOKIE_NAME}=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
-    }
-  }, []);
+      document.documentElement.lang = newLocale;
+      // Server-rendered, localized data (project titles, series, profile, metadata) must be
+      // re-fetched for the new cookie value; client dictionaries switch immediately above.
+      router.refresh();
+    },
+    [router]
+  );
 
   const toggleLocale = useCallback(() => {
     setLocale(locale === 'en' ? 'vi' : 'en');

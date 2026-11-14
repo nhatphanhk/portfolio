@@ -6,6 +6,7 @@ import { MapPin, Mail, Phone, Layers, FileText, ChevronLeft, ChevronRight } from
 import DynamicIcon from '@/components/ui/DynamicIcon';
 import { SectionId, parseSectionLayout, DEFAULT_HARVARD_ORDER } from '@/lib/resume-layout';
 import { useLanguage } from '@/lib/i18n/context';
+import { formatDate } from '@/lib/utils';
 
 const CATEGORY_LABELS: Record<string, string> = {
   LANGUAGE: 'Programming Languages',
@@ -656,11 +657,11 @@ export function ResumeMultiPage({
                       {exp.company}
                     </span>
                     <span className="text-xs font-serif font-medium text-gray-800 shrink-0">
-                      {new Date(exp.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} –{' '}
+                      {formatDate(exp.startDate, 'en', 'monthYear')} –{' '}
                       {exp.isCurrent
                         ? 'Present'
                         : exp.endDate
-                        ? new Date(exp.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                        ? formatDate(exp.endDate, 'en', 'monthYear')
                         : ''}
                     </span>
                   </div>
