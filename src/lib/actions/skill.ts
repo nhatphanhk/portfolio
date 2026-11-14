@@ -76,6 +76,7 @@ export async function deleteSkill(id: string) {
 }
 
 export async function getAllSkillsFromDb() {
+  await ensureAdmin();
   return prisma.skill.findMany({
     orderBy: [{ category: 'asc' }, { order: 'asc' }],
   });

@@ -128,7 +128,8 @@ export function ResumePdfDialog({
     }
 
     try {
-      new URL(trimmed);
+      const parsedUrl = new URL(trimmed);
+      if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') throw new Error('scheme');
     } catch {
       toast.error('Đường dẫn URL không hợp lệ (cần bắt đầu bằng http:// hoặc https://)');
       return;

@@ -5,9 +5,10 @@ import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
 import { prisma, prismaErrorMessage } from '@/lib/db';
 import { z } from 'zod';
 import { ensureAdmin } from '@/lib/auth-utils';
-import { smartReorderSeriesBlogs, compactSeriesOrders } from '@/lib/actions/series';
+import { smartReorderSeriesBlogs, compactSeriesOrders } from '@/lib/series-order';
 import { slugify } from '@/lib/utils';
 import { estimateReadMinutes } from '@/lib/blog-utils';
+import { sanitizeRichHtml } from '@/lib/sanitize-html';
 
 const blogSchema = z.object({
   title: z.string().min(3).max(255),
@@ -79,6 +80,7 @@ export async function createBlog(formData: BlogFormData) {
 
   try {
     const { tags, thumbnailUrl, seriesId, seriesOrder, ...rest } = parsed.data;
+    rest.content = sanitizeRichHtml(rest.content);
     const authorId = await ensureAdminUser();
     const tagNames = tags
       ? tags
@@ -136,6 +138,7 @@ export async function updateBlog(id: string, formData: BlogFormData) {
 
   try {
     const { tags, thumbnailUrl, seriesId, seriesOrder, ...rest } = parsed.data;
+    rest.content = sanitizeRichHtml(rest.content);
     const tagNames = tags
       ? tags
           .split(',')
@@ -231,6 +234,7 @@ export async function deleteBlog(id: string) {
 }
 
 export async function getAllBlogsFromDb() {
+  await ensureAdmin();
   try {
     return await prisma.blog.findMany({
       orderBy: { createdAt: 'desc' },
@@ -343,34 +347,6 @@ export const getPublicBlogBySlug = async (slug: string, locale: 'vi' | 'en' = 'e
   )();
 };
 
-/** Create an empty draft and return its id so the editor can redirect immediately */
-export async function createBlogDraft(): Promise<{ ok: boolean; id?: string; error?: string }> {
-  await ensureAdmin();
-
-  const authorId = await ensureAdminUser();
-
-  // Generate a temporary unique slug
-  const tempSlug = `draft-${Date.now()}`;
-
-  try {
-    const blog = await prisma.blog.create({
-      data: {
-        title: 'Untitled Post',
-        slug: tempSlug,
-        content: '',
-        status: 'DRAFT',
-        authorId,
-      },
-    });
-
-    revalidatePath('/nhatphanhk102/blogs');
-    return { ok: true, id: blog.id };
-  } catch (err) {
-    console.error('createBlogDraft error:', err);
-    return { ok: false, error: 'Failed to create draft' };
-  }
-}
-
 /** Load a single blog by id for the full-page editor (admin only) */
 export async function getBlogById(id: string) {
   await ensureAdmin();
@@ -443,45 +419,6 @@ export async function saveBlogTranslationAction(
   } catch (error) {
     console.error('saveBlogTranslationAction error:', error);
     return { ok: false, error: 'Failed to save translation' };
-  }
-}
-
-/** Action to translate a blog post using Gemini AI and save to PostgreSQL DB */
-export async function translateBlogAction(
-  blogId: string,
-  targetLocale: 'vi' | 'en' = 'vi',
-  customApiKey?: string,
-  currentContent?: { title: string; excerpt?: string | null; content: string }
-): Promise<{ ok: boolean; data?: { title: string; excerpt: string; content: string }; error?: string }> {
-  await ensureAdmin();
-  try {
-    let sourceData = currentContent;
-    if (!sourceData || !sourceData.title) {
-      const blog = await prisma.blog.findUnique({
-        where: { id: blogId },
-        select: { title: true, excerpt: true, content: true },
-      });
-      if (!blog) {
-        return { ok: false, error: 'Blog not found' };
-      }
-      sourceData = blog;
-    }
-
-    const { generateBlogTranslationWithDetails, saveBlogTranslationToDb } = await import('@/lib/gemini-translate');
-    const result = await generateBlogTranslationWithDetails(sourceData, targetLocale, customApiKey);
-
-    if (!result.ok || !result.data) {
-      return { ok: false, error: result.error || 'AI translation failed' };
-    }
-
-    await saveBlogTranslationToDb(blogId, result.data, targetLocale);
-
-    revalidatePath('/blog');
-    revalidatePath(`/nhatphanhk102/blogs/editor/${blogId}`);
-    return { ok: true, data: result.data };
-  } catch (error: any) {
-    console.error('translateBlogAction error:', error);
-    return { ok: false, error: error?.message || 'Error during translation' };
   }
 }
 

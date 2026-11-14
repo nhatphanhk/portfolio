@@ -55,24 +55,26 @@ export function checkRateLimit(key: string, limit: number, windowMs: number): bo
 }
 
 /**
- * Extracts client IP safely from request headers.
- * Checks Cloudflare, standard proxies, and fallbacks.
+ * Extracts the client IP from request headers.
+ *
+ * Order matters: `x-vercel-forwarded-for` / `x-forwarded-for` are set by the Vercel edge and
+ * cannot be forged by the client, whereas `cf-connecting-ip` is only trustworthy behind
+ * Cloudflare (which this deployment is not), so it is consulted last. Returns 'unknown' when
+ * no header is present so callers never store a fake loopback address.
  */
 export function getClientIp(req: Request): string {
   const headers = req.headers;
-  const cfConnectingIp = headers.get('cf-connecting-ip');
-  if (cfConnectingIp) return cfConnectingIp.trim();
-
-  const forwardedFor = headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    const firstIp = forwardedFor.split(',')[0]?.trim();
-    if (firstIp) return firstIp;
+  const candidates = [
+    headers.get('x-vercel-forwarded-for'),
+    headers.get('x-forwarded-for'),
+    headers.get('x-real-ip'),
+    headers.get('cf-connecting-ip'),
+  ];
+  for (const value of candidates) {
+    const first = value?.split(',')[0]?.trim();
+    if (first) return first;
   }
-
-  const realIp = headers.get('x-real-ip');
-  if (realIp) return realIp.trim();
-
-  return '127.0.0.1';
+  return 'unknown';
 }
 
 /**
@@ -89,6 +91,8 @@ export const RATE_LIMIT_PRESETS = {
   VIEW_TRACKING: { limit: 15, windowMs: 60 * 1000 },
   /** File upload: 10 requests per 5 minutes */
   UPLOAD: { limit: 10, windowMs: 5 * 60 * 1000 },
+  /** Credentials sign-in attempts: 10 per 15 minutes */
+  LOGIN: { limit: 10, windowMs: 15 * 60 * 1000 },
   /** Admin account setup: 3 requests per 15 minutes */
   ADMIN_SETUP: { limit: 3, windowMs: 15 * 60 * 1000 },
   /** Swagger API spec: 30 requests per minute */
@@ -105,17 +109,31 @@ export function isSafePublicUrl(urlString: string): boolean {
     const hostname = url.hostname.toLowerCase();
     if (
       hostname === 'localhost' ||
-      hostname === '0.0.0.0' ||
+      hostname.endsWith('.localhost') ||
+      hostname.startsWith('0.') || // 0.0.0.0/8 ("this" network)
       hostname.startsWith('127.') || // Loopback 127.0.0.0/8
       hostname === '::1' ||
       hostname === '[::1]' ||
+      hostname.startsWith('[::ffff:') || // IPv4-mapped IPv6
+      hostname.startsWith('[fc') || // IPv6 unique-local fc00::/7
+      hostname.startsWith('[fd') ||
+      hostname.startsWith('[fe80') || // IPv6 link-local
       hostname.startsWith('10.') ||
       hostname.startsWith('192.168.') ||
       hostname.startsWith('169.254.') || // Cloud metadata (AWS, GCP, Azure)
       hostname.endsWith('.internal') ||
-      hostname.endsWith('.local')
+      hostname.endsWith('.local') ||
+      hostname.endsWith('.nip.io') ||
+      hostname.endsWith('.sslip.io')
     ) {
       return false;
+    }
+
+    // Carrier-grade NAT 100.64.0.0/10
+    const octets = hostname.split('.');
+    if (octets.length === 4 && octets[0] === '100') {
+      const second = parseInt(octets[1], 10);
+      if (!isNaN(second) && second >= 64 && second <= 127) return false;
     }
 
     // Check 172.16.0.0 - 172.31.255.255

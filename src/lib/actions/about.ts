@@ -678,6 +678,7 @@ export async function saveProfileTranslationAction(
 
 /** Get all saved translations for profile */
 export async function getProfileTranslations(profileId: string) {
+  await ensureAdmin();
   try {
     return await prisma.contentTranslation.findMany({
       where: { entityType: 'profile', entityId: profileId },
@@ -760,6 +761,7 @@ export async function saveExperienceTranslationAction(
 
 /** Get all saved translations for an experience */
 export async function getExperienceTranslations(experienceId: string) {
+  await ensureAdmin();
   try {
     return await prisma.contentTranslation.findMany({
       where: { entityType: 'experience', entityId: experienceId },

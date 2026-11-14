@@ -2,7 +2,14 @@
 
 import DOMPurify from 'dompurify';
 import { useEffect, useState, useRef } from 'react';
-import { slugifyHeading, sanitizeBasicServer, type Heading } from '@/lib/blog-utils';
+import {
+  slugifyHeading,
+  sanitizeBasicServer,
+  isAllowedIframeSrc,
+  RICH_CONTENT_ADD_ATTR,
+  RICH_CONTENT_ADD_TAGS,
+  type Heading,
+} from '@/lib/blog-utils';
 import { hydrateRichContent } from '@/lib/rich-content';
 
 import 'katex/dist/katex.min.css';
@@ -10,23 +17,21 @@ import 'katex/dist/katex.min.css';
 export type { Heading };
 export { sanitizeBasicServer };
 
+if (typeof window !== 'undefined') {
+  // Embeds are only allowed from known hosts (YouTube, Vimeo, CodeSandbox, …)
+  DOMPurify.addHook('uponSanitizeElement', (node, data) => {
+    if (data.tagName === 'iframe' && !isAllowedIframeSrc((node as Element).getAttribute('src') || '')) {
+      node.parentNode?.removeChild(node);
+    }
+  });
+}
+
 function processHtml(html: string): string {
   if (typeof window === 'undefined') return sanitizeBasicServer(html);
 
   const cleanHtml = DOMPurify.sanitize(html, {
-    ADD_TAGS: ['iframe', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
-    ADD_ATTR: [
-      'allow',
-      'allowfullscreen',
-      'frameborder',
-      'scrolling',
-      'data-callout',
-      'data-type',
-      'data-latex',
-      'data-math-hydrated',
-      'data-mermaid-hydrated',
-      'data-code-hydrated',
-    ],
+    ADD_TAGS: RICH_CONTENT_ADD_TAGS,
+    ADD_ATTR: RICH_CONTENT_ADD_ATTR,
   });
 
   const div = document.createElement('div');

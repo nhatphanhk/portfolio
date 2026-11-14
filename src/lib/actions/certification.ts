@@ -85,6 +85,7 @@ export async function deleteCertification(id: string) {
 }
 
 export async function getAllCertificationsFromDb() {
+  await ensureAdmin();
   return prisma.certification.findMany({
     orderBy: [{ status: 'asc' }, { issueDate: 'desc' }],
   });

@@ -128,10 +128,21 @@ ${rawText.slice(0, 30000)}
 
       return {
         profile: parsed.profile || {},
-        experiences: Array.isArray(parsed.experiences) ? parsed.experiences : [],
-        education: Array.isArray(parsed.education) ? parsed.education : [],
+        // The prompt's field names differ from ParsedResumeData in three places; map them here
+        // so tech stack, GPA and language level survive the import.
+        experiences: (Array.isArray(parsed.experiences) ? parsed.experiences : []).map((e: any) => ({
+          ...e,
+          techStack: e.techStack ?? e.technologies,
+        })),
+        education: (Array.isArray(parsed.education) ? parsed.education : []).map((e: any) => ({
+          ...e,
+          gpa: e.gpa ?? e.grade,
+        })),
         skills: Array.isArray(parsed.skills) ? parsed.skills : [],
-        spokenLanguages: Array.isArray(parsed.spokenLanguages) ? parsed.spokenLanguages : [],
+        spokenLanguages: (Array.isArray(parsed.spokenLanguages) ? parsed.spokenLanguages : []).map((l: any) => ({
+          ...l,
+          level: l.level ?? l.proficiency,
+        })),
         socialLinks: Array.isArray(parsed.socialLinks) ? parsed.socialLinks : [],
         rawText,
       };

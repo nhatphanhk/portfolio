@@ -3,6 +3,7 @@
 import React from 'react';
 import { ExternalLink, Github, Calendar, Tag, CheckCircle } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/context';
+import { BlogContent } from '@/components/blog/BlogContent';
 import { formatDate } from '@/lib/utils';
 
 interface ProjectDetailClientProps {
@@ -103,9 +104,10 @@ export function ProjectDetailClient({ project }: ProjectDetailClientProps) {
 
         {/* Content / Case Study */}
         {content && (
-          <div className="prose prose-neutral max-w-none prose-headings:font-bold prose-a:text-primary prose-code:text-primary/80 prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-sm prose-pre:bg-muted prose-pre:border prose-pre:border-border">
-            <div dangerouslySetInnerHTML={{ __html: content }} />
-          </div>
+          <BlogContent
+            html={content}
+            className="prose-neutral prose-headings:font-bold prose-a:text-primary prose-code:text-primary/80 prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-sm prose-pre:bg-muted prose-pre:border prose-pre:border-border"
+          />
         )}
       </div>
 

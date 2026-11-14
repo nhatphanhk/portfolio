@@ -9,6 +9,9 @@ let currentMermaidTheme = '';
 /**
  * Render a Mermaid chart string to an SVG string.
  */
+const escapeHtml = (value: string): string =>
+  value.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch] as string);
+
 export async function renderMermaid(code: string, isDark: boolean = true): Promise<string> {
   const mermaid = (await import('mermaid')).default;
   const theme = isDark ? 'dark' : 'default';
@@ -98,7 +101,7 @@ export async function hydrateRichContent(container: HTMLElement, isDark: boolean
         wrapper.innerHTML = `
           <div class="w-full text-left p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-xs text-destructive">
             <p class="font-semibold mb-1">Mermaid Syntax Error</p>
-            <pre class="overflow-x-auto text-[11px] font-mono text-destructive/90">${err?.message || 'Invalid syntax'}</pre>
+            <pre class="overflow-x-auto text-[11px] font-mono text-destructive/90">${escapeHtml(err?.message || 'Invalid syntax')}</pre>
           </div>
         `;
         pre.style.display = 'block';

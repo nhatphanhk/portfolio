@@ -13,10 +13,8 @@ const contactSchema = z.object({
 /**
  * POST /api/contact
  * Public endpoint — submit the contact form.
- * Rate limit: enforced via middleware (5 per hour per IP in production).
- *
- * In MVP, logs to console and stores in-memory.
- * In production, integrate with email service (Nodemailer/Resend).
+ * Rate limited to 5 submissions per 10 minutes per IP; messages are stored in the contacts table
+ * and show up in the admin inbox. Email notification is still a TODO.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -37,7 +35,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+    if (body === null) {
+      return NextResponse.json(
+        { success: false, error: { code: 'INVALID_JSON', message: 'Request body must be JSON' } },
+        { status: 400 }
+      );
+    }
     const parsed = contactSchema.safeParse(body);
 
     if (!parsed.success) {

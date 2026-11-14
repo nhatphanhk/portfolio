@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import DOMPurify from 'dompurify';
+import { RICH_CONTENT_ADD_ATTR, RICH_CONTENT_ADD_TAGS } from '@/lib/blog-utils';
 import {
   Dialog,
   DialogContent,
@@ -49,6 +51,12 @@ interface TranslationPreviewDialogProps {
   onSaveToDb: (data: TranslatedData) => Promise<void>;
   onApplyAndSave: (data: TranslatedData) => Promise<void>;
 }
+
+/** AI output and the pasted original are untrusted HTML; sanitize before injecting. */
+const safeHtml = (html: string | null | undefined): string =>
+  typeof window === 'undefined'
+    ? ''
+    : DOMPurify.sanitize(html || '', { ADD_TAGS: RICH_CONTENT_ADD_TAGS, ADD_ATTR: RICH_CONTENT_ADD_ATTR });
 
 export function TranslationPreviewDialog({
   open,
@@ -404,7 +412,7 @@ export function TranslationPreviewDialog({
                   <div className="max-w-3xl mx-auto">
                     <div
                       className="prose prose-slate dark:prose-invert max-w-none text-foreground prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary prose-pre:bg-muted prose-pre:border prose-pre:border-border leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: editedData.content }}
+                      dangerouslySetInnerHTML={{ __html: safeHtml(editedData.content) }}
                     />
                   </div>
                 </div>
@@ -426,7 +434,7 @@ export function TranslationPreviewDialog({
                     </div>
                     <div
                       className="prose prose-sm prose-slate dark:prose-invert max-w-none text-muted-foreground/90 leading-relaxed pt-2"
-                      dangerouslySetInnerHTML={{ __html: original.content }}
+                      dangerouslySetInnerHTML={{ __html: safeHtml(original.content) }}
                     />
                   </div>
 
@@ -443,7 +451,7 @@ export function TranslationPreviewDialog({
                     </div>
                     <div
                       className="prose prose-sm prose-slate dark:prose-invert max-w-none text-foreground leading-relaxed pt-2"
-                      dangerouslySetInnerHTML={{ __html: editedData.content }}
+                      dangerouslySetInnerHTML={{ __html: safeHtml(editedData.content) }}
                     />
                   </div>
                 </div>

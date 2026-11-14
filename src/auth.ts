@@ -4,6 +4,7 @@ import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
+import { checkRateLimit, getClientIp, RATE_LIMIT_PRESETS } from '@/lib/rate-limit';
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -20,9 +21,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const parsed = credentialsSchema.safeParse(credentials);
         if (!parsed.success) return null;
+
+        // Brute-force protection: 10 attempts per 15 minutes per IP
+        const ip = getClientIp(request);
+        if (!checkRateLimit(`login:${ip}`, RATE_LIMIT_PRESETS.LOGIN.limit, RATE_LIMIT_PRESETS.LOGIN.windowMs)) {
+          return null;
+        }
 
         const { email, password } = parsed.data;
 
@@ -59,7 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               id: 'admin',
               email: adminEmail,
               name: 'Administrator',
-              role: 'admin',
+              role: 'ADMIN',
             };
           }
         }

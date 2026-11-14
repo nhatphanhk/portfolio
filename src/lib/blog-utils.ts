@@ -13,12 +13,80 @@ export function slugifyHeading(text: string): string {
 /**
  * Basic server-side sanitization to prevent XSS during SSR before DOMPurify runs on client.
  */
+/** Extra tags/attributes the rich-content renderer needs on top of DOMPurify's defaults. */
+export const RICH_CONTENT_ADD_TAGS = ['iframe', 'table', 'thead', 'tbody', 'tr', 'th', 'td'];
+export const RICH_CONTENT_ADD_ATTR = [
+  'allow',
+  'allowfullscreen',
+  'frameborder',
+  'scrolling',
+  'data-callout',
+  'data-type',
+  'data-latex',
+  'data-math-hydrated',
+  'data-mermaid-hydrated',
+  'data-code-hydrated',
+];
+
+/** Hosts an <iframe> may embed from; anything else is stripped by the sanitizers. */
+export const ALLOWED_IFRAME_HOSTS = [
+  'www.youtube.com',
+  'youtube.com',
+  'www.youtube-nocookie.com',
+  'player.vimeo.com',
+  'codesandbox.io',
+  'codepen.io',
+  'stackblitz.com',
+  'www.figma.com',
+  'embed.figma.com',
+  'gist.github.com',
+  'docs.google.com',
+  'www.google.com',
+];
+
+export function isAllowedIframeSrc(src: string): boolean {
+  try {
+    const url = new URL(src);
+    return url.protocol === 'https:' && ALLOWED_IFRAME_HOSTS.includes(url.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Server-side fallback used only until the client sanitizer (DOMPurify) has run. Content is
+ * also sanitized at save time (lib/sanitize-html.ts); this is defense in depth for older rows.
+ * It strips active elements, event handlers and script-bearing URLs (including entity-encoded
+ * and whitespace-padded forms).
+ */
 export function sanitizeBasicServer(html: string): string {
-  if (!html) return '';
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/\s+on\w+\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+)/gi, '')
-    .replace(/javascript:/gi, 'blocked:');
+  const decode = (value: string): string => {
+    try {
+      return value
+        .replace(/&#x([0-9a-f]+);?/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+        .replace(/&#(\d+);?/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+        .replace(/&(tab|newline);/gi, '')
+        .replace(/[\u0000-\u001f\s]+/g, '')
+        .toLowerCase();
+    } catch {
+      return value.toLowerCase();
+    }
+  };
+  let out = html
+    .replace(/<(script|style|object|embed|base|meta|link|form|noscript)\b[\s\S]*?(?:<\/\1\s*>|\/>|>)/gi, '')
+    .replace(/<\/(script|style|object|embed|form|noscript)\s*>/gi, '');
+  let prev: string;
+  do {
+    prev = out;
+    out = out.replace(/(<[^>]*?)[\s/]+(?:on\w+|srcdoc|formaction)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '$1');
+  } while (out !== prev);
+  return out.replace(
+    /(href|src|xlink:href|action)\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/gi,
+    (match, attr, _quoted, dq, sq, bare) => {
+      const decoded = decode(dq ?? sq ?? bare ?? '');
+      return /^(javascript|vbscript|data:text\/html|data:image\/svg)/.test(decoded) ? `${attr}="#"` : match;
+    }
+  );
 }
 
 export function extractHeadings(html: string): Heading[] {

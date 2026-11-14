@@ -6,6 +6,7 @@ import { prisma, prismaErrorMessage } from '@/lib/db';
 import { z } from 'zod';
 import { ensureAdmin } from '@/lib/auth-utils';
 import { slugify } from '@/lib/utils';
+import { sanitizeRichHtml } from '@/lib/sanitize-html';
 
 const projectSchema = z.object({
   title: z.string().min(3).max(255),
@@ -72,6 +73,7 @@ export async function createProject(formData: ProjectFormData) {
 
   try {
     const { tags, thumbnailUrl, demoUrl, repoUrl, ...rest } = parsed.data;
+    rest.content = sanitizeRichHtml(rest.content);
     const authorId = await ensureAdminUser();
     const tagIds = await syncTags(tags ? tags.split(',') : []);
 
@@ -106,6 +108,7 @@ export async function updateProject(id: string, formData: ProjectFormData) {
 
   try {
     const { tags, thumbnailUrl, demoUrl, repoUrl, ...rest } = parsed.data;
+    rest.content = sanitizeRichHtml(rest.content);
     const tagIds = await syncTags(tags ? tags.split(',') : []);
 
     const previous = await prisma.project.findUnique({ where: { id }, select: { slug: true, publishedAt: true } });
@@ -162,6 +165,7 @@ export async function deleteProject(id: string) {
 }
 
 export async function getAllProjectsFromDb() {
+  await ensureAdmin();
   try {
     return await prisma.project.findMany({
       orderBy: { createdAt: 'desc' },
@@ -336,6 +340,7 @@ export async function saveProjectTranslationAction(
 
 /** Get all saved translations for a project */
 export async function getProjectTranslations(projectId: string) {
+  await ensureAdmin();
   try {
     return await prisma.contentTranslation.findMany({
       where: { entityType: 'project', entityId: projectId },

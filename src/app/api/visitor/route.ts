@@ -21,7 +21,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+    if (body === null) {
+      return NextResponse.json({ ok: false, error: 'Request body must be JSON' }, { status: 400 });
+    }
     const parsed = visitorSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -36,6 +39,7 @@ export async function POST(req: NextRequest) {
         name: parsed.data.name,
         email: parsed.data.email,
         subject: 'Visitor Log',
+        type: 'VISITOR_LOG',
         message: parsed.data.reason,
         status: 'UNREAD',
         ipAddress: ip !== 'unknown' ? ip : null,
