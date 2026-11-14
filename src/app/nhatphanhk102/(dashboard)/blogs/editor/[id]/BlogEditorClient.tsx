@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useTransition, useEffect, useMemo } from 'react';
+import { useState, useCallback, useTransition, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,8 +13,8 @@ import {
 } from '@/lib/actions/blog';
 import { TranslationPreviewDialog, TranslatedData } from '@/components/admin/TranslationPreviewDialog';
 import { UnsavedChangesDialog } from '@/components/admin/UnsavedChangesDialog';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes-guard';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   Save,
@@ -127,14 +127,12 @@ const inputCls =
 const selectCls = `${inputCls} editor-select appearance-none pr-9 cursor-pointer`;
 
 export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
-  const router = useRouter();
   const [currentBlogId, setCurrentBlogId] = useState<string>(blog.id);
   const isNew = !currentBlogId;
 
   const [isPending, startTransition] = useTransition();
   const [isTranslating, setIsTranslating] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [translatedResult, setTranslatedResult] = useState<TranslatedData | null>(null);
   const [targetLocale, setTargetLocale] = useState<'vi' | 'en'>('vi');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -188,26 +186,9 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
     return activeSeries?.blogs || [];
   }, [activeSeries]);
 
-  // Protect against accidental browser tab close or reload when changes exist
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isDirty) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty]);
-
-  // Handle navigation back to blog list with confirmation modal if dirty
-  const handleBackClick = () => {
-    if (isDirty) {
-      setShowLeaveDialog(true);
-    } else {
-      router.push('/nhatphanhk102/blogs');
-    }
-  };
+  // Guards unsaved work against tab close/reload, every in-app link (sidebar, breadcrumb) and the back button
+  const leaveGuard = useUnsavedChangesGuard(isDirty);
+  const handleBackClick = () => leaveGuard.requestNavigation('/nhatphanhk102/blogs');
 
   // Auto-generate slug from title (if slug is empty, temporary draft slug, or new post)
   const onTitleBlur = useCallback(
@@ -274,6 +255,16 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
     };
   }, []);
 
+  // Records what the server now holds without clobbering anything typed while the save was in
+  // flight: the saved payload becomes the clean baseline, current input values are kept.
+  const markSaved = useCallback(
+    (saved: FormData) => {
+      setValue('status', saved.status);
+      reset(saved, { keepValues: true });
+    },
+    [reset, setValue]
+  );
+
   const doSave = useCallback(
     (data: FormData) => {
       if (data.content && (data.content.includes('src="data:image/') || data.content.includes('src="blob:'))) {
@@ -300,7 +291,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
             setCurrentBlogId(newId);
             window.history.replaceState(null, '', `/nhatphanhk102/blogs/editor/${newId}`);
             setLastSaved(new Date());
-            reset(payload);
+            markSaved(payload);
             toast.success(payload.status === 'PUBLISHED' ? 'Đã xuất bản bài viết thành công ✓' : 'Đã lưu bản nháp thành công ✓');
           } else {
             const err = typeof (result as any).error === 'string' ? (result as any).error : 'Lưu bài viết thất bại';
@@ -311,15 +302,16 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
           const result = await updateBlog(currentBlogId, payload as any);
           if (result.ok) {
             setLastSaved(new Date());
-            reset(payload);
+            markSaved(payload);
             toast.success(payload.status === 'PUBLISHED' ? 'Đã xuất bản bài viết thành công ✓' : 'Đã lưu thay đổi thành công ✓');
           } else {
-            toast.error('Lưu bài viết thất bại');
+            const err = typeof (result as any).error === 'string' ? (result as any).error : 'Lưu bài viết thất bại';
+            toast.error(err);
           }
         }
       });
     },
-    [currentBlogId, reset, orderMode]
+    [currentBlogId, markSaved, orderMode]
   );
 
   const handleManualSave = handleSubmit((data: FormData) => {
@@ -375,14 +367,11 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
     }
 
     clearErrors();
-    setValue('status', 'PUBLISHED', { shouldDirty: true });
     doSave(payloadToPublish);
   };
 
   const handleUnpublish = () => {
-    setValue('status', 'DRAFT', { shouldDirty: true });
-    const currentValues = getValues();
-    doSave({ ...currentValues, status: 'DRAFT' });
+    doSave({ ...getValues(), status: 'DRAFT' });
   };
 
   const handleAiTranslate = async (localeToUse: 'vi' | 'en' = targetLocale) => {
@@ -867,9 +856,11 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
 
       {/* Unsaved changes confirmation dialog */}
       <UnsavedChangesDialog
-        open={showLeaveDialog}
-        onOpenChange={setShowLeaveDialog}
-        onConfirmLeave={() => router.push('/nhatphanhk102/blogs')}
+        open={leaveGuard.isBlocking}
+        onOpenChange={open => {
+          if (!open) leaveGuard.cancel();
+        }}
+        onConfirmLeave={leaveGuard.confirmLeave}
       />
     </div>
   );

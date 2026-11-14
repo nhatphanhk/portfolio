@@ -2,7 +2,7 @@
 
 
 import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
-import { prisma } from '@/lib/db';
+import { prisma, prismaErrorMessage } from '@/lib/db';
 import { z } from 'zod';
 import { ensureAdmin } from '@/lib/auth-utils';
 import { slugify } from '@/lib/utils';
@@ -70,27 +70,32 @@ export async function createProject(formData: ProjectFormData) {
   if (!parsed.success)
     return { ok: false, error: parsed.error.flatten().fieldErrors };
 
-  const { tags, thumbnailUrl, demoUrl, repoUrl, ...rest } = parsed.data;
-  const authorId = await ensureAdminUser();
-  const tagIds = await syncTags(tags ? tags.split(',') : []);
+  try {
+    const { tags, thumbnailUrl, demoUrl, repoUrl, ...rest } = parsed.data;
+    const authorId = await ensureAdminUser();
+    const tagIds = await syncTags(tags ? tags.split(',') : []);
 
-  await prisma.project.create({
-    data: {
-      ...rest,
-      thumbnailUrl: thumbnailUrl || undefined,
-      demoUrl: demoUrl || undefined,
-      repoUrl: repoUrl || undefined,
-      authorId,
-      publishedAt: rest.status === 'PUBLISHED' ? new Date() : undefined,
-      tags: { create: tagIds.map(tagId => ({ tagId })) },
-    },
-  });
+    await prisma.project.create({
+      data: {
+        ...rest,
+        thumbnailUrl: thumbnailUrl || undefined,
+        demoUrl: demoUrl || undefined,
+        repoUrl: repoUrl || undefined,
+        authorId,
+        publishedAt: rest.status === 'PUBLISHED' ? new Date() : undefined,
+        tags: { create: tagIds.map(tagId => ({ tagId })) },
+      },
+    });
 
-  revalidateTag('projects', 'max');
-  revalidatePath('/nhatphanhk102/projects');
-  revalidatePath('/project');
-  revalidatePath('/');
-  return { ok: true };
+    revalidateTag('projects', 'max');
+    revalidatePath('/nhatphanhk102/projects');
+    revalidatePath('/project');
+    revalidatePath('/');
+    return { ok: true };
+  } catch (err) {
+    console.error('Error creating project:', err);
+    return { ok: false, error: prismaErrorMessage(err, 'Không thể tạo dự án.') };
+  }
 }
 
 export async function updateProject(id: string, formData: ProjectFormData) {
@@ -99,26 +104,31 @@ export async function updateProject(id: string, formData: ProjectFormData) {
   if (!parsed.success)
     return { ok: false, error: parsed.error.flatten().fieldErrors };
 
-  const { tags, thumbnailUrl, demoUrl, repoUrl, ...rest } = parsed.data;
-  const tagIds = await syncTags(tags ? tags.split(',') : []);
+  try {
+    const { tags, thumbnailUrl, demoUrl, repoUrl, ...rest } = parsed.data;
+    const tagIds = await syncTags(tags ? tags.split(',') : []);
 
-  await prisma.project.update({
-    where: { id },
-    data: {
-      ...rest,
-      thumbnailUrl: thumbnailUrl || undefined,
-      demoUrl: demoUrl || undefined,
-      repoUrl: repoUrl || undefined,
-      tags: { deleteMany: {}, create: tagIds.map(tagId => ({ tagId })) },
-    },
-  });
+    await prisma.project.update({
+      where: { id },
+      data: {
+        ...rest,
+        thumbnailUrl: thumbnailUrl || null,
+        demoUrl: demoUrl || null,
+        repoUrl: repoUrl || null,
+        tags: { deleteMany: {}, create: tagIds.map(tagId => ({ tagId })) },
+      },
+    });
 
-  revalidateTag('projects', 'max');
-  revalidatePath('/nhatphanhk102/projects');
-  revalidatePath('/project');
-  revalidatePath(`/project/${rest.slug}`);
-  revalidatePath('/');
-  return { ok: true };
+    revalidateTag('projects', 'max');
+    revalidatePath('/nhatphanhk102/projects');
+    revalidatePath('/project');
+    revalidatePath(`/project/${rest.slug}`);
+    revalidatePath('/');
+    return { ok: true };
+  } catch (err) {
+    console.error('Error updating project:', err);
+    return { ok: false, error: prismaErrorMessage(err, 'Không thể lưu dự án.') };
+  }
 }
 
 export async function deleteProject(id: string) {

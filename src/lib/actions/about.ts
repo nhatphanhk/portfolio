@@ -28,8 +28,8 @@ const profileSchema = z.object({
   location: z.string().max(255).optional(),
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().max(50).optional(),
-  resumeUrl: z.string().max(500).optional(),
-  avatarUrl: z.string().max(500).optional(),
+  resumeUrl: z.string().max(500).nullable().optional(),
+  avatarUrl: z.string().max(500).nullable().optional(),
   softSkills: z.string().max(2000).optional(),
   interests: z.string().max(2000).optional(),
 });
@@ -162,17 +162,27 @@ export async function upsertSocialLink(
 ) {
   await ensureAdmin();
   const existing = await prisma.socialLink.findFirst({ where: { platform } });
+  let id: string;
   if (existing) {
-    await prisma.socialLink.update({
+    const updated = await prisma.socialLink.update({
       where: { id: existing.id },
-      data: { url },
+      data: { url, ...(iconName ? { iconName } : {}) },
     });
+    id = updated.id;
   } else {
     const count = await prisma.socialLink.count();
-    await prisma.socialLink.create({
+    const created = await prisma.socialLink.create({
       data: { platform, url, iconName, order: count },
     });
+    id = created.id;
   }
+  REVALIDATE();
+  return { ok: true, id };
+}
+
+export async function deleteSocialLink(id: string) {
+  await ensureAdmin();
+  await prisma.socialLink.delete({ where: { id } });
   REVALIDATE();
   return { ok: true };
 }
@@ -247,7 +257,7 @@ export async function createExperience(formData: ExperienceFormData) {
   if (!parsed.success)
     return { ok: false, error: parsed.error.flatten().fieldErrors };
   const count = await prisma.experience.count();
-  await prisma.experience.create({
+  const created = await prisma.experience.create({
     data: {
       ...parsed.data,
       startDate: new Date(parsed.data.startDate),
@@ -256,7 +266,7 @@ export async function createExperience(formData: ExperienceFormData) {
     },
   });
   REVALIDATE();
-  return { ok: true };
+  return { ok: true, id: created.id };
 }
 
 export async function updateExperience(
@@ -282,6 +292,16 @@ export async function updateExperience(
 export async function deleteExperience(id: string) {
   await ensureAdmin();
   await prisma.experience.delete({ where: { id } });
+  REVALIDATE();
+  return { ok: true };
+}
+
+/** Persists the on-screen order of experiences (array index becomes `order`). */
+export async function reorderExperiences(ids: string[]) {
+  await ensureAdmin();
+  await prisma.$transaction(
+    ids.map((id, order) => prisma.experience.update({ where: { id }, data: { order } }))
+  );
   REVALIDATE();
   return { ok: true };
 }
@@ -316,7 +336,7 @@ export async function createEducation(formData: EducationFormData) {
   if (!parsed.success)
     return { ok: false, error: parsed.error.flatten().fieldErrors };
   const count = await prisma.education.count();
-  await prisma.education.create({
+  const created = await prisma.education.create({
     data: {
       ...parsed.data,
       startDate: new Date(parsed.data.startDate),
@@ -325,7 +345,7 @@ export async function createEducation(formData: EducationFormData) {
     },
   });
   REVALIDATE();
-  return { ok: true };
+  return { ok: true, id: created.id };
 }
 
 export async function updateEducation(id: string, formData: EducationFormData) {
@@ -348,6 +368,16 @@ export async function updateEducation(id: string, formData: EducationFormData) {
 export async function deleteEducation(id: string) {
   await ensureAdmin();
   await prisma.education.delete({ where: { id } });
+  REVALIDATE();
+  return { ok: true };
+}
+
+/** Persists the on-screen order of education entries (array index becomes `order`). */
+export async function reorderEducation(ids: string[]) {
+  await ensureAdmin();
+  await prisma.$transaction(
+    ids.map((id, order) => prisma.education.update({ where: { id }, data: { order } }))
+  );
   REVALIDATE();
   return { ok: true };
 }
@@ -378,7 +408,7 @@ export async function createAchievement(formData: AchievementFormData) {
   if (!parsed.success)
     return { ok: false, error: parsed.error.flatten().fieldErrors };
   const count = await prisma.achievement.count();
-  await prisma.achievement.create({
+  const created = await prisma.achievement.create({
     data: {
       ...parsed.data,
       date: parsed.data.date ? new Date(parsed.data.date) : null,
@@ -386,7 +416,7 @@ export async function createAchievement(formData: AchievementFormData) {
     },
   });
   REVALIDATE();
-  return { ok: true };
+  return { ok: true, id: created.id };
 }
 
 export async function updateAchievement(
@@ -439,11 +469,11 @@ export async function createSpokenLanguage(formData: SpokenLanguageFormData) {
   if (!parsed.success)
     return { ok: false, error: parsed.error.flatten().fieldErrors };
   const count = await prisma.spokenLanguage.count();
-  await prisma.spokenLanguage.create({
+  const created = await prisma.spokenLanguage.create({
     data: { ...parsed.data, order: count },
   });
   REVALIDATE();
-  return { ok: true };
+  return { ok: true, id: created.id };
 }
 
 export async function updateSpokenLanguage(
@@ -493,7 +523,7 @@ export async function createActivity(formData: ActivityFormData) {
   if (!parsed.success)
     return { ok: false, error: parsed.error.flatten().fieldErrors };
   const count = await prisma.activity.count();
-  await prisma.activity.create({
+  const created = await prisma.activity.create({
     data: {
       ...parsed.data,
       startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : null,
@@ -502,7 +532,7 @@ export async function createActivity(formData: ActivityFormData) {
     },
   });
   REVALIDATE();
-  return { ok: true };
+  return { ok: true, id: created.id };
 }
 
 export async function updateActivity(id: string, formData: ActivityFormData) {

@@ -45,7 +45,7 @@ export function ResumePdfConvertDialog({
   const [parsedData, setParsedData] = useState<ParsedResumeData | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('');
-  const [importMode, setImportMode] = useState<'replace' | 'merge'>('replace');
+  const [importMode, setImportMode] = useState<'replace' | 'merge'>('merge');
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -204,6 +204,14 @@ export function ResumePdfConvertDialog({
       rawText: parsedData.rawText,
     };
 
+    if (
+      importMode === 'replace' &&
+      !window.confirm(
+        'Chế độ "Thay thế" sẽ XÓA toàn bộ kinh nghiệm, học vấn, kỹ năng và ngoại ngữ hiện có khi bạn bấm "Lưu thay đổi". Tiếp tục?'
+      )
+    ) {
+      return;
+    }
     onApplyParsedData(filtered, importMode, fileUrl);
     toast.success('Đã cập nhật dữ liệu từ file PDF vào bản CV Live Canvas!');
     handleClose(false);

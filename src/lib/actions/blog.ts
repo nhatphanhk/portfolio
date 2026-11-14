@@ -2,7 +2,7 @@
 
 
 import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
-import { prisma } from '@/lib/db';
+import { prisma, prismaErrorMessage } from '@/lib/db';
 import { z } from 'zod';
 import { ensureAdmin } from '@/lib/auth-utils';
 import { smartReorderSeriesBlogs, compactSeriesOrders } from '@/lib/actions/series';
@@ -76,48 +76,53 @@ export async function createBlog(formData: BlogFormData) {
     return { ok: false, error: parsed.error.flatten().fieldErrors };
   }
 
-  const { tags, thumbnailUrl, seriesId, seriesOrder, ...rest } = parsed.data;
-  const authorId = await ensureAdminUser();
-  const tagNames = tags
-    ? tags
-        .split(',')
-        .map(t => t.trim())
-        .filter(Boolean)
-    : [];
-  const tagIds = await syncTags(tagNames);
+  try {
+    const { tags, thumbnailUrl, seriesId, seriesOrder, ...rest } = parsed.data;
+    const authorId = await ensureAdminUser();
+    const tagNames = tags
+      ? tags
+          .split(',')
+          .map(t => t.trim())
+          .filter(Boolean)
+      : [];
+    const tagIds = await syncTags(tagNames);
 
-  const parsedSeriesOrder =
-    seriesOrder != null && Number(seriesOrder) > 0 ? Number(seriesOrder) : null;
-  const targetSeriesId = seriesId || null;
+    const parsedSeriesOrder =
+      seriesOrder != null && Number(seriesOrder) > 0 ? Number(seriesOrder) : null;
+    const targetSeriesId = seriesId || null;
 
-  const newBlog = await prisma.blog.create({
-    data: {
-      ...rest,
-      seriesId: targetSeriesId,
-      seriesOrder: parsedSeriesOrder,
-      thumbnailUrl: thumbnailUrl || undefined,
-      authorId,
-      publishedAt: rest.status === 'PUBLISHED' ? new Date() : undefined,
-      tags: {
-        create: tagIds.map(tagId => ({ tagId })),
+    const newBlog = await prisma.blog.create({
+      data: {
+        ...rest,
+        seriesId: targetSeriesId,
+        seriesOrder: parsedSeriesOrder,
+        thumbnailUrl: thumbnailUrl || undefined,
+        authorId,
+        publishedAt: rest.status === 'PUBLISHED' ? new Date() : undefined,
+        tags: {
+          create: tagIds.map(tagId => ({ tagId })),
+        },
       },
-    },
-  });
-
-  if (targetSeriesId) {
-    await smartReorderSeriesBlogs({
-      seriesId: targetSeriesId,
-      targetBlogId: newBlog.id,
-      desiredOrder: parsedSeriesOrder,
     });
-  }
 
-  revalidateTag('blogs', 'max');
-  revalidatePath('/nhatphanhk102/blogs');
-  revalidatePath('/blog');
-  revalidatePath('/blog/series');
-  revalidatePath('/');
-  return { ok: true, id: newBlog.id };
+    if (targetSeriesId) {
+      await smartReorderSeriesBlogs({
+        seriesId: targetSeriesId,
+        targetBlogId: newBlog.id,
+        desiredOrder: parsedSeriesOrder,
+      });
+    }
+
+    revalidateTag('blogs', 'max');
+    revalidatePath('/nhatphanhk102/blogs');
+    revalidatePath('/blog');
+    revalidatePath('/blog/series');
+    revalidatePath('/');
+    return { ok: true, id: newBlog.id };
+  } catch (err) {
+    console.error('Error creating blog:', err);
+    return { ok: false, error: prismaErrorMessage(err, 'Không thể tạo bài viết.') };
+  }
 }
 
 export async function updateBlog(id: string, formData: BlogFormData) {
@@ -127,64 +132,69 @@ export async function updateBlog(id: string, formData: BlogFormData) {
     return { ok: false, error: parsed.error.flatten().fieldErrors };
   }
 
-  const { tags, thumbnailUrl, seriesId, seriesOrder, ...rest } = parsed.data;
-  const tagNames = tags
-    ? tags
-        .split(',')
-        .map(t => t.trim())
-        .filter(Boolean)
-    : [];
-  const tagIds = await syncTags(tagNames);
+  try {
+    const { tags, thumbnailUrl, seriesId, seriesOrder, ...rest } = parsed.data;
+    const tagNames = tags
+      ? tags
+          .split(',')
+          .map(t => t.trim())
+          .filter(Boolean)
+      : [];
+    const tagIds = await syncTags(tagNames);
 
-  const oldBlog = await prisma.blog.findUnique({
-    where: { id },
-    select: { seriesId: true, seriesOrder: true, slug: true },
-  });
-
-  const parsedSeriesOrder =
-    seriesOrder != null && Number(seriesOrder) > 0 ? Number(seriesOrder) : null;
-  const targetSeriesId = seriesId || null;
-
-  await prisma.blog.update({
-    where: { id },
-    data: {
-      ...rest,
-      seriesId: targetSeriesId,
-      seriesOrder: parsedSeriesOrder,
-      thumbnailUrl: thumbnailUrl || undefined,
-      publishedAt:
-        rest.status === 'PUBLISHED'
-          ? ((
-              await prisma.blog.findUnique({
-                where: { id },
-                select: { publishedAt: true },
-              })
-            )?.publishedAt ?? new Date())
-          : null,
-      tags: {
-        deleteMany: {},
-        create: tagIds.map(tagId => ({ tagId })),
-      },
-    },
-  });
-
-  // Smart series insertion & reordering
-  if (targetSeriesId || oldBlog?.seriesId) {
-    await smartReorderSeriesBlogs({
-      seriesId: targetSeriesId,
-      targetBlogId: id,
-      desiredOrder: parsedSeriesOrder,
-      previousSeriesId: oldBlog?.seriesId,
+    const oldBlog = await prisma.blog.findUnique({
+      where: { id },
+      select: { seriesId: true, seriesOrder: true, slug: true },
     });
-  }
 
-  revalidateTag('blogs', 'max');
-  revalidatePath('/nhatphanhk102/blogs');
-  revalidatePath('/blog');
-  revalidatePath('/blog/series');
-  revalidatePath(`/blog/${rest.slug}`);
-  revalidatePath('/');
-  return { ok: true };
+    const parsedSeriesOrder =
+      seriesOrder != null && Number(seriesOrder) > 0 ? Number(seriesOrder) : null;
+    const targetSeriesId = seriesId || null;
+
+    await prisma.blog.update({
+      where: { id },
+      data: {
+        ...rest,
+        seriesId: targetSeriesId,
+        seriesOrder: parsedSeriesOrder,
+        thumbnailUrl: thumbnailUrl || null,
+        publishedAt:
+          rest.status === 'PUBLISHED'
+            ? ((
+                await prisma.blog.findUnique({
+                  where: { id },
+                  select: { publishedAt: true },
+                })
+              )?.publishedAt ?? new Date())
+            : null,
+        tags: {
+          deleteMany: {},
+          create: tagIds.map(tagId => ({ tagId })),
+        },
+      },
+    });
+
+    // Smart series insertion & reordering
+    if (targetSeriesId || oldBlog?.seriesId) {
+      await smartReorderSeriesBlogs({
+        seriesId: targetSeriesId,
+        targetBlogId: id,
+        desiredOrder: parsedSeriesOrder,
+        previousSeriesId: oldBlog?.seriesId,
+      });
+    }
+
+    revalidateTag('blogs', 'max');
+    revalidatePath('/nhatphanhk102/blogs');
+    revalidatePath('/blog');
+    revalidatePath('/blog/series');
+    revalidatePath(`/blog/${rest.slug}`);
+    revalidatePath('/');
+    return { ok: true };
+  } catch (err) {
+    console.error('Error updating blog:', err);
+    return { ok: false, error: prismaErrorMessage(err, 'Không thể lưu bài viết.') };
+  }
 }
 
 export async function deleteBlog(id: string) {

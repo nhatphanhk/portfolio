@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export type ItemType =
   | 'experience'
@@ -156,6 +157,7 @@ export function ResumeItemDialog({
       onOpenChange(false);
     } catch (err) {
       console.error('Failed to save item:', err);
+      toast.error(err instanceof Error ? err.message : 'Không thể lưu mục này.');
     } finally {
       setSaving(false);
     }
@@ -519,14 +521,14 @@ export function ResumeItemDialog({
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span className="font-semibold uppercase">Mức độ thành thạo</span>
-                  <span>{formData.level || 80}%</span>
+                  <span>{formData.level || 3}/5</span>
                 </div>
                 <input
                   type="range"
-                  min="10"
-                  max="100"
-                  step="5"
-                  value={formData.level || 80}
+                  min="1"
+                  max="5"
+                  step="1"
+                  value={formData.level || 3}
                   onChange={e => setFormData({ ...formData, level: parseInt(e.target.value, 10) })}
                   className="w-full accent-primary cursor-pointer"
                 />

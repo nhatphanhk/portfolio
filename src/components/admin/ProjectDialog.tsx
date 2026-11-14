@@ -216,7 +216,8 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
         reset();
         onOpenChange(false);
       } else {
-        toast.error('Something went wrong.');
+        const err = (result as { error?: unknown }).error;
+        toast.error(typeof err === 'string' ? err : 'Something went wrong.');
       }
     });
   };

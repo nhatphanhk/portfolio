@@ -15,7 +15,7 @@ const schema = z.object({
     'LANGUAGE', 'FRAMEWORK', 'DATABASE', 'CLOUD', 'IAC', 
     'MONITORING', 'VERSION_CONTROL'
   ]),
-  level: z.number().int(),
+  level: z.number().int().min(1).max(5),
   iconUrl: z.string().url().optional().or(z.literal('')),
   order: z.number().int(),
 });
@@ -52,7 +52,7 @@ export function SkillDialog({ mode, open, onOpenChange, initialData }: SkillDial
     defaultValues: {
       name: initialData?.name ?? '',
       category: initialData?.category ?? 'FRONTEND',
-      level: 3,
+      level: initialData?.level ?? 3,
       iconUrl: initialData?.iconUrl ?? '',
       order: initialData?.order ?? 0,
     },
@@ -70,7 +70,8 @@ export function SkillDialog({ mode, open, onOpenChange, initialData }: SkillDial
         reset();
         onOpenChange(false);
       } else {
-        toast.error('Something went wrong.');
+        const err = (result as { error?: unknown }).error;
+        toast.error(typeof err === 'string' ? err : 'Something went wrong.');
       }
     });
   };
@@ -114,6 +115,20 @@ export function SkillDialog({ mode, open, onOpenChange, initialData }: SkillDial
                 className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Level (1–5)</label>
+            <select
+              {...register('level', { valueAsNumber: true })}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              {[1, 2, 3, 4, 5].map(n => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition, useCallback } from 'react';
+import React, { useState, useTransition, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { ResumeToolbar } from '@/components/admin/resume/ResumeToolbar';
 import { LiveResumeCanvas } from '@/components/admin/resume/LiveResumeCanvas';
@@ -9,6 +9,8 @@ import { ResumeItemDialog, ItemType } from '@/components/admin/resume/ResumeItem
 import { ResumePdfDialog } from '@/components/admin/resume/ResumePdfDialog';
 import { ResumePdfConvertDialog } from '@/components/admin/resume/ResumePdfConvertDialog';
 import { ResumeTranslateDialog } from '@/components/admin/resume/ResumeTranslateDialog';
+import { UnsavedChangesDialog } from '@/components/admin/UnsavedChangesDialog';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes-guard';
 import { ParsedResumeData } from '@/lib/pdf-resume-parser';
 import {
   SectionId,
@@ -22,6 +24,9 @@ import {
 import {
   updateProfile,
   upsertSocialLink,
+  deleteSocialLink,
+  reorderExperiences,
+  reorderEducation,
   createExperience,
   updateExperience,
   deleteExperience,
@@ -37,8 +42,49 @@ import {
   createActivity,
   updateActivity,
   deleteActivity,
+  type ProfileFormData,
 } from '@/lib/actions/about';
 import { createSkill, deleteSkill } from '@/lib/actions/skill';
+
+type ActionResult = { ok: boolean; id?: string; error?: unknown };
+
+/** Rows that exist only on the client (PDF import) until "Save All" persists them. */
+const isTempId = (id: unknown): boolean => typeof id === 'string' && id.startsWith('temp-');
+
+/** Turns a failed server action into a readable error so the caller can toast it. */
+function assertOk(res: ActionResult, what: string): void {
+  if (!res.ok) {
+    throw new Error(typeof res.error === 'string' ? res.error : `Không thể ${what}.`);
+  }
+}
+
+/** Builds the payload updateProfile() expects from the profile state object. */
+function buildProfilePayload(p: any, overrides: Partial<ProfileFormData> = {}): ProfileFormData {
+  return {
+    name: p.name,
+    handle: p.handle || undefined,
+    title: p.title,
+    tagline: p.tagline || undefined,
+    bio: p.bio || undefined,
+    bio2: p.bio2 || undefined,
+    careerObjective: p.careerObjective || undefined,
+    location: p.location || undefined,
+    email: p.email || undefined,
+    phone: p.phone || undefined,
+    resumeUrl: p.resumeUrl || undefined,
+    avatarUrl: p.avatarUrl || undefined,
+    softSkills: p.softSkills || undefined,
+    interests: p.interests || undefined,
+    ...overrides,
+  };
+}
+
+/** Dates arrive as Date objects (DB rows) or strings (forms); the actions want strings. */
+const toDateString = (d: unknown, precision: 'month' | 'day' = 'month'): string | undefined => {
+  if (!d) return undefined;
+  if (typeof d === 'string') return d;
+  return new Date(d as Date).toISOString().slice(0, precision === 'month' ? 7 : 10);
+};
 
 interface AdminResumeClientProps {
   profile: any;
@@ -71,6 +117,37 @@ export function AdminResumeClient({
   const [activities, setActivities] = useState(initialActivities);
   const [skillsByCategory, setSkillsByCategory] = useState(initialSkillsByCategory);
 
+  // Last persisted snapshot of every collection. "Hoàn tác" restores this, and it moves
+  // forward after every successful write (dialog saves hit the server immediately).
+  const baseline = useRef({
+    profile: initialProfile,
+    experiences: initialExperiences,
+    education: initialEducation,
+    socialLinks: initialSocialLinks,
+    achievements: initialAchievements,
+    spokenLanguages: initialSpokenLanguages,
+    activities: initialActivities,
+    skillsByCategory: initialSkillsByCategory,
+  });
+  type ListKey = 'experiences' | 'education' | 'socialLinks' | 'achievements' | 'spokenLanguages' | 'activities';
+  const listSetters: Record<ListKey, React.Dispatch<React.SetStateAction<any[]>>> = {
+    experiences: setExperiences,
+    education: setEducation,
+    socialLinks: setSocialLinks,
+    achievements: setAchievements,
+    spokenLanguages: setSpokenLanguages,
+    activities: setActivities,
+  };
+  /** Applies a persisted list change to both live state and the restore baseline. */
+  const commitList = (key: ListKey, updater: (prev: any[]) => any[]) => {
+    listSetters[key](updater);
+    baseline.current = { ...baseline.current, [key]: updater(baseline.current[key]) };
+  };
+  const commitSkills = (updater: (prev: Record<string, any[]>) => Record<string, any[]>) => {
+    setSkillsByCategory(updater);
+    baseline.current = { ...baseline.current, skillsByCategory: updater(baseline.current.skillsByCategory) };
+  };
+
   // ── Dynamic Sections Layout State ──────────────────────────
   const [sectionLayout, setSectionLayout] = useState<ResumeSectionLayout>(() =>
     parseSectionLayout(initialProfile.interests)
@@ -87,6 +164,7 @@ export function AdminResumeClient({
   const [totalPages, setTotalPages] = useState(1);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, startSavingTransition] = useTransition();
+  const leaveGuard = useUnsavedChangesGuard(hasUnsavedChanges);
 
   // Pending deletion tracking for replaced items
   const [deletedExpIds, setDeletedExpIds] = useState<string[]>([]);
@@ -120,25 +198,17 @@ export function AdminResumeClient({
     setHasUnsavedChanges(true);
   }, []);
 
-  const handleSavePdfUrl = useCallback(
-    async (url: string | null) => {
-      setProfile((prev: any) => ({
-        ...prev,
-        resumeUrl: url,
-      }));
-      try {
-        await updateProfile({
-          ...profile,
-          resumeUrl: url || undefined,
-        });
-        setHasUnsavedChanges(false);
-      } catch (e) {
-        console.error('Failed to update profile resumeUrl', e);
-        throw e;
-      }
-    },
-    [profile]
-  );
+  // Persists only the PDF link (on top of the last saved profile), so pending inline edits are
+  // neither silently saved nor silently marked as saved. Throws so the dialog can show the error.
+  const handleSavePdfUrl = useCallback(async (url: string | null) => {
+    const res = await updateProfile(buildProfilePayload(baseline.current.profile, { resumeUrl: url }));
+    assertOk(res, 'cập nhật liên kết PDF');
+    setProfile((prev: any) => ({ ...prev, resumeUrl: url }));
+    baseline.current = {
+      ...baseline.current,
+      profile: { ...baseline.current.profile, resumeUrl: url },
+    };
+  }, []);
 
   // ── Template Style Selection ──────────────────────────────
   const handleSelectTemplateStyle = useCallback((style: ResumeTemplateStyle) => {
@@ -343,7 +413,7 @@ export function AdminResumeClient({
               id: `temp-skill-${Date.now()}-${idx}`,
               name: sk.name,
               category: cat,
-              level: sk.level || 80,
+              level: sk.level || 3,
               order: idx,
             });
           });
@@ -362,7 +432,7 @@ export function AdminResumeClient({
                   id: `temp-skill-${Date.now()}-${idx}`,
                   name: sk.name,
                   category: cat,
-                  level: sk.level || 80,
+                  level: sk.level || 3,
                   order: next[cat].length,
                 });
               }
@@ -430,169 +500,227 @@ export function AdminResumeClient({
   );
 
   // ── Save All Uncommitted Changes ───────────────────────────
+  // Writes run first and queued deletions last, so a failure can never leave the CV emptier
+  // than before. Every created row adopts its real id immediately, which is what stops the
+  // next "Save All" from creating it again.
   const handleSaveAll = () => {
     startSavingTransition(async () => {
+      const merge = <T,>(done: T[], all: T[]): T[] => [...done, ...all.slice(done.length)];
+      const nowMonth = new Date().toISOString().slice(0, 7);
+
+      const nextProfile = { ...profile, interests: JSON.stringify(sectionLayout) };
+      const doneExp: any[] = [];
+      const doneEdu: any[] = [];
+      const doneAch: any[] = [];
+      const doneAct: any[] = [];
+      const doneLang: any[] = [];
+      const doneSocial: any[] = [];
+      const skillIdMap = new Map<string, string>();
+      const pendingDeletes = {
+        exp: [...deletedExpIds],
+        edu: [...deletedEduIds],
+        skill: [...deletedSkillIds],
+        lang: [...deletedLangIds],
+      };
+      let profileSaved = false;
+      let succeeded = false;
+
       try {
-        const layoutJson = JSON.stringify(sectionLayout);
+        assertOk(await updateProfile(buildProfilePayload(nextProfile)), 'lưu thông tin hồ sơ');
+        profileSaved = true;
 
-        // Delete items queued for deletion (from replace mode)
-        for (const id of deletedExpIds) {
-          try { await deleteExperience(id); } catch (_e) {}
-        }
-        for (const id of deletedEduIds) {
-          try { await deleteEducation(id); } catch (_e) {}
-        }
-        for (const id of deletedSkillIds) {
-          try { await deleteSkill(id); } catch (_e) {}
-        }
-        for (const id of deletedLangIds) {
-          try { await deleteSpokenLanguage(id); } catch (_e) {}
-        }
-        setDeletedExpIds([]);
-        setDeletedEduIds([]);
-        setDeletedSkillIds([]);
-        setDeletedLangIds([]);
-
-        // Save profile
-        const profileRes = await updateProfile({
-          name: profile.name,
-          handle: profile.handle || undefined,
-          title: profile.title,
-          tagline: profile.tagline || undefined,
-          bio: profile.bio || undefined,
-          bio2: profile.bio2 || undefined,
-          careerObjective: profile.careerObjective || undefined,
-          location: profile.location || undefined,
-          email: profile.email || undefined,
-          phone: profile.phone || undefined,
-          resumeUrl: profile.resumeUrl || undefined,
-          avatarUrl: profile.avatarUrl || undefined,
-          softSkills: profile.softSkills || undefined,
-          interests: layoutJson,
-        });
-
-        if (!profileRes.ok) {
-          toast.error('Lỗi khi lưu thông tin profile');
-          return;
-        }
-
-        // Save inline-modified or newly added experiences
         for (const exp of experiences) {
-          const sDate = exp.startDate
-            ? (typeof exp.startDate === 'string' ? exp.startDate : new Date(exp.startDate).toISOString().slice(0, 7))
-            : new Date().toISOString().slice(0, 7);
-          const eDate = exp.endDate
-            ? (typeof exp.endDate === 'string' ? exp.endDate : new Date(exp.endDate).toISOString().slice(0, 7))
-            : undefined;
-
-          if (exp.id && !exp.id.startsWith('temp-')) {
-            await updateExperience(exp.id, {
-              company: exp.company,
-              position: exp.position,
-              description: exp.description || undefined,
-              achievements: exp.achievements || undefined,
-              techStack: exp.techStack || undefined,
-              startDate: sDate,
-              endDate: exp.isCurrent ? undefined : eDate,
-              isCurrent: exp.isCurrent,
-            });
+          const payload = {
+            company: exp.company,
+            position: exp.position,
+            description: exp.description || undefined,
+            achievements: exp.achievements || undefined,
+            techStack: exp.techStack || undefined,
+            startDate: toDateString(exp.startDate) ?? nowMonth,
+            endDate: exp.isCurrent ? undefined : toDateString(exp.endDate),
+            isCurrent: exp.isCurrent ?? false,
+          };
+          if (isTempId(exp.id)) {
+            const res = await createExperience(payload);
+            assertOk(res, 'lưu kinh nghiệm');
+            doneExp.push({ ...exp, id: res.id as string });
           } else {
-            await createExperience({
-              company: exp.company,
-              position: exp.position,
-              description: exp.description || undefined,
-              achievements: exp.achievements || undefined,
-              techStack: exp.techStack || undefined,
-              startDate: sDate,
-              endDate: exp.isCurrent ? undefined : eDate,
-              isCurrent: exp.isCurrent ?? false,
-            });
+            assertOk(await updateExperience(exp.id, payload), 'lưu kinh nghiệm');
+            doneExp.push(exp);
           }
         }
 
-        // Save inline-modified or newly added education
         for (const edu of education) {
-          const sDate = edu.startDate
-            ? (typeof edu.startDate === 'string' ? edu.startDate : new Date(edu.startDate).toISOString().slice(0, 7))
-            : new Date().toISOString().slice(0, 7);
-          const eDate = edu.endDate
-            ? (typeof edu.endDate === 'string' ? edu.endDate : new Date(edu.endDate).toISOString().slice(0, 7))
-            : undefined;
-
-          if (edu.id && !edu.id.startsWith('temp-')) {
-            await updateEducation(edu.id, {
-              institution: edu.institution,
-              degree: edu.degree,
-              fieldOfStudy: edu.fieldOfStudy || undefined,
-              startDate: sDate,
-              endDate: edu.isCurrent ? undefined : eDate,
-              isCurrent: edu.isCurrent,
-              gpa: edu.gpa || undefined,
-              description: edu.description || undefined,
-            });
+          const payload = {
+            institution: edu.institution,
+            degree: edu.degree,
+            fieldOfStudy: edu.fieldOfStudy || undefined,
+            startDate: toDateString(edu.startDate) ?? nowMonth,
+            endDate: edu.isCurrent ? undefined : toDateString(edu.endDate),
+            isCurrent: edu.isCurrent ?? false,
+            gpa: edu.gpa || undefined,
+            description: edu.description || undefined,
+          };
+          if (isTempId(edu.id)) {
+            const res = await createEducation(payload);
+            assertOk(res, 'lưu học vấn');
+            doneEdu.push({ ...edu, id: res.id as string });
           } else {
-            await createEducation({
-              institution: edu.institution,
-              degree: edu.degree,
-              fieldOfStudy: edu.fieldOfStudy || undefined,
-              startDate: sDate,
-              endDate: edu.isCurrent ? undefined : eDate,
-              isCurrent: edu.isCurrent ?? false,
-              gpa: edu.gpa || undefined,
-              description: edu.description || undefined,
-            });
+            assertOk(await updateEducation(edu.id, payload), 'lưu học vấn');
+            doneEdu.push(edu);
           }
         }
 
-        // Save newly added skills from PDF or manual additions
+        // Inline edits on the canvas also touch achievements and activities
+        for (const ach of achievements) {
+          const payload = {
+            title: ach.title,
+            description: ach.description || undefined,
+            date: toDateString(ach.date, 'day'),
+            category: ach.category || undefined,
+          };
+          if (isTempId(ach.id)) {
+            const res = await createAchievement(payload);
+            assertOk(res, 'lưu thành tích');
+            doneAch.push({ ...ach, id: res.id as string });
+          } else {
+            assertOk(await updateAchievement(ach.id, payload), 'lưu thành tích');
+            doneAch.push(ach);
+          }
+        }
+
+        for (const act of activities) {
+          const payload = {
+            title: act.title,
+            description: act.description || undefined,
+            type: act.type || undefined,
+            startDate: toDateString(act.startDate, 'day'),
+            endDate: toDateString(act.endDate, 'day'),
+          };
+          if (isTempId(act.id)) {
+            const res = await createActivity(payload);
+            assertOk(res, 'lưu hoạt động');
+            doneAct.push({ ...act, id: res.id as string });
+          } else {
+            assertOk(await updateActivity(act.id, payload), 'lưu hoạt động');
+            doneAct.push(act);
+          }
+        }
+
         for (const [cat, skillList] of Object.entries(skillsByCategory)) {
           for (const sk of skillList) {
-            if (sk.id && sk.id.startsWith('temp-')) {
-              try {
-                await createSkill({
-                  name: sk.name,
-                  category: cat as any,
-                  level: sk.level || 80,
-                  order: 0,
-                });
-              } catch (_err) {
-                console.error('Failed to create skill during Save All:', _err);
-              }
-            }
+            if (!isTempId(sk.id)) continue;
+            const res = await createSkill({
+              name: sk.name,
+              category: cat as any,
+              level: sk.level || 3,
+              order: 0,
+            });
+            assertOk(res, `lưu kỹ năng ${sk.name}`);
+            skillIdMap.set(sk.id, res.id as string);
           }
         }
 
-        // Save newly added spoken languages
         for (const lang of spokenLanguages) {
-          if (lang.id && lang.id.startsWith('temp-')) {
-            try {
-              await createSpokenLanguage({
-                language: lang.language,
-                level: lang.level || 'Professional',
-              });
-            } catch (_err) {
-              console.error('Failed to create spoken language during Save All:', _err);
-            }
+          if (isTempId(lang.id)) {
+            const res = await createSpokenLanguage({
+              language: lang.language,
+              level: lang.level || 'Professional',
+            });
+            assertOk(res, `lưu ngoại ngữ ${lang.language}`);
+            doneLang.push({ ...lang, id: res.id as string });
+          } else {
+            doneLang.push(lang);
           }
         }
 
-        // Save newly added social links
         for (const social of socialLinks) {
-          if (social.id && social.id.startsWith('temp-')) {
-            try {
-              await upsertSocialLink(social.platform, social.url, social.iconName);
-            } catch (_err) {
-              console.error('Failed to upsert social link during Save All:', _err);
-            }
+          if (isTempId(social.id)) {
+            const res = await upsertSocialLink(social.platform, social.url, social.iconName);
+            assertOk(res, `lưu liên kết ${social.platform}`);
+            doneSocial.push({ ...social, id: res.id as string });
+          } else {
+            doneSocial.push(social);
           }
         }
 
-        setProfile((prev: any) => ({ ...prev, interests: layoutJson }));
-        setHasUnsavedChanges(false);
-        toast.success('Đã lưu tất cả thay đổi trên CV thành công!');
+        // Persist the on-screen order (Move up / down)
+        if (doneExp.length > 0) {
+          assertOk(await reorderExperiences(doneExp.map(e => e.id)), 'lưu thứ tự kinh nghiệm');
+        }
+        if (doneEdu.length > 0) {
+          assertOk(await reorderEducation(doneEdu.map(e => e.id)), 'lưu thứ tự học vấn');
+        }
+
+        // Deletions queued by a "replace" PDF import run last; failures stay queued for the next save
+        const tryDelete = async (ids: string[], del: (id: string) => Promise<{ ok: boolean }>) => {
+          const failed: string[] = [];
+          for (const id of ids) {
+            const ok = await del(id).then(r => r.ok, () => false);
+            if (!ok) failed.push(id);
+          }
+          return failed;
+        };
+        pendingDeletes.exp = await tryDelete(pendingDeletes.exp, deleteExperience);
+        pendingDeletes.edu = await tryDelete(pendingDeletes.edu, deleteEducation);
+        pendingDeletes.skill = await tryDelete(pendingDeletes.skill, deleteSkill);
+        pendingDeletes.lang = await tryDelete(pendingDeletes.lang, deleteSpokenLanguage);
+        const failedDeletes =
+          pendingDeletes.exp.length +
+          pendingDeletes.edu.length +
+          pendingDeletes.skill.length +
+          pendingDeletes.lang.length;
+        if (failedDeletes > 0) {
+          throw new Error(
+            `Đã lưu thay đổi nhưng chưa xóa được ${failedDeletes} mục cũ. Hãy bấm "Lưu thay đổi" lần nữa.`
+          );
+        }
+        succeeded = true;
       } catch (error) {
         console.error('Error saving CV changes:', error);
-        toast.error('Có lỗi xảy ra khi lưu thay đổi.');
+        toast.error(error instanceof Error ? error.message : 'Có lỗi xảy ra khi lưu thay đổi.');
+      } finally {
+        // Commit whatever did persist (real ids included) so nothing is created twice later
+        const finalProfile = profileSaved ? nextProfile : profile;
+        const finalExp = merge(doneExp, experiences);
+        const finalEdu = merge(doneEdu, education);
+        const finalAch = merge(doneAch, achievements);
+        const finalAct = merge(doneAct, activities);
+        const finalLang = merge(doneLang, spokenLanguages);
+        const finalSocial = merge(doneSocial, socialLinks);
+        const finalSkills = Object.fromEntries(
+          Object.entries(skillsByCategory).map(([cat, list]) => [
+            cat,
+            list.map(sk => (skillIdMap.has(sk.id) ? { ...sk, id: skillIdMap.get(sk.id) } : sk)),
+          ])
+        );
+        setProfile(finalProfile);
+        setExperiences(finalExp);
+        setEducation(finalEdu);
+        setAchievements(finalAch);
+        setActivities(finalAct);
+        setSpokenLanguages(finalLang);
+        setSocialLinks(finalSocial);
+        setSkillsByCategory(finalSkills);
+        setDeletedExpIds(pendingDeletes.exp);
+        setDeletedEduIds(pendingDeletes.edu);
+        setDeletedSkillIds(pendingDeletes.skill);
+        setDeletedLangIds(pendingDeletes.lang);
+
+        if (succeeded) {
+          baseline.current = {
+            profile: finalProfile,
+            experiences: finalExp,
+            education: finalEdu,
+            socialLinks: finalSocial,
+            achievements: finalAch,
+            spokenLanguages: finalLang,
+            activities: finalAct,
+            skillsByCategory: finalSkills,
+          };
+          setHasUnsavedChanges(false);
+          toast.success('Đã lưu tất cả thay đổi trên CV thành công!');
+        }
       }
     });
   };
@@ -600,15 +728,16 @@ export function AdminResumeClient({
   // ── Reset to Initial Data ──────────────────────────────────
   const handleReset = () => {
     if (window.confirm('Bạn có chắc muốn hoàn tác các thay đổi chưa lưu trên CV?')) {
-      setProfile(initialProfile);
-      setExperiences(initialExperiences);
-      setEducation(initialEducation);
-      setSocialLinks(initialSocialLinks);
-      setAchievements(initialAchievements);
-      setSpokenLanguages(initialSpokenLanguages);
-      setActivities(initialActivities);
-      setSkillsByCategory(initialSkillsByCategory);
-      setSectionLayout(parseSectionLayout(initialProfile.interests));
+      const b = baseline.current;
+      setProfile(b.profile);
+      setExperiences(b.experiences);
+      setEducation(b.education);
+      setSocialLinks(b.socialLinks);
+      setAchievements(b.achievements);
+      setSpokenLanguages(b.spokenLanguages);
+      setActivities(b.activities);
+      setSkillsByCategory(b.skillsByCategory);
+      setSectionLayout(parseSectionLayout(b.profile.interests));
       setDeletedExpIds([]);
       setDeletedEduIds([]);
       setDeletedSkillIds([]);
@@ -627,169 +756,127 @@ export function AdminResumeClient({
     });
   };
 
+  // Dialog saves hit the server immediately. Created rows adopt the real id returned by the
+  // action (so "Save All" never re-creates them) and the restore baseline moves with them.
   const handleSaveDialogItem = async (type: ItemType, data: any) => {
+    const replaceById = (next: any) => (prev: any[]) =>
+      prev.map(item => (item.id === next.id ? { ...item, ...next } : item));
+    const append = (next: any) => (prev: any[]) => [...prev, next];
+
     switch (type) {
       case 'experience': {
+        const payload = {
+          company: data.company,
+          position: data.position,
+          startDate: data.startDate,
+          endDate: data.endDate || undefined,
+          isCurrent: data.isCurrent,
+          description: data.description || undefined,
+          achievements: data.achievements || undefined,
+          techStack: data.techStack || undefined,
+        };
         if (data.id) {
-          await updateExperience(data.id, {
-            company: data.company,
-            position: data.position,
-            startDate: data.startDate,
-            endDate: data.endDate || undefined,
-            isCurrent: data.isCurrent,
-            description: data.description || undefined,
-            achievements: data.achievements || undefined,
-            techStack: data.techStack || undefined,
-          });
-          setExperiences(prev =>
-            prev.map(item => (item.id === data.id ? { ...item, ...data } : item))
-          );
+          assertOk(await updateExperience(data.id, payload), 'lưu kinh nghiệm');
+          commitList('experiences', replaceById(data));
           toast.success('Đã cập nhật kinh nghiệm!');
         } else {
-          await createExperience({
-            company: data.company,
-            position: data.position,
-            startDate: data.startDate,
-            endDate: data.endDate || undefined,
-            isCurrent: data.isCurrent,
-            description: data.description || undefined,
-            achievements: data.achievements || undefined,
-            techStack: data.techStack || undefined,
-          });
-          setExperiences(prev => [
-            ...prev,
-            { ...data, id: `temp-${Date.now()}`, startDate: new Date(data.startDate) },
-          ]);
+          const res = await createExperience(payload);
+          assertOk(res, 'lưu kinh nghiệm');
+          commitList('experiences', append({ ...data, id: res.id, startDate: new Date(data.startDate) }));
           toast.success('Đã thêm kinh nghiệm mới!');
         }
         break;
       }
 
       case 'education': {
+        const payload = {
+          institution: data.institution,
+          degree: data.degree,
+          fieldOfStudy: data.fieldOfStudy || undefined,
+          startDate: data.startDate,
+          endDate: data.endDate || undefined,
+          isCurrent: data.isCurrent,
+          gpa: data.gpa || undefined,
+          description: data.description || undefined,
+        };
         if (data.id) {
-          await updateEducation(data.id, {
-            institution: data.institution,
-            degree: data.degree,
-            fieldOfStudy: data.fieldOfStudy || undefined,
-            startDate: data.startDate,
-            endDate: data.endDate || undefined,
-            isCurrent: data.isCurrent,
-            gpa: data.gpa || undefined,
-            description: data.description || undefined,
-          });
-          setEducation(prev =>
-            prev.map(item => (item.id === data.id ? { ...item, ...data } : item))
-          );
+          assertOk(await updateEducation(data.id, payload), 'lưu học vấn');
+          commitList('education', replaceById(data));
           toast.success('Đã cập nhật học vấn!');
         } else {
-          await createEducation({
-            institution: data.institution,
-            degree: data.degree,
-            fieldOfStudy: data.fieldOfStudy || undefined,
-            startDate: data.startDate,
-            endDate: data.endDate || undefined,
-            isCurrent: data.isCurrent,
-            gpa: data.gpa || undefined,
-            description: data.description || undefined,
-          });
-          setEducation(prev => [
-            ...prev,
-            { ...data, id: `temp-${Date.now()}`, startDate: new Date(data.startDate) },
-          ]);
+          const res = await createEducation(payload);
+          assertOk(res, 'lưu học vấn');
+          commitList('education', append({ ...data, id: res.id, startDate: new Date(data.startDate) }));
           toast.success('Đã thêm học vấn mới!');
         }
         break;
       }
 
       case 'achievement': {
+        const payload = {
+          title: data.title,
+          description: data.description || undefined,
+          date: data.date || undefined,
+          category: data.category || undefined,
+        };
         if (data.id) {
-          await updateAchievement(data.id, {
-            title: data.title,
-            description: data.description || undefined,
-            date: data.date || undefined,
-            category: data.category || undefined,
-          });
-          setAchievements(prev =>
-            prev.map(item => (item.id === data.id ? { ...item, ...data } : item))
-          );
+          assertOk(await updateAchievement(data.id, payload), 'lưu thành tích');
+          commitList('achievements', replaceById(data));
           toast.success('Đã cập nhật thành tích!');
         } else {
-          await createAchievement({
-            title: data.title,
-            description: data.description || undefined,
-            date: data.date || undefined,
-            category: data.category || undefined,
-          });
-          setAchievements(prev => [
-            ...prev,
-            { ...data, id: `temp-${Date.now()}`, date: data.date ? new Date(data.date) : null },
-          ]);
+          const res = await createAchievement(payload);
+          assertOk(res, 'lưu thành tích');
+          commitList('achievements', append({ ...data, id: res.id, date: data.date ? new Date(data.date) : null }));
           toast.success('Đã thêm thành tích mới!');
         }
         break;
       }
 
       case 'language': {
+        const payload = { language: data.language, level: data.level };
         if (data.id) {
-          await updateSpokenLanguage(data.id, {
-            language: data.language,
-            level: data.level,
-          });
-          setSpokenLanguages(prev =>
-            prev.map(item => (item.id === data.id ? { ...item, ...data } : item))
-          );
+          assertOk(await updateSpokenLanguage(data.id, payload), 'lưu ngoại ngữ');
+          commitList('spokenLanguages', replaceById(data));
           toast.success('Đã cập nhật ngoại ngữ!');
         } else {
-          await createSpokenLanguage({
-            language: data.language,
-            level: data.level,
-          });
-          setSpokenLanguages(prev => [...prev, { ...data, id: `temp-${Date.now()}` }]);
+          const res = await createSpokenLanguage(payload);
+          assertOk(res, 'lưu ngoại ngữ');
+          commitList('spokenLanguages', append({ ...data, id: res.id }));
           toast.success('Đã thêm ngoại ngữ mới!');
         }
         break;
       }
 
       case 'activity': {
+        const payload = {
+          title: data.title,
+          description: data.description || undefined,
+          type: data.type || undefined,
+          startDate: data.startDate || undefined,
+          endDate: data.endDate || undefined,
+        };
         if (data.id) {
-          await updateActivity(data.id, {
-            title: data.title,
-            description: data.description || undefined,
-            type: data.type || undefined,
-            startDate: data.startDate || undefined,
-            endDate: data.endDate || undefined,
-          });
-          setActivities(prev =>
-            prev.map(item => (item.id === data.id ? { ...item, ...data } : item))
-          );
+          assertOk(await updateActivity(data.id, payload), 'lưu hoạt động');
+          commitList('activities', replaceById(data));
           toast.success('Đã cập nhật hoạt động!');
         } else {
-          await createActivity({
-            title: data.title,
-            description: data.description || undefined,
-            type: data.type || undefined,
-            startDate: data.startDate || undefined,
-            endDate: data.endDate || undefined,
-          });
-          setActivities(prev => [...prev, { ...data, id: `temp-${Date.now()}` }]);
+          const res = await createActivity(payload);
+          assertOk(res, 'lưu hoạt động');
+          commitList('activities', append({ ...data, id: res.id }));
           toast.success('Đã thêm hoạt động mới!');
         }
         break;
       }
 
       case 'skill': {
-        await createSkill({
-          name: data.name,
-          category: data.category,
-          level: data.level || 80,
-          order: 0,
-        });
-        setSkillsByCategory(prev => {
+        const level = data.level || 3;
+        const res = await createSkill({ name: data.name, category: data.category, level, order: 0 });
+        assertOk(res, `lưu kỹ năng ${data.name}`);
+        commitSkills(prev => {
           const cat = data.category;
-          const current = prev[cat] || [];
           return {
             ...prev,
-            [cat]: [...current, { id: `temp-${Date.now()}`, name: data.name, level: data.level }],
+            [cat]: [...(prev[cat] || []), { id: res.id, name: data.name, category: cat, level, order: 0 }],
           };
         });
         toast.success(`Đã thêm kỹ năng ${data.name}!`);
@@ -797,15 +884,16 @@ export function AdminResumeClient({
       }
 
       case 'social': {
-        await upsertSocialLink(data.platform, data.url, data.iconName);
-        setSocialLinks(prev => {
+        const res = await upsertSocialLink(data.platform, data.url, data.iconName);
+        assertOk(res, `lưu liên kết ${data.platform}`);
+        commitList('socialLinks', prev => {
           const idx = prev.findIndex(s => s.platform.toLowerCase() === data.platform.toLowerCase());
           if (idx >= 0) {
             const updated = [...prev];
-            updated[idx] = { ...updated[idx], ...data };
+            updated[idx] = { ...updated[idx], ...data, id: res.id };
             return updated;
           }
-          return [...prev, { id: `temp-${Date.now()}`, ...data }];
+          return [...prev, { ...data, id: res.id }];
         });
         toast.success(`Đã lưu liên kết ${data.platform}!`);
         break;
@@ -816,37 +904,45 @@ export function AdminResumeClient({
   // ── Item Actions: Delete ───────────────────────────────────
   const handleDeleteItem = async (type: ItemType, id: string) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa mục này?')) return;
+    const removeById = (prev: any[]) => prev.filter(item => item.id !== id);
 
     try {
       switch (type) {
         case 'experience':
-          if (!id.startsWith('temp-')) await deleteExperience(id);
-          setExperiences(prev => prev.filter(e => e.id !== id));
+          if (!isTempId(id)) assertOk(await deleteExperience(id), 'xóa mục này');
+          commitList('experiences', removeById);
           break;
         case 'education':
-          if (!id.startsWith('temp-')) await deleteEducation(id);
-          setEducation(prev => prev.filter(e => e.id !== id));
+          if (!isTempId(id)) assertOk(await deleteEducation(id), 'xóa mục này');
+          commitList('education', removeById);
           break;
         case 'achievement':
-          if (!id.startsWith('temp-')) await deleteAchievement(id);
-          setAchievements(prev => prev.filter(a => a.id !== id));
+          if (!isTempId(id)) assertOk(await deleteAchievement(id), 'xóa mục này');
+          commitList('achievements', removeById);
           break;
         case 'language':
-          if (!id.startsWith('temp-')) await deleteSpokenLanguage(id);
-          setSpokenLanguages(prev => prev.filter(l => l.id !== id));
+          if (!isTempId(id)) assertOk(await deleteSpokenLanguage(id), 'xóa mục này');
+          commitList('spokenLanguages', removeById);
           break;
         case 'activity':
-          if (!id.startsWith('temp-')) await deleteActivity(id);
-          setActivities(prev => prev.filter(a => a.id !== id));
+          if (!isTempId(id)) assertOk(await deleteActivity(id), 'xóa mục này');
+          commitList('activities', removeById);
           break;
         case 'social':
-          setSocialLinks(prev => prev.filter(s => s.id !== id));
+          if (!isTempId(id)) assertOk(await deleteSocialLink(id), 'xóa mục này');
+          commitList('socialLinks', removeById);
+          break;
+        case 'skill':
+          if (!isTempId(id)) assertOk(await deleteSkill(id), 'xóa kỹ năng');
+          commitSkills(prev =>
+            Object.fromEntries(Object.entries(prev).map(([cat, list]) => [cat, list.filter(s => s.id !== id)]))
+          );
           break;
       }
       toast.success('Đã xóa thành công!');
     } catch (err) {
       console.error('Delete item failed:', err);
-      toast.error('Không thể xóa mục này.');
+      toast.error(err instanceof Error ? err.message : 'Không thể xóa mục này.');
     }
   };
 
@@ -891,27 +987,21 @@ export function AdminResumeClient({
     setDialogState({
       open: true,
       type: 'skill',
-      item: { category, level: 80 },
+      item: { category, level: 3 },
     });
   };
 
   const handleDeleteSkill = async (id: string) => {
     if (!window.confirm('Xóa kỹ năng này khỏi CV?')) return;
     try {
-      if (!id.startsWith('temp-')) {
-        await deleteSkill(id);
-      }
-      setSkillsByCategory(prev => {
-        const next: Record<string, any[]> = {};
-        for (const [cat, skills] of Object.entries(prev)) {
-          next[cat] = skills.filter(s => s.id !== id);
-        }
-        return next;
-      });
+      if (!isTempId(id)) assertOk(await deleteSkill(id), 'xóa kỹ năng');
+      commitSkills(prev =>
+        Object.fromEntries(Object.entries(prev).map(([cat, skills]) => [cat, skills.filter(s => s.id !== id)]))
+      );
       toast.success('Đã xóa kỹ năng!');
     } catch (err) {
       console.error('Failed to delete skill:', err);
-      toast.error('Không thể xóa kỹ năng.');
+      toast.error(err instanceof Error ? err.message : 'Không thể xóa kỹ năng.');
     }
   };
 
@@ -1055,6 +1145,15 @@ export function AdminResumeClient({
         onOpenChange={setIsTranslateDialogOpen}
         profile={profile}
         experiences={experiences}
+      />
+
+      {/* ── Leave guard for unsaved canvas edits ── */}
+      <UnsavedChangesDialog
+        open={leaveGuard.isBlocking}
+        onOpenChange={open => {
+          if (!open) leaveGuard.cancel();
+        }}
+        onConfirmLeave={leaveGuard.confirmLeave}
       />
     </div>
   );

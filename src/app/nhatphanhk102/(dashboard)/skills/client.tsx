@@ -209,6 +209,7 @@ export function AdminSkillsClient({ skills }: { skills: Skill[] }) {
             id: editTarget.id,
             name: editTarget.name,
             category: editTarget.category as 'FRONTEND' | 'BACKEND' | 'DEVOPS' | 'TOOLS' | 'OTHER',
+            level: editTarget.level ?? 3,
             iconUrl: editTarget.iconUrl ?? '',
             order: editTarget.order,
           }}

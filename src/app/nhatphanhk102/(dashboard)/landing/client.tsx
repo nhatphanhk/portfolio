@@ -13,6 +13,8 @@ import {
   Languages,
 } from 'lucide-react';
 import { saveSiteContentBundle, type SiteContentBundle } from '@/lib/actions/site-content';
+import { UnsavedChangesDialog } from '@/components/admin/UnsavedChangesDialog';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes-guard';
 import {
   DEFAULT_SITE_CONTENT,
   DEFAULT_VI_SITE_CONTENT,
@@ -53,6 +55,11 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
     }
     return map;
   });
+
+  // What the server currently holds; the page is dirty whenever the editors differ from it.
+  const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify({ en: itemsEn, vi: itemsVi }));
+  const isDirty = JSON.stringify({ en: itemsEn, vi: itemsVi }) !== savedSnapshot;
+  const leaveGuard = useUnsavedChangesGuard(isDirty);
 
   const isTranslatable = (key: string) => {
     return (TRANSLATABLE_SITE_CONTENT_KEYS as readonly string[]).includes(key);
@@ -158,6 +165,7 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
       });
 
       if (result.ok) {
+        setSavedSnapshot(JSON.stringify({ en: itemsEn, vi: itemsVi }));
         toast.success('Đã lưu nội dung và bản dịch Landing Page thành công!');
       } else {
         toast.error(result.error || 'Lỗi khi lưu dữ liệu. Vui lòng thử lại.');
@@ -366,6 +374,14 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
           );
         })}
       </div>
+
+      <UnsavedChangesDialog
+        open={leaveGuard.isBlocking}
+        onOpenChange={open => {
+          if (!open) leaveGuard.cancel();
+        }}
+        onConfirmLeave={leaveGuard.confirmLeave}
+      />
     </main>
   );
 }
