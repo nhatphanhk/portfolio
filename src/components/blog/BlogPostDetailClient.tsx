@@ -47,6 +47,8 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations, is
     if (typeof window === 'undefined' || !post?.id) return;
     const sessionKey = `viewed_blog_${post.id}`;
     if (sessionStorage.getItem(sessionKey)) return;
+    // Mark before the request so a StrictMode double mount cannot send two POSTs
+    sessionStorage.setItem(sessionKey, 'true');
 
     fetch(`/api/blogs/${post.id}/view`, {
       method: 'POST',
@@ -54,11 +56,10 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations, is
     })
       .then(res => res.json())
       .then(data => {
-        if (data?.ok) {
-          sessionStorage.setItem(sessionKey, 'true');
-        }
+        if (!data?.ok) sessionStorage.removeItem(sessionKey);
       })
       .catch(err => {
+        sessionStorage.removeItem(sessionKey);
         console.warn('View tracking error:', err);
       });
   }, [post?.id]);
