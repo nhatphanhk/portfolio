@@ -55,7 +55,7 @@ export function ProjectDetailClient({ project }: ProjectDetailClientProps) {
           <div className="flex flex-wrap items-center gap-2 mb-3">
             {project.featured && (
               <span className="px-2.5 py-0.5 text-xs font-semibold bg-primary/10 text-primary rounded-full border border-primary/20">
-                ★ {t('project.featured') || 'Featured'}
+                ★ {t('project.featured')}
               </span>
             )}
             <span className="px-2.5 py-0.5 text-xs bg-muted rounded-full text-muted-foreground capitalize font-medium">
@@ -102,7 +102,7 @@ export function ProjectDetailClient({ project }: ProjectDetailClientProps) {
 
         {/* Content / Case Study */}
         {content && (
-          <div className="prose prose-neutral dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-primary prose-code:text-primary/80 prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-sm prose-pre:bg-muted prose-pre:border prose-pre:border-border">
+          <div className="prose prose-neutral max-w-none prose-headings:font-bold prose-a:text-primary prose-code:text-primary/80 prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-sm prose-pre:bg-muted prose-pre:border prose-pre:border-border">
             <div dangerouslySetInnerHTML={{ __html: content }} />
           </div>
         )}
@@ -141,7 +141,7 @@ export function ProjectDetailClient({ project }: ProjectDetailClientProps) {
           <div className="p-5 rounded-2xl border border-border/70 bg-card shadow-sm">
             <h2 className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-muted-foreground mb-4">
               <Tag className="w-3.5 h-3.5" />
-              {t('project.technologies') || 'Tech Stack'}
+              {t('project.technologies')}
             </h2>
             <div className="flex flex-wrap gap-2">
               {project.technologies.map(tech => (

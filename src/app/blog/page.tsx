@@ -5,11 +5,15 @@ import { getPublicSeries } from '@/lib/actions/series';
 import { BlogListClient } from '@/components/blog/BlogListClient';
 import { UserBreadcrumb } from '@/components/UserBreadcrumb';
 import type { Metadata } from 'next';
+import { buildOpenGraph } from '@/lib/constants';
+
+const BLOG_DESCRIPTION =
+  'Articles on web development, TypeScript, React, Next.js, system design, and engineering best practices.';
 
 export const metadata: Metadata = {
   title: 'Blogs',
-  description:
-    'Articles on web development, TypeScript, React, Next.js, system design, and engineering best practices.',
+  description: BLOG_DESCRIPTION,
+  openGraph: buildOpenGraph({ title: 'Blogs', description: BLOG_DESCRIPTION, path: '/blog' }),
 };
 
 export const revalidate = 3600;

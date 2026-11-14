@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { isVercelBlobUrl } from '@/lib/utils';
 import {
   Layers,
   BookOpen,
@@ -77,6 +78,7 @@ export function SeriesDetailClient({ series }: SeriesDetailClientProps) {
           <div className="relative h-64 sm:h-80 w-full overflow-hidden">
             <Image
               src={series.coverUrl}
+              unoptimized={!isVercelBlobUrl(series.coverUrl)}
               alt={title}
               fill
               priority
@@ -119,7 +121,7 @@ export function SeriesDetailClient({ series }: SeriesDetailClientProps) {
                 href={`/blog/${firstPost.slug}`}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold bg-primary text-primary-foreground hover:opacity-90 shadow-md hover:shadow-primary/25 transition-all"
               >
-                <span>{t('seriesPage.startSeries') || 'Start Part 1'}</span>
+                <span>{t('seriesPage.startSeries')}</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             )}
@@ -129,7 +131,7 @@ export function SeriesDetailClient({ series }: SeriesDetailClientProps) {
               className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-medium border border-border/80 bg-background/60 hover:bg-muted/60 text-foreground transition-colors shadow-xs"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>{t('seriesPage.backToSeries') || 'Back to all series'}</span>
+              <span>{t('seriesPage.backToSeries')}</span>
             </Link>
           </div>
         </div>
@@ -212,7 +214,7 @@ export function SeriesDetailClient({ series }: SeriesDetailClientProps) {
                         </div>
 
                         <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary group-hover:underline">
-                          <span>{t('common.readMore') || 'Read article'}</span>
+                          <span>{t('common.readMore')}</span>
                           <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
                         </span>
                       </div>

@@ -7,7 +7,8 @@ import { LanguageProvider } from '@/lib/i18n/context';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
-import { SITE_DESCRIPTION, SITE_URL, OG_IMAGE } from '@/lib/constants';
+import { SITE_NAME, SITE_DESCRIPTION, SITE_URL, buildOpenGraph } from '@/lib/constants';
+import { getServerLocale } from '@/lib/i18n/server';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -23,8 +24,8 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'nhatphanhk102',
-    template: `%s | nhatphanhk102`,
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
   metadataBase: new URL(SITE_URL),
@@ -37,21 +38,12 @@ export const metadata: Metadata = {
     shortcut: '/favicon.ico',
     apple: '/apple-icon.png',
   },
-  openGraph: {
-    title: 'nhatphanhk102',
-    description: SITE_DESCRIPTION,
-    url: SITE_URL,
-    siteName: 'nhatphanhk102',
-    images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
-    locale: 'en_US',
-    type: 'website',
-  },
+  openGraph: buildOpenGraph({ title: SITE_NAME, description: SITE_DESCRIPTION, path: '/' }),
   twitter: {
     card: 'summary_large_image',
-    title: 'nhatphanhk102',
+    title: SITE_NAME,
     description: SITE_DESCRIPTION,
-    images: [OG_IMAGE],
-    creator: '@nhatphanhk102',
+    creator: `@${SITE_NAME}`,
   },
   robots: {
     index: true,
@@ -59,8 +51,6 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true },
   },
 };
-
-import { getServerLocale } from '@/lib/i18n/server';
 
 export default async function RootLayout({
   children,
@@ -72,7 +62,7 @@ export default async function RootLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" forcedTheme="light" disableTransitionOnChange>
           <LanguageProvider initialLocale={locale}>
             {children}
             <Toaster position="bottom-right" />

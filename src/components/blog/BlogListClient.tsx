@@ -95,13 +95,13 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
     search.trim() !== '' || selectedTag !== 'ALL' || selectedSeriesSlug !== null;
 
   // If not filtering, separate into featured (first) and rest
-  const featured = !isFiltering && currentPage === 1 && posts.length > 0 ? posts[0] : null;
-  const displayPosts = useMemo(() => {
-    if (featured) {
-      return filteredPosts.slice(1);
-    }
-    return filteredPosts;
-  }, [filteredPosts, featured]);
+  // When not filtering, posts[0] is the featured post. It is excluded from the paginated
+  // list on EVERY page (not just page 1) so the page count is stable and nothing repeats.
+  const featured = !isFiltering && posts.length > 0 ? posts[0] : null;
+  const displayPosts = useMemo(
+    () => (featured ? filteredPosts.slice(1) : filteredPosts),
+    [filteredPosts, featured]
+  );
 
   // Pagination for display posts
   const totalPages = Math.ceil(displayPosts.length / ITEMS_PER_PAGE) || 1;
@@ -200,7 +200,7 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
               href="/blog/series"
               className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline transition-colors pl-2"
             >
-              <span>{t('seriesPage.viewAll') || 'View all series'}</span>
+              <span>{t('seriesPage.viewAll')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -270,7 +270,7 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
       )}
 
       {/* Featured Post (Only shown when not searching/filtering & on page 1) */}
-      {featured && (
+      {featured && currentPage === 1 && (
         <div className="mb-12">
           <div className="text-xs font-semibold uppercase tracking-widest text-primary mb-4 flex items-center gap-1.5">
             <span>{t('blog.featuredArticle')}</span>

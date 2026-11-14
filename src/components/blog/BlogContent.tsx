@@ -2,7 +2,6 @@
 
 import DOMPurify from 'dompurify';
 import { useEffect, useState, useRef } from 'react';
-import { useTheme } from 'next-themes';
 import { slugifyHeading, sanitizeBasicServer, type Heading } from '@/lib/blog-utils';
 import { hydrateRichContent } from '@/lib/rich-content';
 
@@ -58,7 +57,6 @@ interface BlogContentProps {
 export function BlogContent({ html, className = '' }: BlogContentProps) {
   const [processedHtml, setProcessedHtml] = useState<string>('');
   const containerRef = useRef<HTMLDivElement>(null);
-  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     setProcessedHtml(processHtml(html));
@@ -66,15 +64,15 @@ export function BlogContent({ html, className = '' }: BlogContentProps) {
 
   useEffect(() => {
     if (containerRef.current && processedHtml) {
-      const isDark = resolvedTheme === 'dark';
-      hydrateRichContent(containerRef.current, isDark);
+      // The site is light-only (forcedTheme="light" in the root layout).
+      hydrateRichContent(containerRef.current, false);
     }
-  }, [processedHtml, resolvedTheme]);
+  }, [processedHtml]);
 
   return (
     <div
       ref={containerRef}
-      className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none ${className}`}
+      className={`prose prose-sm sm:prose-base max-w-none ${className}`}
       dangerouslySetInnerHTML={{ __html: processedHtml || sanitizeBasicServer(html) }}
     />
   );

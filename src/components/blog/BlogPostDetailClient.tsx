@@ -62,10 +62,10 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations, is
       });
   }, [post?.id]);
 
-  // Active translation based on user's current locale
+  // Posts are authored in Vietnamese; stored translations are English (locale 'en').
   const activeTranslation = useMemo(() => {
-    if (locale === 'en') return null; // Default original
-    return translations.find(tr => tr.locale === locale) || null;
+    if (locale !== 'en') return null; // Vietnamese readers get the original
+    return translations.find(tr => tr.locale === 'en') || null;
   }, [locale, translations]);
 
   const currentTitle = activeTranslation?.title || post.title;
@@ -79,7 +79,7 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations, is
 
   const handleRequestAITranslation = async () => {
     setIsTranslating(true);
-    toast.info(t('blog.translating') || 'Translating with AI and caching in DB...');
+    toast.info(t('blog.translating'));
 
     try {
       const res = await fetch('/api/translate', {
@@ -90,28 +90,28 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations, is
           title: post.title,
           excerpt: post.excerpt,
           content: post.content,
-          targetLocale: 'vi',
+          targetLocale: 'en',
         }),
       });
 
       const data = await res.json();
       if (data.ok && data.translation) {
         setTranslations(prev => [
-          ...prev.filter(t => t.locale !== 'vi'),
+          ...prev.filter(t => t.locale !== 'en'),
           {
-            locale: 'vi',
+            locale: 'en',
             title: data.translation.title,
             excerpt: data.translation.excerpt,
             content: data.translation.content,
           },
         ]);
-        toast.success('Translated & cached in DB ✓');
+        toast.success(t('blog.translateSuccess'));
       } else {
         toast.error(data.error || 'Translation failed');
       }
     } catch (err) {
       console.error(err);
-      toast.error('Failed to translate article.');
+      toast.error(t('blog.translateFailed'));
     } finally {
       setIsTranslating(false);
     }
@@ -136,26 +136,26 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations, is
             </div>
 
             {/* AI Translation Status / Trigger Badge */}
-            {locale === 'vi' && (
+            {locale === 'en' && (
               <div>
                 {activeTranslation ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-500/10 text-green-700 border border-green-500/20">
                     <Globe className="w-3.5 h-3.5" />
-                    Bản dịch tiếng Việt (Lưu sẵn DB)
+                    {t('blog.translatedBadge')}
                   </span>
                 ) : isAdmin ? (
                   <button
                     type="button"
                     onClick={handleRequestAITranslation}
                     disabled={isTranslating}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/30 hover:bg-purple-500/20 transition-all cursor-pointer shadow-2xs"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-700 border border-purple-500/30 hover:bg-purple-500/20 transition-all cursor-pointer shadow-2xs"
                   >
                     {isTranslating ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="w-3.5 h-3.5 text-purple-600" />
                     )}
-                    {isTranslating ? 'Đang dịch AI...' : 'Dịch sang Tiếng Việt & Lưu DB'}
+                    {isTranslating ? t('blog.translating') : t('blog.aiTranslate')}
                   </button>
                 ) : null}
               </div>
@@ -165,10 +165,6 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations, is
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground mb-3 leading-tight tracking-tight">
             {currentTitle}
           </h1>
-
-          <p className="font-mono text-xs text-muted-foreground mb-4">
-            Slug: <code className="text-foreground">{post.slug}</code>
-          </p>
 
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <time dateTime={post.publishedAt}>

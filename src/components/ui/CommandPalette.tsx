@@ -9,15 +9,12 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from '@/components/ui/command';
-import { useTheme } from 'next-themes';
-import { Home, User, Mail, FileText, Monitor, Moon, Sun, Briefcase, Layers, Cpu, Award } from 'lucide-react';
+import { Home, User, Mail, FileText, Briefcase, Layers, Cpu, Award } from 'lucide-react';
 
 export function CommandPalette() {
   const [open, setOpen] = React.useState(false);
   const router = useRouter();
-  const { setTheme } = useTheme();
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -40,7 +37,7 @@ export function CommandPalette() {
       <CommandInput placeholder="Type a command or search..." />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
-        
+
         <CommandGroup heading="Navigation">
           <CommandItem onSelect={() => runCommand(() => router.push('/'))}>
             <Home className="mr-2 h-4 w-4" />
@@ -73,23 +70,6 @@ export function CommandPalette() {
           <CommandItem onSelect={() => runCommand(() => router.push('/contact'))}>
             <Mail className="mr-2 h-4 w-4" />
             <span>Contact</span>
-          </CommandItem>
-        </CommandGroup>
-        
-        <CommandSeparator />
-        
-        <CommandGroup heading="Theme">
-          <CommandItem onSelect={() => runCommand(() => setTheme('light'))}>
-            <Sun className="mr-2 h-4 w-4" />
-            <span>Light</span>
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => setTheme('dark'))}>
-            <Moon className="mr-2 h-4 w-4" />
-            <span>Dark</span>
-          </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => setTheme('system'))}>
-            <Monitor className="mr-2 h-4 w-4" />
-            <span>System</span>
           </CommandItem>
         </CommandGroup>
       </CommandList>

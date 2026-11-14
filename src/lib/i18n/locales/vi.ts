@@ -58,9 +58,12 @@ export const vi: TranslationDict = {
     noHeadings: 'Bài viết này không có các đề mục phụ.',
     articleOverview: 'Tổng quan bài viết',
     partOfSeries: 'trong chuỗi bài viết này',
-    aiTranslate: 'Dịch AI (Tiếng Việt)',
+    aiTranslate: 'Dịch AI (Tiếng Anh)',
     viewOriginal: 'Xem bản gốc',
     translating: 'Đang dịch bằng AI...',
+    translatedBadge: 'Bản dịch tiếng Anh (đã lưu)',
+    translateSuccess: 'Đã dịch và lưu bản dịch thành công.',
+    translateFailed: 'Không thể dịch bài viết.',
   },
 
   // Series page
@@ -94,6 +97,8 @@ export const vi: TranslationDict = {
     noProjectsFound: 'Không tìm thấy dự án nào',
     noProjectsDesc: 'Không có dự án nào phù hợp với điều kiện tìm kiếm hoặc bộ lọc hiện tại của bạn.',
     featured: 'Nổi bật',
+    badge: 'Bộ sưu tập dự án',
+    technologies: 'Công nghệ sử dụng',
     demo: 'Bản Demo',
     code: 'Mã nguồn',
     viewDetails: 'Xem chi tiết dự án',
@@ -106,6 +111,7 @@ export const vi: TranslationDict = {
     subtitle: 'Tổng hợp các công nghệ, ngôn ngữ lập trình, framework và công cụ tôi sử dụng để phát triển các ứng dụng web chất lượng cao và có khả năng mở rộng.',
     tracked: 'kỹ năng được ghi nhận',
     categories: {
+      label: 'Danh mục',
       FRONTEND: 'Lập trình Frontend',
       BACKEND: 'Lập trình Backend',
       DEVOPS: 'DevOps & Điện toán đám mây',

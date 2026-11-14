@@ -3,6 +3,11 @@
 @plugin '@tailwindcss/typography';
 @plugin 'tailwindcss-animate';
 
+/* `dark:` utilities only apply under a `.dark` class, never the OS setting. The site is
+   light-only (ThemeProvider forcedTheme="light"), so the class is never added and every
+   dark: utility is inert. See docs/KNOWN_ISSUES.md. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 body {
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
@@ -473,10 +478,6 @@ body {
   background-color: oklch(0.95 0.01 80 / 30%);
 }
 
-.dark .prose table tr:nth-child(even) {
-  background-color: oklch(0.2 0.03 255 / 30%);
-}
-
 /* ── Mermaid Diagrams in Content ── */
 .mermaid-diagram {
   max-width: 100%;
@@ -573,12 +574,6 @@ body {
   padding: 0.2em 0.45em !important;
   border-radius: 0.375rem !important;
   white-space: break-spaces;
-}
-
-.dark .prose :not(pre) > code {
-  color: oklch(0.85 0.16 85) !important;
-  background-color: oklch(0.24 0.05 255 / 60%) !important;
-  border-color: oklch(0.36 0.06 255 / 60%) !important;
 }
 
 /* Remove default backticks added by tailwind typography */

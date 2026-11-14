@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { isVercelBlobUrl } from '@/lib/utils';
 import { Layers, Search, BookOpen, ArrowRight, Sparkles } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/context';
 
@@ -56,7 +57,7 @@ export function SeriesListClient({ seriesList }: SeriesListClientProps) {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <input
           type="text"
-          placeholder={t('seriesPage.searchPlaceholder') || 'Search series by title or topic...'}
+          placeholder={t('seriesPage.searchPlaceholder')}
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full pl-11 pr-4 py-3 text-sm rounded-2xl border border-border/80 bg-card text-foreground placeholder:text-muted-foreground shadow-xs focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
@@ -78,6 +79,7 @@ export function SeriesListClient({ seriesList }: SeriesListClientProps) {
                   {series.coverUrl ? (
                     <Image
                       src={series.coverUrl}
+                      unoptimized={!isVercelBlobUrl(series.coverUrl)}
                       alt={series.title}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -158,7 +160,7 @@ export function SeriesListClient({ seriesList }: SeriesListClientProps) {
                       href={`/blog/series/${series.slug}`}
                       className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-primary hover:underline"
                     >
-                      <span>{t('seriesPage.exploreCurriculum') || 'Explore curriculum'}</span>
+                      <span>{t('seriesPage.exploreCurriculum')}</span>
                       <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                     </Link>
 
@@ -167,7 +169,7 @@ export function SeriesListClient({ seriesList }: SeriesListClientProps) {
                         href={`/blog/${firstBlog.slug}`}
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-foreground text-background hover:bg-foreground/90 transition-colors shadow-xs"
                       >
-                        <span>{t('seriesPage.startSeries') || 'Start Series'}</span>
+                        <span>{t('seriesPage.startSeries')}</span>
                       </Link>
                     )}
                   </div>
@@ -180,7 +182,7 @@ export function SeriesListClient({ seriesList }: SeriesListClientProps) {
         <div className="text-center py-16 rounded-3xl border border-border bg-card p-8 shadow-xs">
           <Layers className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
           <h3 className="text-lg font-bold text-foreground mb-1">
-            {t('seriesPage.noSeriesFound') || 'No series found matching your query.'}
+            {t('seriesPage.noSeriesFound')}
           </h3>
           <p className="text-sm text-muted-foreground">
             Try searching for a different topic or keyword.

@@ -3,24 +3,21 @@ import { UserBreadcrumb } from '@/components/UserBreadcrumb';
 import { getPublicCertifications } from '@/lib/actions/certification';
 import CertificationsClient from '@/components/certification/CertificationsClient';
 import type { Metadata } from 'next';
+import { buildOpenGraph } from '@/lib/constants';
 
 import { getServerLocale } from '@/lib/i18n/server';
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getServerLocale();
   const isVi = locale === 'vi';
+  const title = isVi ? 'Chứng chỉ nghề nghiệp' : 'Certifications';
+  const description = isVi
+    ? 'Các chứng chỉ chuyên môn từ AWS, Google Cloud, Meta và các nền tảng công nghệ uy tín.'
+    : 'Professional certifications and credentials from AWS, Google Cloud, Meta, and other platforms.';
   return {
-    title: isVi ? 'Chứng chỉ nghề nghiệp' : 'Certifications',
-    description: isVi
-      ? 'Các chứng chỉ chuyên môn từ AWS, Google Cloud, Meta và các nền tảng công nghệ uy tín.'
-      : 'Professional certifications and credentials from AWS, Google Cloud, Meta, and other platforms.',
-    openGraph: {
-      title: isVi ? 'Chứng chỉ nghề nghiệp | nhatphanhk102' : 'Certifications | nhatphanhk102',
-      description: isVi
-        ? 'Các chứng chỉ chuyên môn từ AWS, Google Cloud, Meta và các nền tảng công nghệ uy tín.'
-        : 'Professional certifications and credentials from AWS, Google Cloud, Meta, and other platforms.',
-      locale: isVi ? 'vi_VN' : 'en_US',
-    },
+    title,
+    description,
+    openGraph: buildOpenGraph({ title, description, path: '/certifications', locale }),
   };
 }
 

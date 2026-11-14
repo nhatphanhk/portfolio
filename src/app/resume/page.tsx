@@ -17,22 +17,19 @@ import {
   getActivities,
 } from '@/lib/actions/about';
 import type { Metadata } from 'next';
+import { buildOpenGraph } from '@/lib/constants';
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getServerLocale();
   const isVi = locale === 'vi';
+  const title = isVi ? 'Hồ sơ năng lực & CV' : 'Resume';
+  const description = isVi
+    ? 'Hồ sơ năng lực cá nhân, kinh nghiệm làm việc và các kỹ năng chuyên môn'
+    : 'Professional Curriculum Vitae & Experience Overview';
   return {
-    title: isVi ? 'Hồ sơ năng lực & CV' : 'Resume',
-    description: isVi
-      ? 'Hồ sơ năng lực cá nhân, kinh nghiệm làm việc và các kỹ năng chuyên môn'
-      : 'Professional Curriculum Vitae & Experience Overview',
-    openGraph: {
-      title: isVi ? 'Hồ sơ năng lực & CV | nhatphanhk102' : 'Resume | nhatphanhk102',
-      description: isVi
-        ? 'Hồ sơ năng lực cá nhân, kinh nghiệm làm việc và các kỹ năng chuyên môn'
-        : 'Professional Curriculum Vitae & Experience Overview',
-      locale: isVi ? 'vi_VN' : 'en_US',
-    },
+    title,
+    description,
+    openGraph: buildOpenGraph({ title, description, path: '/resume', locale }),
   };
 }
 

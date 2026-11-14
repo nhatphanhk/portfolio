@@ -83,7 +83,7 @@ export default function SkillsClient({ skillsByCategory }: SkillsClientProps) {
             <div className="w-px h-8 bg-border" />
             <div className="text-center">
               <p className="text-2xl font-black text-foreground">{categories.length}</p>
-              <p className="text-xs font-semibold text-muted-foreground">{t('skills.categories.label') || 'Categories'}</p>
+              <p className="text-xs font-semibold text-muted-foreground">{t('skills.categories.label')}</p>
             </div>
           </div>
         </div>

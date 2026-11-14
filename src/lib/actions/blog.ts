@@ -288,7 +288,7 @@ export async function getPublicBlogs(locale: 'vi' | 'en' = 'vi') {
   )();
 }
 
-export const getPublicBlogBySlug = async (slug: string) => {
+export const getPublicBlogBySlug = async (slug: string, locale: 'vi' | 'en' = 'vi') => {
   return unstable_cache(
     async () => {
       try {
@@ -300,12 +300,21 @@ export const getPublicBlogBySlug = async (slug: string) => {
           },
         });
         if (!b || b.status !== 'PUBLISHED') return null;
+
+        // Posts are authored in Vietnamese; apply the stored English translation when asked.
+        const isEn = locale === 'en';
+        let trans: { title?: string | null; excerpt?: string | null; content?: string | null } | undefined;
+        if (isEn) {
+          const { getBatchEntityTranslationsFromDb } = await import('@/lib/gemini-translate');
+          trans = (await getBatchEntityTranslationsFromDb('blog', [b.id], 'en')).get(b.id);
+        }
+
         return {
           id: b.id,
-          title: b.title,
+          title: isEn && trans?.title ? trans.title : b.title,
           slug: b.slug,
-          excerpt: b.excerpt || '',
-          content: b.content,
+          excerpt: isEn && trans?.excerpt ? trans.excerpt : (b.excerpt || ''),
+          content: isEn && trans?.content ? trans.content : b.content,
           publishedAt: (b.publishedAt || b.createdAt).toISOString(),
           readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
           tags: b.tags.map(t => t.tag.name),
@@ -320,7 +329,7 @@ export const getPublicBlogBySlug = async (slug: string) => {
         return null;
       }
     },
-    ['public-blog-slug', slug],
+    ['public-blog-slug', slug, locale],
     { revalidate: 3600, tags: ['blogs', `blog-${slug}`] }
   )();
 };

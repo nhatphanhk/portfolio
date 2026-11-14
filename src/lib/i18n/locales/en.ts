@@ -56,9 +56,12 @@ export const en = {
     noHeadings: 'This article has no subheadings.',
     articleOverview: 'Article Overview',
     partOfSeries: 'in this article series',
-    aiTranslate: 'AI Translate (VI)',
+    aiTranslate: 'AI Translate (EN)',
     viewOriginal: 'View Original',
     translating: 'Translating with AI...',
+    translatedBadge: 'English translation (cached)',
+    translateSuccess: 'Translated and cached successfully.',
+    translateFailed: 'Failed to translate article.',
   },
 
   // Series page
@@ -92,6 +95,8 @@ export const en = {
     noProjectsFound: 'No projects found',
     noProjectsDesc: "We couldn't find any projects matching your current search or filter criteria.",
     featured: 'Featured',
+    badge: 'Portfolio Showcase',
+    technologies: 'Tech Stack',
     demo: 'Live Demo',
     code: 'Source Code',
     viewDetails: 'View Project Details',
@@ -104,6 +109,7 @@ export const en = {
     subtitle: 'A comprehensive directory of technologies, languages, frameworks, and developer tools I leverage to build robust, scalable web applications',
     tracked: 'skills tracked',
     categories: {
+      label: 'Categories',
       FRONTEND: 'Frontend',
       BACKEND: 'Backend',
       DEVOPS: 'DevOps & Cloud',

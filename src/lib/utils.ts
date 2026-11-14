@@ -23,3 +23,12 @@ export function slugify(text: string): string {
     .replace(/^-+|-+$/g, '')         // Remove leading & trailing hyphens
     .replace(/-+/g, '-');            // Collapse consecutive hyphens
 }
+
+
+/**
+ * True for URLs served by Vercel Blob — the only remote host allowed in
+ * `images.remotePatterns` (next.config.ts). Anything else must use `<Image unoptimized>`.
+ */
+export function isVercelBlobUrl(url: string): boolean {
+  return /^https:\/\/[^/]+\.public\.blob\.vercel-storage\.com\//i.test(url);
+}

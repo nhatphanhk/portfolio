@@ -4,11 +4,15 @@ import { getPublicSeries } from '@/lib/actions/series';
 import { SeriesListClient } from '@/components/blog/SeriesListClient';
 import { UserBreadcrumb } from '@/components/UserBreadcrumb';
 import type { Metadata } from 'next';
+import { buildOpenGraph } from '@/lib/constants';
+
+const SERIES_DESCRIPTION =
+  'Structured multi-part learning roadmaps and article series covering in-depth web development, system design, and software engineering.';
 
 export const metadata: Metadata = {
   title: 'Article Series',
-  description:
-    'Structured multi-part learning roadmaps and article series covering in-depth web development, system design, and software engineering.',
+  description: SERIES_DESCRIPTION,
+  openGraph: buildOpenGraph({ title: 'Article Series', description: SERIES_DESCRIPTION, path: '/blog/series' }),
 };
 
 export const revalidate = 3600;

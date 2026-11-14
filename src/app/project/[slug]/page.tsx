@@ -4,6 +4,7 @@ import { getPublicProjectBySlug } from '@/lib/actions/project';
 import { UserBreadcrumb } from '@/components/UserBreadcrumb';
 import { ProjectDetailClient } from '@/components/project/ProjectDetailClient';
 import type { Metadata } from 'next';
+import { buildOpenGraph } from '@/lib/constants';
 
 export const revalidate = 3600;
 
@@ -25,12 +26,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: project.title,
     description: project.description ?? undefined,
-    openGraph: {
+    openGraph: buildOpenGraph({
       title: project.title,
       description: project.description ?? undefined,
+      path: `/project/${slug}`,
+      locale,
       type: 'article',
-      images: project.thumbnailUrl ? [{ url: project.thumbnailUrl }] : [],
-    },
+      images: project.thumbnailUrl ? [project.thumbnailUrl] : undefined,
+    }),
   };
 }
 
