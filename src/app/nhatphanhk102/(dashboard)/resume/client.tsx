@@ -230,7 +230,12 @@ export function AdminResumeClient({
         const list = [...(prev.order || DEFAULT_HARVARD_ORDER)];
         const idx = list.indexOf(id);
         if (idx === -1) return prev;
-        const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+        // Swap with the nearest *visible* neighbour; swapping with a hidden section is an invisible no-op
+        const step = direction === 'up' ? -1 : 1;
+        let targetIdx = idx + step;
+        while (targetIdx >= 0 && targetIdx < list.length && prev.hidden.includes(list[targetIdx])) {
+          targetIdx += step;
+        }
         if (targetIdx < 0 || targetIdx >= list.length) return prev;
 
         [list[idx], list[targetIdx]] = [list[targetIdx], list[idx]];
@@ -295,9 +300,12 @@ export function AdminResumeClient({
       const isHidden = prev.hidden.includes(id);
       if (isHidden) {
         const defCol = SECTION_META[id]?.defaultColumn || 'left';
+        const order = prev.order || DEFAULT_HARVARD_ORDER;
         return {
           ...prev,
           hidden: prev.hidden.filter(s => s !== id),
+          // A section hidden at load time may be missing from the Harvard order; put it back
+          order: order.includes(id) ? order : [...order, id],
           [defCol]: [...prev[defCol], id],
         };
       } else {

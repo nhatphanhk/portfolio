@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Layers, Plus, Pencil, Trash2, Search, Filter } from 'lucide-react';
 import { SkillDialog } from '@/components/admin/SkillDialog';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
@@ -43,6 +43,10 @@ export function AdminSkillsClient({ skills }: { skills: Skill[] }) {
   }, [skills, categoryFilter, search]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+  // Keep the page in range when rows are deleted or filters shrink the list
+  useEffect(() => {
+    setCurrentPage(p => Math.min(p, totalPages));
+  }, [totalPages]);
   const paginated = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filtered.slice(start, start + ITEMS_PER_PAGE);

@@ -89,9 +89,9 @@ export function parseSectionLayout(raw: string | null | undefined): ResumeSectio
       order = [...left, ...right];
     }
 
-    // Ensure all known IDs are present in order
+    // Ensure all known IDs are present in order (hidden ones too, so un-hiding restores their slot)
     for (const id of knownIds) {
-      if (!order.includes(id) && !hidden.includes(id)) {
+      if (!order.includes(id)) {
         order.push(id);
       }
     }

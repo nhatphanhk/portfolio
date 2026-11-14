@@ -50,14 +50,27 @@ export function BlogOutline({ headings, readTime, className = '' }: BlogOutlineP
       }
     );
 
-    headings.forEach(heading => {
-      const element = document.getElementById(heading.id);
-      if (element) {
-        observer.observe(element);
+    // Heading ids are added by BlogContent after its own effect runs, so retry briefly until
+    // the elements exist instead of observing nothing on first load.
+    let cancelled = false;
+    let attempts = 0;
+    const attach = () => {
+      if (cancelled) return;
+      const elements = headings
+        .map(heading => document.getElementById(heading.id))
+        .filter((el): el is HTMLElement => el !== null);
+      if (elements.length < headings.length && attempts++ < 20) {
+        setTimeout(attach, 100);
+        return;
       }
-    });
+      elements.forEach(el => observer.observe(el));
+    };
+    attach();
 
-    return () => observer.disconnect();
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
   }, [headings]);
 
   const scrollToHeading = (e: React.MouseEvent, id: string) => {

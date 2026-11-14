@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { MainLayout } from '@/components';
 import { getPublicProjects } from '@/lib/actions/project';
 import { ProjectListClient } from '@/components/project/ProjectListClient';
@@ -38,7 +39,9 @@ export default async function ProjectPage() {
         <ProjectHeaderClient />
 
         {/* Interactive List with Search, Filter & Pagination */}
-        <ProjectListClient projects={projects} />
+        <Suspense fallback={null}>
+          <ProjectListClient projects={projects} />
+        </Suspense>
       </div>
     </MainLayout>
   );

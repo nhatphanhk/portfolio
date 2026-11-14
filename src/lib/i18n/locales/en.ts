@@ -131,6 +131,7 @@ export const en = {
     subtitle: 'Professional credentials that validate my expertise across cloud platforms, frontend development, and software engineering.',
     active: 'Active',
     expired: 'Expired',
+    expires: 'Expires',
     issued: 'Issued',
     viewCredential: 'View Credential',
     credentialId: 'Credential ID',

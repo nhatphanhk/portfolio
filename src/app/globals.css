@@ -771,3 +771,12 @@ body {
 .hljs-params {
   color: #e2e8f0 !important;
 }
+
+/* ── Print: site chrome stays out of the printed résumé ── */
+@media print {
+  body > div > header,
+  body > div > footer,
+  nav[aria-label='breadcrumb'] {
+    display: none !important;
+  }
+}

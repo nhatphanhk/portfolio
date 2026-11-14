@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Layers, Plus, Pencil, Trash2, BookOpen, Search, ArrowUpDown, Tag, ChevronDown } from 'lucide-react';
 import { SeriesDialog } from '@/components/admin/SeriesDialog';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
@@ -81,6 +81,10 @@ export function AdminSeriesClient({ initialSeries }: Props) {
   }, [initialSeries, tagFilter, search, sortBy]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+  // Keep the page in range when rows are deleted or filters shrink the list
+  useEffect(() => {
+    setCurrentPage(p => Math.min(p, totalPages));
+  }, [totalPages]);
   const paginated = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filtered.slice(start, start + ITEMS_PER_PAGE);

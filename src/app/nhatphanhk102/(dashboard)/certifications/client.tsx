@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Award, Plus, Pencil, Trash2, ExternalLink, Search, Filter } from 'lucide-react';
 import { CertificationDialog } from '@/components/admin/CertificationDialog';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
@@ -21,6 +21,10 @@ type Certification = {
 };
 
 const ITEMS_PER_PAGE = 10;
+
+/** Status shown in the list: an ACTIVE row whose expiry date has passed is effectively expired. */
+const isActive = (c: Certification) =>
+  c.status === 'ACTIVE' && !(c.expiryDate && new Date(c.expiryDate).getTime() < Date.now());
 
 export function AdminCertificationsClient({ certifications }: { certifications: Certification[] }) {
   const [createOpen, setCreateOpen] = useState(false);
@@ -50,6 +54,10 @@ export function AdminCertificationsClient({ certifications }: { certifications: 
   }, [certifications, statusFilter, search]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+  // Keep the page in range when rows are deleted or filters shrink the list
+  useEffect(() => {
+    setCurrentPage(p => Math.min(p, totalPages));
+  }, [totalPages]);
   const paginated = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filtered.slice(start, start + ITEMS_PER_PAGE);
@@ -178,12 +186,12 @@ export function AdminCertificationsClient({ certifications }: { certifications: 
                     <td className="px-4 py-3.5">
                       <span
                         className={`px-2 py-0.5 text-xs rounded-full font-medium ${
-                          cert.status === 'ACTIVE'
-                            ? 'bg-green-500/10 text-green-700 dark:text-green-400'
+                          isActive(cert)
+                            ? 'bg-green-500/10 text-green-700'
                             : 'bg-muted text-muted-foreground'
                         }`}
                       >
-                        {cert.status}
+                        {isActive(cert) ? 'ACTIVE' : 'EXPIRED'}
                       </span>
                     </td>
                     <td className="px-4 py-3.5 text-right">

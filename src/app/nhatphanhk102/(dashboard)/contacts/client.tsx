@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, useTransition, useMemo } from 'react';
-import { Users, Trash2, Mail, ExternalLink, Calendar, MessageSquare, Search, Filter } from 'lucide-react';
+import { useEffect, useState, useTransition, useMemo } from 'react';
+import { Trash2, Mail, ExternalLink, Calendar, MessageSquare, Search, Filter } from 'lucide-react';
+import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { deleteContact, updateContactStatus } from '@/lib/actions/contact';
 import { formatDate } from '@/lib/utils';
+
+type ContactStatus = 'UNREAD' | 'READ' | 'REPLIED';
 
 type Contact = {
   id: string;
@@ -20,59 +23,64 @@ type Contact = {
 
 const ITEMS_PER_PAGE = 10;
 
+const STATUS_LABELS: Record<ContactStatus, string> = {
+  UNREAD: 'Chưa đọc',
+  READ: 'Đã đọc',
+  REPLIED: 'Đã trả lời',
+};
+
 export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
+  // Local copy so status changes show immediately; re-synced when the server data refreshes
+  const [rows, setRows] = useState<Contact[]>(contacts);
+  useEffect(() => setRows(contacts), [contacts]);
+
   const [viewTarget, setViewTarget] = useState<Contact | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  // Filter and pagination state
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'ALL' | 'MESSAGES' | 'VISITORS'>('MESSAGES');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
 
-  const handleStatusChange = (id: string, status: 'UNREAD' | 'READ' | 'REPLIED') => {
-    startTransition(() => {
-      updateContactStatus(id, status);
+  const handleStatusChange = (id: string, status: ContactStatus) => {
+    const previous = rows.find(c => c.id === id)?.status;
+    setRows(prev => prev.map(c => (c.id === id ? { ...c, status } : c)));
+    startTransition(async () => {
+      const res = await updateContactStatus(id, status);
+      if (!res.ok) {
+        setRows(prev => prev.map(c => (c.id === id ? { ...c, status: previous ?? c.status } : c)));
+        toast.error('Không thể cập nhật trạng thái. Vui lòng thử lại.');
+      }
     });
   };
 
-  // Filtered contacts
+  // Opening a message marks it as read
+  const openMessage = (contact: Contact) => {
+    setViewTarget(contact);
+    if (contact.status === 'UNREAD') handleStatusChange(contact.id, 'READ');
+  };
+
   const filteredContacts = useMemo(() => {
-    return contacts.filter(contact => {
-      // Type filter
-      const isVisitor = contact.subject === 'Visitor Log';
-      if (typeFilter === 'MESSAGES' && isVisitor) return false;
-      if (typeFilter === 'VISITORS' && !isVisitor) return false;
-
-      // Status filter
+    return rows.filter(contact => {
       if (statusFilter !== 'ALL' && contact.status !== statusFilter) return false;
-
-      // Search query
       if (search.trim()) {
         const q = search.toLowerCase().trim();
-        const matchName = contact.name.toLowerCase().includes(q);
-        const matchEmail = contact.email.toLowerCase().includes(q);
-        const matchSubject = (contact.subject ?? '').toLowerCase().includes(q);
-        const matchMessage = contact.message.toLowerCase().includes(q);
-        if (!matchName && !matchEmail && !matchSubject && !matchMessage) return false;
+        const haystack = [contact.name, contact.email, contact.subject ?? '', contact.message].join(' ').toLowerCase();
+        if (!haystack.includes(q)) return false;
       }
-
       return true;
     });
-  }, [contacts, typeFilter, statusFilter, search]);
+  }, [rows, statusFilter, search]);
 
-  // Pagination calculations
   const totalPages = Math.ceil(filteredContacts.length / ITEMS_PER_PAGE) || 1;
+  // Keep the page in range when rows are deleted or filters shrink the list
+  useEffect(() => {
+    setCurrentPage(p => Math.min(p, totalPages));
+  }, [totalPages]);
   const paginatedContacts = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredContacts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredContacts, currentPage]);
-
-  const handleTypeChange = (type: 'ALL' | 'MESSAGES' | 'VISITORS') => {
-    setTypeFilter(type);
-    setCurrentPage(1);
-  };
 
   const handleStatusFilterChange = (status: string) => {
     setStatusFilter(status);
@@ -84,58 +92,16 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
     setCurrentPage(1);
   };
 
-  const directMessagesCount = contacts.filter(c => c.subject !== 'Visitor Log').length;
-  const visitorLogsCount = contacts.filter(c => c.subject === 'Visitor Log').length;
-  const unreadCount = contacts.filter(c => c.status === 'UNREAD').length;
+  const unreadCount = rows.filter(c => c.status === 'UNREAD').length;
 
   return (
     <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-5xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground mb-1">Contact Inbox</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage incoming messages and visitor registrations ({contacts.length} total, {unreadCount} unread)
-          </p>
-        </div>
-
-        {/* View Tabs */}
-        <div className="flex items-center gap-1 p-1 bg-muted/60 border border-border rounded-xl">
-          <button
-            type="button"
-            onClick={() => handleTypeChange('MESSAGES')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              typeFilter === 'MESSAGES'
-                ? 'bg-card text-foreground shadow-xs font-semibold'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-            Messages ({directMessagesCount})
-          </button>
-          <button
-            type="button"
-            onClick={() => handleTypeChange('VISITORS')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              typeFilter === 'VISITORS'
-                ? 'bg-card text-foreground shadow-xs font-semibold'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Users className="h-3.5 w-3.5" />
-            Visitors ({visitorLogsCount})
-          </button>
-          <button
-            type="button"
-            onClick={() => handleTypeChange('ALL')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              typeFilter === 'ALL'
-                ? 'bg-card text-foreground shadow-xs font-semibold'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            All ({contacts.length})
-          </button>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground mb-1">Hộp thư liên hệ</h1>
+        <p className="text-sm text-muted-foreground">
+          Tin nhắn gửi từ form liên hệ ({rows.length} tin nhắn, {unreadCount} chưa đọc). Khách truy cập qua cổng chào
+          nằm ở mục Visitor Logs.
+        </p>
       </div>
 
       {/* Filter and Search Bar */}
@@ -144,26 +110,32 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <input
             type="text"
-            placeholder="Search by name, email, subject, or message..."
+            placeholder="Tìm theo tên, email, tiêu đề hoặc nội dung..."
             value={search}
             onChange={e => handleSearchChange(e.target.value)}
+            aria-label="Tìm kiếm tin nhắn"
             className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-border bg-card shadow-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"
           />
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-border bg-card shadow-xs text-xs text-muted-foreground transition-colors">
+          <div
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border bg-card shadow-xs text-xs transition-colors ${
+              statusFilter !== 'ALL' ? 'border-primary/40 text-foreground' : 'border-border text-muted-foreground'
+            }`}
+          >
             <Filter className="h-3.5 w-3.5" />
-            <span className="font-medium">Status:</span>
+            <span className="font-medium">Trạng thái:</span>
             <select
               value={statusFilter}
               onChange={e => handleStatusFilterChange(e.target.value)}
+              aria-label="Lọc theo trạng thái"
               className="bg-transparent text-foreground outline-none font-medium cursor-pointer"
             >
-              <option value="ALL">All Statuses</option>
-              <option value="UNREAD">Unread</option>
-              <option value="READ">Read</option>
-              <option value="REPLIED">Replied</option>
+              <option value="ALL">Tất cả</option>
+              <option value="UNREAD">Chưa đọc</option>
+              <option value="READ">Đã đọc</option>
+              <option value="REPLIED">Đã trả lời</option>
             </select>
           </div>
         </div>
@@ -174,30 +146,30 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
         {paginatedContacts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground bg-card">
             <MessageSquare className="h-10 w-10 mb-3 opacity-30" />
-            <p className="font-medium text-foreground">No records found</p>
+            <p className="font-medium text-foreground">Không có tin nhắn nào</p>
             <p className="text-xs text-muted-foreground mt-1">
               {search || statusFilter !== 'ALL'
-                ? 'Try adjusting your search or filter parameters'
-                : 'No contacts in this section yet'}
+                ? 'Thử thay đổi từ khóa hoặc bộ lọc'
+                : 'Chưa có ai gửi tin nhắn qua form liên hệ'}
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-100/90 dark:bg-slate-800/90 border-b border-border text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
+              <thead className="bg-muted/60 border-b border-border text-muted-foreground font-semibold text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">Sender</th>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden md:table-cell">Details</th>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden sm:table-cell">Date</th>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">Status</th>
-                  <th className="px-4 py-3.5 text-right font-semibold text-slate-700 dark:text-slate-300">Actions</th>
+                  <th className="text-left px-4 py-3.5 font-semibold">Người gửi</th>
+                  <th className="text-left px-4 py-3.5 font-semibold hidden md:table-cell">Nội dung</th>
+                  <th className="text-left px-4 py-3.5 font-semibold hidden sm:table-cell">Ngày gửi</th>
+                  <th className="text-left px-4 py-3.5 font-semibold">Trạng thái</th>
+                  <th className="px-4 py-3.5 text-right font-semibold">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-card">
                 {paginatedContacts.map(contact => (
                   <tr
                     key={contact.id}
-                    onClick={() => setViewTarget(contact)}
+                    onClick={() => openMessage(contact)}
                     className="hover:bg-primary/5 cursor-pointer transition-colors group"
                   >
                     <td className="px-4 py-3.5">
@@ -206,10 +178,12 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
                           {contact.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-foreground group-hover:text-primary transition-colors">{contact.name}</p>
+                          <p className="font-medium text-foreground group-hover:text-primary transition-colors">
+                            {contact.name}
+                          </p>
                           <a
                             href={`mailto:${contact.email}`}
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={e => e.stopPropagation()}
                             className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
                           >
                             <Mail className="h-3 w-3" /> {contact.email}
@@ -218,7 +192,7 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
                       </div>
                     </td>
                     <td className="px-4 py-3.5 hidden md:table-cell max-w-[240px]">
-                      <p className="text-xs font-medium text-foreground truncate">{contact.subject ?? 'No subject'}</p>
+                      <p className="text-xs font-medium text-foreground truncate">{contact.subject ?? 'Không có tiêu đề'}</p>
                       <p className="text-xs text-muted-foreground truncate">{contact.message}</p>
                     </td>
                     <td className="px-4 py-3.5 hidden sm:table-cell text-muted-foreground">
@@ -230,31 +204,33 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
                     <td className="px-4 py-3.5">
                       <select
                         value={contact.status}
-                        onChange={e => handleStatusChange(contact.id, e.target.value as any)}
+                        onChange={e => handleStatusChange(contact.id, e.target.value as ContactStatus)}
                         onClick={e => e.stopPropagation()}
                         disabled={isPending}
-                        aria-label={`Change status for message from ${contact.name}`}
+                        aria-label={`Đổi trạng thái tin nhắn của ${contact.name}`}
                         className={`px-2 py-1 text-xs rounded-lg border outline-none font-medium focus:ring-2 focus:ring-ring transition-colors cursor-pointer ${
                           contact.status === 'UNREAD'
                             ? 'bg-red-500/10 text-red-600 border-red-500/20'
                             : contact.status === 'READ'
-                              ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20'
-                              : 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20'
+                              ? 'bg-amber-500/10 text-amber-700 border-amber-500/20'
+                              : 'bg-green-500/10 text-green-700 border-green-500/20'
                         }`}
                       >
-                        <option value="UNREAD">Unread</option>
-                        <option value="READ">Read</option>
-                        <option value="REPLIED">Replied</option>
+                        {(Object.keys(STATUS_LABELS) as ContactStatus[]).map(s => (
+                          <option key={s} value={s}>
+                            {STATUS_LABELS[s]}
+                          </option>
+                        ))}
                       </select>
                     </td>
                     <td className="px-4 py-3.5 text-right">
                       <div className="flex items-center gap-1 justify-end">
                         <button
                           type="button"
-                          aria-label={`View message from ${contact.name}`}
-                          onClick={(e) => {
+                          aria-label={`Xem tin nhắn của ${contact.name}`}
+                          onClick={e => {
                             e.stopPropagation();
-                            setViewTarget(contact);
+                            openMessage(contact);
                           }}
                           className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted cursor-pointer"
                         >
@@ -262,8 +238,8 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
                         </button>
                         <button
                           type="button"
-                          aria-label={`Delete message from ${contact.name}`}
-                          onClick={(e) => {
+                          aria-label={`Xóa tin nhắn của ${contact.name}`}
+                          onClick={e => {
                             e.stopPropagation();
                             setDeleteTarget(contact);
                           }}
@@ -280,7 +256,6 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
           </div>
         )}
 
-        {/* Pagination in table footer */}
         {filteredContacts.length > 0 && (
           <div className="p-4 bg-card border-t border-border">
             <PaginationControl
@@ -296,9 +271,9 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
 
       {/* View Dialog */}
       <Dialog open={!!viewTarget} onOpenChange={open => !open && setViewTarget(null)}>
-        <DialogContent className="max-w-lg bg-card">
+        <DialogContent className="max-w-lg bg-card max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Message Details</DialogTitle>
+            <DialogTitle>Chi tiết tin nhắn</DialogTitle>
           </DialogHeader>
           {viewTarget && (
             <div className="space-y-4 py-2">
@@ -311,20 +286,42 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
                 </div>
                 <div className="text-right text-xs text-muted-foreground">
                   <p>{formatDate(viewTarget.createdAt, 'vi', 'numeric')}</p>
-                  <p>{new Date(viewTarget.createdAt).toLocaleTimeString()}</p>
+                  <p>{new Date(viewTarget.createdAt).toLocaleTimeString('vi-VN', { timeZone: 'UTC' })} (UTC)</p>
                 </div>
               </div>
 
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Subject</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Tiêu đề</p>
                 <p className="font-medium text-foreground">{viewTarget.subject ?? '—'}</p>
               </div>
 
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Message</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Nội dung</p>
                 <div className="bg-muted/40 p-4 rounded-xl border border-border/80 text-sm whitespace-pre-wrap leading-relaxed text-foreground">
                   {viewTarget.message}
                 </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-border">
+                <a
+                  href={`mailto:${viewTarget.email}?subject=${encodeURIComponent(`Re: ${viewTarget.subject ?? 'Liên hệ'}`)}`}
+                  onClick={() => handleStatusChange(viewTarget.id, 'REPLIED')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 transition-colors"
+                >
+                  <Mail className="h-3.5 w-3.5" />
+                  Trả lời qua email
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteTarget(viewTarget);
+                    setViewTarget(null);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Xóa
+                </button>
               </div>
             </div>
           )}
@@ -336,8 +333,8 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
         <DeleteDialog
           open={!!deleteTarget}
           onOpenChange={open => !open && setDeleteTarget(null)}
-          title="Delete Contact Record?"
-          description="Are you sure you want to delete this message/log? This cannot be undone."
+          title="Xóa tin nhắn này?"
+          description="Tin nhắn sẽ bị xóa vĩnh viễn và không thể khôi phục."
           onConfirm={() => deleteContact(deleteTarget.id)}
         />
       )}

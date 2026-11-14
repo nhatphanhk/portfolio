@@ -133,6 +133,7 @@ export const vi: TranslationDict = {
     subtitle: 'Các chứng chỉ chuyên môn khẳng định năng lực trong lĩnh vực điện toán đám mây, phát triển phần mềm và kỹ thuật hệ thống.',
     active: 'Còn hiệu lực',
     expired: 'Đã hết hạn',
+    expires: 'Hết hạn vào',
     issued: 'Ngày cấp',
     viewCredential: 'Xem chứng chỉ gốc',
     credentialId: 'Mã định danh',

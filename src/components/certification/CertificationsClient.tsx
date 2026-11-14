@@ -24,8 +24,12 @@ interface CertificationsClientProps {
 
 export default function CertificationsClient({ certifications }: CertificationsClientProps) {
   const { t, locale } = useLanguage();
-  const active = certifications.filter(c => c.status === 'ACTIVE');
-  const expired = certifications.filter(c => c.status === 'EXPIRED');
+  // A certificate whose expiry date has passed is expired even if the admin never flipped the status
+  const now = Date.now();
+  const isExpired = (c: CertificationItem) =>
+    c.status === 'EXPIRED' || (!!c.expiryDate && new Date(c.expiryDate).getTime() < now);
+  const active = certifications.filter(c => !isExpired(c));
+  const expired = certifications.filter(isExpired);
 
   return (
     <>
@@ -86,7 +90,7 @@ export default function CertificationsClient({ certifications }: CertificationsC
                     </span>
                     {cert.expiryDate && (
                       <span className="text-muted-foreground/60">
-                        · {t('certifications.expired')}{' '}
+                        · {t('certifications.expires')}{' '}
                         {formatDate(cert.expiryDate, locale, 'monthYear')}
                       </span>
                     )}

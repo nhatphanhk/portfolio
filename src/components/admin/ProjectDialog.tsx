@@ -42,6 +42,8 @@ interface ProjectDialogProps {
 
 export function ProjectDialog({ mode, open, onOpenChange, initialData }: ProjectDialogProps) {
   const [isPending, startTransition] = useTransition();
+  // Once the slug is typed by hand, title changes must not overwrite it
+  const [slugTouched, setSlugTouched] = useState(Boolean(initialData?.slug));
 
   // Translation states
   const [isTranslating, setIsTranslating] = useState(false);
@@ -69,6 +71,10 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
       tags: initialData?.tags ?? '',
     },
   });
+
+  useEffect(() => {
+    if (open) setSlugTouched(Boolean(initialData?.slug));
+  }, [open, initialData?.slug]);
 
   useEffect(() => {
     if (open && initialData?.id) {
@@ -198,7 +204,7 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
   };
 
   const onTitleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    if (!initialData?.slug) {
+    if (!slugTouched) {
       const slug = slugify(e.target.value);
       setValue('slug', slug, { shouldValidate: true });
     }
@@ -238,7 +244,7 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Slug *</label>
-              <input {...register('slug')} placeholder="my-project" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <input {...register('slug', { onChange: () => setSlugTouched(true) })} placeholder="my-project" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               {errors.slug && <p className="text-xs text-destructive mt-1">{errors.slug.message}</p>}
             </div>
           </div>

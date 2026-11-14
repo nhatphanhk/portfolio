@@ -11,7 +11,7 @@ export function ResumeHeaderClient({ resumeUrl }: ResumeHeaderClientProps) {
   const { t } = useLanguage();
 
   return (
-    <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden">
       <div>
         <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-1 tracking-tight">
           {t('resume.title')}

@@ -141,7 +141,8 @@ export function AboutSection({ profile, content }: AboutSectionProps) {
       // ── Numbers Counter Animation ──
       const statEls = gsap.utils.toArray<HTMLElement>('[data-about="stat-number"]', sectionRef.current ?? undefined);
       statEls.forEach(el => {
-        const target = parseInt(el.dataset.target ?? '0', 10);
+        // "1,000" must count to 1000, not 1
+        const target = parseInt((el.dataset.target ?? '0').replace(/[^\d]/g, ''), 10) || 0;
         const obj = { val: 0 };
 
         gsap.to(obj, {
@@ -253,21 +254,21 @@ export function AboutSection({ profile, content }: AboutSectionProps) {
                 data-about="stat-card"
                 className="p-4 rounded-2xl bg-card border border-border/70 shadow-sm text-center hover:border-amber-500/30 hover:shadow-md transition-all"
               >
-                <p data-about="stat-number" data-target={content?.stat_years_value || '5'} className="text-2xl sm:text-3xl font-black text-amber-500">0+</p>
+                <p data-about="stat-number" data-target={content?.stat_years_value || '5'} className="text-2xl sm:text-3xl font-black text-amber-500">{content?.stat_years_value || '5'}+</p>
                 <p className="text-[11px] font-semibold text-muted-foreground mt-1 leading-tight">{getC('stat_years_label', t.landing.statYearsLabel)}</p>
               </div>
               <div
                 data-about="stat-card"
                 className="p-4 rounded-2xl bg-card border border-border/70 shadow-sm text-center hover:border-blue-500/30 hover:shadow-md transition-all"
               >
-                <p data-about="stat-number" data-target={content?.stat_projects_value || '20'} className="text-2xl sm:text-3xl font-black text-blue-600">0+</p>
+                <p data-about="stat-number" data-target={content?.stat_projects_value || '20'} className="text-2xl sm:text-3xl font-black text-blue-600">{content?.stat_projects_value || '20'}+</p>
                 <p className="text-[11px] font-semibold text-muted-foreground mt-1 leading-tight">{getC('stat_projects_label', t.landing.statProjectsLabel)}</p>
               </div>
               <div
                 data-about="stat-card"
                 className="p-4 rounded-2xl bg-card border border-border/70 shadow-sm text-center hover:border-teal-500/30 hover:shadow-md transition-all"
               >
-                <p data-about="stat-number" data-target={content?.stat_clients_value || '15'} className="text-2xl sm:text-3xl font-black text-teal-600">0+</p>
+                <p data-about="stat-number" data-target={content?.stat_clients_value || '15'} className="text-2xl sm:text-3xl font-black text-teal-600">{content?.stat_clients_value || '15'}+</p>
                 <p className="text-[11px] font-semibold text-muted-foreground mt-1 leading-tight">{getC('stat_clients_label', t.landing.statClientsLabel)}</p>
               </div>
             </div>

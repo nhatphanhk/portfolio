@@ -47,7 +47,7 @@ export default async function DashboardPage() {
     { title: 'Skills', value: skills.length, icon: Layers, description: 'Tracked technologies' },
     { title: 'Certifications', value: certifications.length, icon: Award, description: 'Credentials earned' },
     { title: 'Messages', value: contacts.filter(c => c.status === 'UNREAD').length, icon: Mail, description: 'Unread contact messages' },
-    { title: 'Page Views', value: 0, icon: BarChart3, description: 'All time (analytics pending)' },
+    { title: 'Page Views', value: blogs.reduce((n, b) => n + (b.viewCount ?? 0), 0), icon: BarChart3, description: 'Total blog post views' },
   ] as const;
 
   const recentPosts = blogs.slice(0, 3);
@@ -75,6 +75,9 @@ export default async function DashboardPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="space-y-3">
+            {recentPosts.length === 0 && (
+              <p className="text-sm text-muted-foreground py-6 text-center">No blog posts yet.</p>
+            )}
             {recentPosts.map(post => (
               <div key={post.id} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
                 <FileText className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
@@ -84,7 +87,7 @@ export default async function DashboardPage() {
                     {formatDate(post.createdAt, 'vi')}
                   </p>
                 </div>
-                <span className={`px-2 py-0.5 text-xs rounded-full shrink-0 ${post.status === 'PUBLISHED' ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-muted text-muted-foreground'}`}>
+                <span className={`px-2 py-0.5 text-xs rounded-full shrink-0 ${post.status === 'PUBLISHED' ? 'bg-green-500/10 text-green-700' : post.status === 'DRAFT' ? 'bg-amber-500/10 text-amber-700' : 'bg-muted text-muted-foreground'}`}>
                   {post.status}
                 </span>
               </div>
@@ -99,6 +102,9 @@ export default async function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="space-y-3">
+            {recentProjects.length === 0 && (
+              <p className="text-sm text-muted-foreground py-6 text-center">No projects yet.</p>
+            )}
             {recentProjects.map(project => (
               <div key={project.id} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
                 <Code className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
@@ -110,12 +116,17 @@ export default async function DashboardPage() {
                     ))}
                   </div>
                 </div>
-                <span className={`px-2 py-0.5 text-xs rounded-full shrink-0 ${
-                  project.featured
-                    ? 'bg-primary/10 text-primary'
-                    : 'bg-muted text-muted-foreground'
-                }`}>
-                  {project.featured ? 'Featured' : 'Active'}
+                <span
+                  className={`px-2 py-0.5 text-xs rounded-full shrink-0 ${
+                    project.status === 'PUBLISHED'
+                      ? 'bg-green-500/10 text-green-700'
+                      : project.status === 'DRAFT'
+                        ? 'bg-amber-500/10 text-amber-700'
+                        : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {project.featured ? '★ ' : ''}
+                  {project.status}
                 </span>
               </div>
             ))}

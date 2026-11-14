@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Users, Trash2, Search, Calendar, Mail, MessageSquare, TrendingUp, Clock, Filter } from 'lucide-react';
 import { deleteVisitorLog } from '@/lib/actions/contact';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
@@ -114,6 +114,10 @@ export function VisitorLogsClient({ logs }: Props) {
   }, [logs, timeFilter, search, now]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+  // Keep the page in range when rows are deleted or filters shrink the list
+  useEffect(() => {
+    setCurrentPage(p => Math.min(p, totalPages));
+  }, [totalPages]);
   const paginated = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filtered.slice(start, start + ITEMS_PER_PAGE);

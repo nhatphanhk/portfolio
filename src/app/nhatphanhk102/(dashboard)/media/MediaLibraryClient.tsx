@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { Images, Trash2, Copy, Check, Upload, Loader2, X, Search } from 'lucide-react';
 import { deleteMedia } from '@/lib/actions/media';
@@ -96,14 +96,20 @@ export function MediaLibraryClient({ media: initialMedia }: MediaLibraryClientPr
   }, [uploadFile]);
 
   const filteredItems = useMemo(() => {
-    if (!search.trim()) return items;
+    // The library is an image picker; PDFs (résumé uploads) would render as broken tiles
+    const images = items.filter(item => (item.mimetype ?? '').startsWith('image/'));
+    if (!search.trim()) return images;
     const q = search.toLowerCase().trim();
-    return items.filter(
+    return images.filter(
       item => item.filename.toLowerCase().includes(q) || (item.altText ?? '').toLowerCase().includes(q)
     );
   }, [items, search]);
 
   const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE) || 1;
+  // Keep the page in range when rows are deleted or filters shrink the list
+  useEffect(() => {
+    setCurrentPage(p => Math.min(p, totalPages));
+  }, [totalPages]);
   const paginatedItems = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredItems.slice(start, start + ITEMS_PER_PAGE);
@@ -343,10 +349,10 @@ export function MediaLibraryClient({ media: initialMedia }: MediaLibraryClientPr
           title={`Delete "${deleteTarget.filename}"?`}
           description="This will permanently delete the image from storage and the database."
           onConfirm={async () => {
-            await deleteMedia(deleteTarget.id);
+            const res = await deleteMedia(deleteTarget.id);
+            if (!res.ok) return res;
             setItems(prev => prev.filter(i => i.id !== deleteTarget.id));
             if (selectedItem?.id === deleteTarget.id) setSelectedItem(null);
-            toast.success('Image deleted');
             return { ok: true };
           }}
         />

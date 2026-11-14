@@ -11,7 +11,7 @@ interface DeleteDialogProps {
   onOpenChange: (open: boolean) => void;
   title: string;
   description?: string;
-  onConfirm: () => Promise<{ ok: boolean }>;
+  onConfirm: () => Promise<{ ok: boolean; error?: string }>;
 }
 
 export function DeleteDialog({ open, onOpenChange, title, description, onConfirm }: DeleteDialogProps) {
@@ -30,7 +30,7 @@ export function DeleteDialog({ open, onOpenChange, title, description, onConfirm
           onOpenChange(false);
           router.refresh();
         } else {
-          toast.error('Failed to delete. Please try again.');
+          toast.error(typeof result?.error === 'string' ? result.error : 'Failed to delete. Please try again.');
         }
       } catch (err) {
         console.error('Delete error:', err);

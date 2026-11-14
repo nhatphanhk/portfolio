@@ -89,6 +89,16 @@ export function sanitizeBasicServer(html: string): string {
   );
 }
 
+const NAMED_ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+
+/** Decodes the entities TipTap emits so heading ids match the DOM's textContent-based ids. */
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+    .replace(/&([a-z]+);/gi, (m, name) => NAMED_ENTITIES[name.toLowerCase()] ?? m);
+}
+
 export function extractHeadings(html: string): Heading[] {
   if (!html) return [];
 
@@ -98,12 +108,14 @@ export function extractHeadings(html: string): Heading[] {
   const idCounts = new Map<string, number>();
   let match;
 
+  let index = 0;
   while ((match = regex.exec(html)) !== null) {
+    const position = index++; // counts every heading, like querySelectorAll does in BlogContent
     const level = parseInt(match[1], 10);
-    const rawText = match[2].replace(/<[^>]*>/g, '').trim();
+    const rawText = decodeHtmlEntities(match[2].replace(/<[^>]*>/g, '')).trim();
     if (!rawText) continue;
 
-    let id = slugifyHeading(rawText) || `heading-${headings.length + 1}`;
+    let id = slugifyHeading(rawText) || `heading-${position + 1}`;
     const count = idCounts.get(id) || 0;
     idCounts.set(id, count + 1);
     if (count > 0) {

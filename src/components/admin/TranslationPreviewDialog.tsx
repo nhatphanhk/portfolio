@@ -26,7 +26,6 @@ import {
   Copy,
   Link2,
   Unlink,
-  Search,
   BookOpen,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -78,7 +77,6 @@ export function TranslationPreviewDialog({
   const [isMaximized, setIsMaximized] = useState(false);
   const [syncScroll, setSyncScroll] = useState(true);
   const [copiedHtml, setCopiedHtml] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const [isSavingDb, setIsSavingDb] = useState(false);
   const [isApplyingAndSaving, setIsApplyingAndSaving] = useState(false);
@@ -174,11 +172,14 @@ export function TranslationPreviewDialog({
     }
   };
 
+  // Only close when the save succeeded; the caller has already shown the error toast otherwise
   const handleSaveDb = async () => {
     setIsSavingDb(true);
     try {
       await onSaveToDb(editedData);
       onOpenChange(false);
+    } catch {
+      // keep the dialog open so the edited translation is not lost
     } finally {
       setIsSavingDb(false);
     }
@@ -189,6 +190,8 @@ export function TranslationPreviewDialog({
     try {
       await onApplyAndSave(editedData);
       onOpenChange(false);
+    } catch {
+      // keep the dialog open so the edited translation is not lost
     } finally {
       setIsApplyingAndSaving(false);
     }
@@ -380,27 +383,6 @@ export function TranslationPreviewDialog({
                     {copiedHtml ? 'Đã chép' : 'Sao chép HTML'}
                   </button>
                 )}
-
-                {/* Quick in-modal Search */}
-                <div className="relative hidden sm:block">
-                  <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Tìm từ khóa..."
-                    className="w-36 lg:w-44 pl-7 pr-2 py-1 text-xs rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs transition-colors"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground hover:text-foreground"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
               </div>
             </div>
 

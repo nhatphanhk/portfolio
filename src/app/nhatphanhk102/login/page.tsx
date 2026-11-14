@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,10 +16,16 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-export default function AdminLoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // NextAuth appends ?callbackUrl= when the proxy redirects a deep link; only same-origin paths are honoured
+  const rawCallback = searchParams.get('callbackUrl') || '';
+  const callbackUrl = rawCallback.startsWith('/') && !rawCallback.startsWith('//') ? rawCallback : '/nhatphanhk102';
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    searchParams.get('error') ? 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.' : null
+  );
 
   const {
     register,
@@ -48,7 +54,7 @@ export default function AdminLoginPage() {
         sessionStorage.setItem('visitor_logged', 'true');
       }
 
-      router.push('/nhatphanhk102');
+      router.push(callbackUrl);
       router.refresh();
     } catch {
       setError('An unexpected error occurred. Please try again.');
@@ -99,8 +105,8 @@ export default function AdminLoginPage() {
                   placeholder="admin@example.com"
                   autoComplete="email"
                   {...register('email')}
-                  className={`w-full pl-10 pr-4 py-2.5 rounded-lg border bg-slate-50 text-foreground text-sm outline-none focus:bg-white focus:ring-2 focus:ring-ring transition-colors ${
-                    errors.email ? 'border-destructive' : 'border-slate-200 hover:border-slate-300'
+                  className={`w-full pl-10 pr-4 py-2.5 rounded-lg border bg-muted/40 text-foreground text-sm outline-none focus:bg-card focus:ring-2 focus:ring-ring transition-colors ${
+                    errors.email ? 'border-destructive' : 'border-input hover:border-foreground/30'
                   }`}
                 />
               </div>
@@ -122,15 +128,15 @@ export default function AdminLoginPage() {
                   placeholder="••••••••"
                   autoComplete="current-password"
                   {...register('password')}
-                  className={`w-full pl-10 pr-10 py-2.5 rounded-lg border bg-slate-50 text-foreground text-sm outline-none focus:bg-white focus:ring-2 focus:ring-ring transition-colors ${
-                    errors.password ? 'border-destructive' : 'border-slate-200 hover:border-slate-300'
+                  className={`w-full pl-10 pr-10 py-2.5 rounded-lg border bg-muted/40 text-foreground text-sm outline-none focus:bg-card focus:ring-2 focus:ring-ring transition-colors ${
+                    errors.password ? 'border-destructive' : 'border-input hover:border-foreground/30'
                   }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  tabIndex={-1}
+                  aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -160,5 +166,13 @@ export default function AdminLoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

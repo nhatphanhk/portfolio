@@ -65,21 +65,16 @@ export function ResumeTranslateDialog({
         if (en) {
           setHasProfileTrans(true);
           setProfileTrans({
-            title: en.title || profile.title || '',
-            tagline: profile.tagline || '',
-            bio: en.description || profile.bio || '',
-            careerObjective: en.content || profile.careerObjective || '',
-            softSkills: en.excerpt || profile.softSkills || '',
+            title: en.title || '',
+            tagline: '',
+            bio: en.description || '',
+            careerObjective: en.content || '',
+            softSkills: en.excerpt || '',
           });
         } else {
           setHasProfileTrans(false);
-          setProfileTrans({
-            title: profile.title || '',
-            tagline: profile.tagline || '',
-            bio: profile.bio || '',
-            careerObjective: profile.careerObjective || '',
-            softSkills: profile.softSkills || '',
-          });
+          // Start empty: pre-filling with the Vietnamese source let "Save" store it as the English text
+          setProfileTrans({ title: '', tagline: '', bio: '', careerObjective: '', softSkills: '' });
         }
       });
     }

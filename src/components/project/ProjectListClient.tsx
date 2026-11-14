@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ExternalLink, Github, Search, FolderCode } from 'lucide-react';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { useLanguage } from '@/lib/i18n/context';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export type PublicProject = {
   id: string;
@@ -36,9 +37,23 @@ interface ProjectListClientProps {
 
 export function ProjectListClient({ projects }: ProjectListClientProps) {
   const { isEn, t } = useLanguage();
-  const [search, setSearch] = useState('');
-  const [selectedTag, setSelectedTag] = useState<string>('ALL');
-  const [currentPage, setCurrentPage] = useState(1);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [search, setSearch] = useState(searchParams.get('q') ?? '');
+  const [selectedTag, setSelectedTag] = useState<string>(searchParams.get('tech') ?? 'ALL');
+  const [currentPage, setCurrentPage] = useState(Math.max(1, Number(searchParams.get('page')) || 1));
+
+  // Mirror the filters into the URL so Back/Forward and shared links keep them (replace, no scroll)
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (search.trim()) params.set('q', search.trim());
+    if (selectedTag !== 'ALL') params.set('tech', selectedTag);
+    if (currentPage > 1) params.set('page', String(currentPage));
+    const next = params.toString();
+    if (next !== searchParams.toString()) {
+      router.replace(next ? `?${next}` : window.location.pathname, { scroll: false });
+    }
+  }, [search, selectedTag, currentPage, router, searchParams]);
 
   // Extract all unique technologies
   const allTechnologies = useMemo(() => {

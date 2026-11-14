@@ -17,6 +17,7 @@ const SEGMENT_NAMES: Record<string, string> = {
   admin: 'Dashboard',
   blogs: 'Blogs',
   editor: 'Editor',
+  dashboard: 'Analytics',
   series: 'Series',
   projects: 'Projects',
   contacts: 'Contacts',
@@ -27,6 +28,9 @@ const SEGMENT_NAMES: Record<string, string> = {
   resume: 'Resume Editor',
   landing: 'Landing Page',
 };
+
+/** Path segments that have no page of their own (rendered as plain text, not links). */
+const NON_ROUTABLE = new Set(['editor']);
 
 export function AdminBreadcrumb() {
   const pathname = usePathname();
@@ -48,7 +52,7 @@ export function AdminBreadcrumb() {
 
   // Generate breadcrumb items
   // segments[0] is 'admin' (Dashboard)
-  const items: { label: string; href: string; isCurrent: boolean }[] = [];
+  const items: { label: string; href: string; isCurrent: boolean; plain: boolean }[] = [];
   let accumulatedPath = '';
 
   segments.forEach((seg, idx) => {
@@ -69,6 +73,7 @@ export function AdminBreadcrumb() {
       label,
       href: accumulatedPath,
       isCurrent,
+      plain: NON_ROUTABLE.has(seg),
     });
   });
 
@@ -82,7 +87,7 @@ export function AdminBreadcrumb() {
             <React.Fragment key={item.href}>
               {index > 0 && <BreadcrumbSeparator />}
               <BreadcrumbItem>
-                {isLast ? (
+                {isLast || item.plain ? (
                   <BreadcrumbPage>{item.label}</BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink asChild>

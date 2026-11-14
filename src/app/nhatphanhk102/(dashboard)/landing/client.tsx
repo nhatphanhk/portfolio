@@ -83,36 +83,49 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
   };
 
   const handleResetSection = (grp: string) => {
+    if (!window.confirm(`Khôi phục toàn bộ nội dung mặc định cho mục "${grp}"? Các chỉnh sửa trong mục này sẽ mất.`)) {
+      return;
+    }
     const defaults = DEFAULT_SITE_CONTENT.filter(d => d.grp === grp);
+    const shared = defaults.filter(d => !isTranslatable(d.key));
+    const applyShared = (prev: Record<string, string>) => {
+      const next = { ...prev };
+      for (const d of shared) next[d.key] = d.value;
+      return next;
+    };
     if (activeTab === 'en') {
       setItemsEn(prev => {
-        const next = { ...prev };
-        for (const d of defaults) {
-          next[d.key] = d.value;
-        }
+        const next = applyShared(prev);
+        for (const d of defaults) next[d.key] = d.value;
         return next;
       });
-      toast.info(`Reset ${grp} (English) to defaults`);
+      setItemsVi(applyShared); // URLs / numbers are shared between both languages
+      toast.info(`Đã khôi phục mục "${grp}" (English) về mặc định`);
     } else {
       setItemsVi(prev => {
-        const next = { ...prev };
-        for (const d of defaults) {
-          if (DEFAULT_VI_SITE_CONTENT[d.key]) {
-            next[d.key] = DEFAULT_VI_SITE_CONTENT[d.key];
-          } else {
-            next[d.key] = d.value;
-          }
-        }
+        const next = applyShared(prev);
+        for (const d of defaults) next[d.key] = DEFAULT_VI_SITE_CONTENT[d.key] ?? d.value;
         return next;
       });
-      toast.info(`Reset ${grp} (Tiếng Việt) to defaults`);
+      setItemsEn(applyShared);
+      toast.info(`Đã khôi phục mục "${grp}" (Tiếng Việt) về mặc định`);
     }
   };
 
   // AI Translation with Google Gemini via /api/translate
   const handleAiTranslate = async () => {
     const targetLocale = activeTab === 'en' ? 'vi' : 'en';
-    const sourceData = activeTab === 'en' ? itemsEn : itemsVi;
+    // Only text fields go to the model; URLs and numbers are shared and must not be "translated"
+    const sourceData = Object.fromEntries(
+      Object.entries(activeTab === 'en' ? itemsEn : itemsVi).filter(([key]) => isTranslatable(key))
+    );
+    if (
+      !window.confirm(
+        `Bản dịch AI sẽ ghi đè các trường văn bản hiện có ở tab ${targetLocale === 'vi' ? 'Tiếng Việt' : 'English'}. Tiếp tục?`
+      )
+    ) {
+      return;
+    }
 
     setIsTranslating(true);
     const toastId = toast.loading(
@@ -135,15 +148,18 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
       if (!res.ok || !json.ok || !json.data) {
         throw new Error(json.error || 'Dịch tự động thất bại');
       }
+      const translated = Object.fromEntries(
+        Object.entries(json.data as Record<string, string>).filter(([key]) => isTranslatable(key))
+      );
 
       if (targetLocale === 'vi') {
-        setItemsVi(prev => ({ ...prev, ...json.data }));
+        setItemsVi(prev => ({ ...prev, ...translated }));
         setActiveTab('vi');
         toast.success('Đã chuyển ngữ thành công sang Tiếng Việt! Vui lòng xem lại và bấm Lưu.', {
           id: toastId,
         });
       } else {
-        setItemsEn(prev => ({ ...prev, ...json.data }));
+        setItemsEn(prev => ({ ...prev, ...translated }));
         setActiveTab('en');
         toast.success('Translated successfully to English! Please review and click Save.', {
           id: toastId,

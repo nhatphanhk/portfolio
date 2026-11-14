@@ -548,6 +548,8 @@ export function LiveResumeCanvas({
   ]);
 
   const totalPages = isHarvard ? harvardPages.length : modernPages.length;
+  // Deleting items or toggling edit mode can shrink the page count below the selected page
+  const clampedActivePage = Math.min(Math.max(1, activePage), Math.max(1, totalPages));
 
   React.useEffect(() => {
     onSetTotalPages(totalPages);
@@ -1785,7 +1787,7 @@ export function LiveResumeCanvas({
       {isHarvard ? (
         // ── 🏛️ HARVARD SINGLE-COLUMN LAYOUT ─────────────────────
         harvardPages.map((page, pIdx) => {
-          const isVisible = viewMode === 'stack' || activePage === page.pageNumber;
+          const isVisible = viewMode === 'stack' || clampedActivePage === page.pageNumber;
           if (!isVisible) return null;
 
           return (
@@ -1819,11 +1821,11 @@ export function LiveResumeCanvas({
                         />
 
                         {/* Professional Title / Subtitle */}
-                        {profile.title && (
+                        {(profile.title || isEditMode) && (
                           <InlineEditable
                             as="p"
                             isEditMode={isEditMode}
-                            value={profile.title}
+                            value={profile.title || ''}
                             onChange={v => onUpdateProfile('title', v)}
                             placeholder="Chức danh nghề nghiệp (VD: Senior Software Engineer)"
                             className="text-xs sm:text-sm font-serif italic text-gray-700 mb-2 block"
@@ -1832,12 +1834,12 @@ export function LiveResumeCanvas({
 
                         {/* Centered Contact Bar with Bullets (•) */}
                         <div id="section-social" className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-xs font-serif text-gray-700 scroll-mt-6">
-                          {profile.location && (
+                          {(profile.location || isEditMode) && (
                             <span className="inline-flex items-center gap-1">
                               <MapPin className="w-3 h-3 text-gray-500 shrink-0" />
                               <InlineEditable
                                 isEditMode={isEditMode}
-                                value={profile.location}
+                                value={profile.location || ''}
                                 onChange={v => onUpdateProfile('location', v)}
                                 placeholder="Địa điểm"
                               />
@@ -1860,12 +1862,12 @@ export function LiveResumeCanvas({
 
                           {((profile.phone || profile.location) && profile.email) && <span>•</span>}
 
-                          {profile.email && (
+                          {(profile.email || isEditMode) && (
                             <span className="inline-flex items-center gap-1">
                               <Mail className="w-3 h-3 text-gray-500 shrink-0" />
                               <InlineEditable
                                 isEditMode={isEditMode}
-                                value={profile.email}
+                                value={profile.email || ''}
                                 onChange={v => onUpdateProfile('email', v)}
                                 placeholder="Email"
                               />
@@ -1955,7 +1957,7 @@ export function LiveResumeCanvas({
       ) : (
         // ── 📐 MODERN 2-COLUMN LAYOUT ───────────────────────────
         modernPages.map(page => {
-          const isVisible = viewMode === 'stack' || activePage === page.pageNumber;
+          const isVisible = viewMode === 'stack' || clampedActivePage === page.pageNumber;
           if (!isVisible) return null;
 
           const leftSections = page.left.sections;

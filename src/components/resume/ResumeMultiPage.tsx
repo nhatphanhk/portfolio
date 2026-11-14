@@ -574,6 +574,8 @@ export function ResumeMultiPage({
   ]);
 
   const totalPages = isHarvard ? harvardPages.length : modernPages.length;
+  // A locale switch can change the page count; never point the tab past the last page
+  const clampedPageTab = Math.min(Math.max(1, activePageTab), Math.max(1, totalPages));
 
   // ══════════════════════════════════════════════════════════════
   // ── HARVARD SECTION RENDERER ──────────────────────────────────
@@ -1129,7 +1131,7 @@ export function ResumeMultiPage({
         {isHarvard ? (
           // ── 🏛️ HARVARD PUBLIC VIEW ─────────────────────────────
           harvardPages.map((page, idx) => {
-            const isVisible = viewMode === 'stack' || activePageTab === page.pageNumber;
+            const isVisible = viewMode === 'stack' || clampedPageTab === page.pageNumber;
             if (!isVisible) return null;
 
             return (
@@ -1229,7 +1231,7 @@ export function ResumeMultiPage({
         ) : (
           // ── 📐 MODERN PUBLIC VIEW ──────────────────────────────
           modernPages.map((page, idx) => {
-            const isVisible = viewMode === 'stack' || activePageTab === page.pageNumber;
+            const isVisible = viewMode === 'stack' || clampedPageTab === page.pageNumber;
             if (!isVisible) return null;
 
             return (

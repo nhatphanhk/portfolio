@@ -77,6 +77,7 @@ export function ResumePdfDialog({
     setIsUploading(true);
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('fileType', 'document');
 
     try {
       const res = await fetch('/api/upload', {

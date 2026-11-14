@@ -25,7 +25,7 @@ import { slugify } from '@/lib/utils';
 const schema = z.object({
   title: z.string().min(2, 'Title required').max(255),
   tags: z.string().optional(),
-  slug: z.string().optional(),
+  slug: z.string().regex(/^[a-z0-9-]*$/, 'Slug chỉ gồm chữ thường, số và dấu gạch nối').optional(),
   description: z.string().max(1000).optional(),
   coverUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
 });
@@ -42,6 +42,8 @@ interface SeriesDialogProps {
 
 export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess }: SeriesDialogProps) {
   const [isPending, startTransition] = useTransition();
+  // Once the slug is typed by hand, title changes must not overwrite it
+  const [slugTouched, setSlugTouched] = useState(Boolean(initialData?.slug));
 
   // Translation states
   const [isTranslating, setIsTranslating] = useState(false);
@@ -70,6 +72,10 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
       coverUrl: initialData?.coverUrl ?? '',
     },
   });
+
+  useEffect(() => {
+    if (open) setSlugTouched(Boolean(initialData?.slug));
+  }, [open, initialData?.slug]);
 
   useEffect(() => {
     if (open && initialData?.id) {
@@ -199,12 +205,12 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
 
   const onTitleBlur = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
-      if (!initialData?.slug) {
+      if (!slugTouched) {
         const slug = slugify(e.target.value);
         setValue('slug', slug, { shouldValidate: true });
       }
     },
-    [initialData?.slug, setValue]
+    [slugTouched, setValue]
   );
 
   const onSubmit = (data: FormData) => {
@@ -234,7 +240,7 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{mode === 'create' ? 'New Blog Series' : 'Edit Blog Series'}</DialogTitle>
         </DialogHeader>
@@ -249,6 +255,19 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
               className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
             {errors.title && <p className="text-xs text-destructive mt-1">{errors.title.message}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Slug</label>
+            <input
+              {...register('slug', { onChange: () => setSlugTouched(true) })}
+              placeholder="full-stack-web-development"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Đường dẫn công khai: /blog/series/&lt;slug&gt;. Tự sinh từ tiêu đề nếu để trống.
+            </p>
+            {errors.slug && <p className="text-xs text-destructive mt-1">{errors.slug.message}</p>}
           </div>
 
           <div>

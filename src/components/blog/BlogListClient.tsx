@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, Clock, Layers, Search, FileText } from 'lucide-react';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { useLanguage } from '@/lib/i18n/context';
@@ -41,18 +41,24 @@ interface BlogListClientProps {
 export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
   const { t, locale } = useLanguage();
   const searchParams = useSearchParams();
-  const [search, setSearch] = useState('');
-  const [selectedTag, setSelectedTag] = useState<string>('ALL');
-  const [selectedSeriesSlug, setSelectedSeriesSlug] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const router = useRouter();
+  const [search, setSearch] = useState(searchParams.get('q') ?? '');
+  const [selectedTag, setSelectedTag] = useState<string>(searchParams.get('tag') ?? 'ALL');
+  const [selectedSeriesSlug, setSelectedSeriesSlug] = useState<string | null>(searchParams.get('series'));
+  const [currentPage, setCurrentPage] = useState(Math.max(1, Number(searchParams.get('page')) || 1));
 
-  // Sync with URL query param ?series=...
+  // Mirror the filters into the URL so Back/Forward and shared links keep them (replace, no scroll)
   useEffect(() => {
-    const seriesParam = searchParams.get('series');
-    if (seriesParam) {
-      setSelectedSeriesSlug(seriesParam);
+    const params = new URLSearchParams();
+    if (search.trim()) params.set('q', search.trim());
+    if (selectedTag !== 'ALL') params.set('tag', selectedTag);
+    if (selectedSeriesSlug) params.set('series', selectedSeriesSlug);
+    if (currentPage > 1) params.set('page', String(currentPage));
+    const next = params.toString();
+    if (next !== searchParams.toString()) {
+      router.replace(next ? `?${next}` : window.location.pathname, { scroll: false });
     }
-  }, [searchParams]);
+  }, [search, selectedTag, selectedSeriesSlug, currentPage, router, searchParams]);
 
   // Extract all unique tags
   const allTags = useMemo(() => {

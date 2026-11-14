@@ -27,7 +27,24 @@ export async function deleteMedia(id: string) {
   await ensureAdmin();
 
   const media = await prisma.media.findUnique({ where: { id } });
-  if (!media) return { ok: false, error: 'Not found' };
+  if (!media) return { ok: false, error: 'Không tìm thấy tệp' };
+
+  // Refuse to delete a file that live content still points at
+  const url = media.url;
+  const [blogRefs, projectRefs, profileRefs, seriesRefs, siteRefs] = await Promise.all([
+    prisma.blog.count({ where: { OR: [{ thumbnailUrl: url }, { content: { contains: url } }] } }),
+    prisma.project.count({ where: { OR: [{ thumbnailUrl: url }, { content: { contains: url } }] } }),
+    prisma.profile.count({ where: { OR: [{ avatarUrl: url }, { resumeUrl: url }] } }),
+    prisma.blogSeries.count({ where: { coverUrl: url } }),
+    prisma.siteContent.count({ where: { value: url } }),
+  ]);
+  const refs = blogRefs + projectRefs + profileRefs + seriesRefs + siteRefs;
+  if (refs > 0) {
+    return {
+      ok: false,
+      error: `Tệp đang được dùng ở ${refs} nơi (bài viết, dự án, hồ sơ hoặc trang chủ). Hãy gỡ liên kết trước khi xóa.`,
+    };
+  }
 
   // Delete from Vercel Blob if it's a blob URL
   if (media.url.includes('blob.vercel-storage.com') || media.url.includes('public.blob.vercel-storage.com')) {

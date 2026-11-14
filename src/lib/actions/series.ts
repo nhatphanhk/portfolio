@@ -10,7 +10,7 @@ import { estimateReadMinutes } from '@/lib/blog-utils';
 
 const seriesSchema = z.object({
   title: z.string().min(2, 'Title required').max(255),
-  slug: z.string().optional(),
+  slug: z.string().regex(/^[a-z0-9-]*$/).optional(),
   description: z.string().max(1000).optional(),
   coverUrl: z.string().url().optional().or(z.literal('')),
   tags: z.string().optional(),
@@ -26,6 +26,9 @@ export async function createSeries(data: SeriesFormData) {
   }
 
   const slug = parsed.data.slug?.trim() || slugify(parsed.data.title);
+  if (!/^[a-z0-9-]+$/.test(slug)) {
+    return { ok: false, error: 'Slug không hợp lệ (chỉ chữ thường, số và dấu gạch nối)' };
+  }
 
   try {
     await prisma.blogSeries.create({
@@ -62,6 +65,9 @@ export async function updateSeries(id: string, data: SeriesFormData) {
   }
 
   const slug = parsed.data.slug?.trim() || slugify(parsed.data.title);
+  if (!/^[a-z0-9-]+$/.test(slug)) {
+    return { ok: false, error: 'Slug không hợp lệ (chỉ chữ thường, số và dấu gạch nối)' };
+  }
 
   try {
     const previous = await prisma.blogSeries.findUnique({ where: { id }, select: { slug: true } });
