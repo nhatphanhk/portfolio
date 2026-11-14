@@ -13,9 +13,9 @@ interface MainLayoutProps {
  */
 const MainLayout = ({ children }: MainLayoutProps) => {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen w-full max-w-full flex flex-col overflow-x-hidden">
       <Header />
-      <main className="flex-grow">{children}</main>
+      <main className="flex-grow w-full max-w-full min-w-0">{children}</main>
       <Footer />
       <VisitorModal />
     </div>

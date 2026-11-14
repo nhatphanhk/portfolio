@@ -51,6 +51,15 @@ function processHtml(html: string): string {
     element.classList.add('scroll-mt-28');
   });
 
+  // Ensure all tables are safely wrapped in a responsive horizontal scroll container
+  div.querySelectorAll('table').forEach(table => {
+    if (table.parentElement?.classList.contains('overflow-x-auto')) return;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'overflow-x-auto my-6 max-w-full rounded-xl border border-border';
+    table.parentNode?.insertBefore(wrapper, table);
+    wrapper.appendChild(table);
+  });
+
   return div.innerHTML;
 }
 
@@ -77,7 +86,7 @@ export function BlogContent({ html, className = '' }: BlogContentProps) {
   return (
     <div
       ref={containerRef}
-      className={`prose prose-sm sm:prose-base max-w-none ${className}`}
+      className={`prose prose-sm sm:prose-base max-w-none min-w-0 w-full overflow-hidden ${className}`}
       dangerouslySetInnerHTML={{ __html: processedHtml || sanitizeBasicServer(html) }}
     />
   );

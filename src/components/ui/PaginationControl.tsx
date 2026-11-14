@@ -83,14 +83,14 @@ export function PaginationControl({
       </div>
 
       {/* Pagination buttons */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 flex-wrap justify-center">
         {/* First page button */}
         <button
           type="button"
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
           aria-label="First page"
-          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className="hidden sm:inline-flex p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none transition-colors"
         >
           <ChevronsLeft className="h-4 w-4" />
         </button>
@@ -107,7 +107,7 @@ export function PaginationControl({
         </button>
 
         {/* Page numbers */}
-        <div className="flex items-center gap-1 mx-1">
+        <div className="flex items-center gap-1 mx-0.5 sm:mx-1 flex-wrap justify-center">
           {pages.map((p, idx) => {
             if (p === 'ellipsis') {
               return (
@@ -157,7 +157,7 @@ export function PaginationControl({
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
           aria-label="Last page"
-          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className="hidden sm:inline-flex p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none transition-colors"
         >
           <ChevronsRight className="h-4 w-4" />
         </button>

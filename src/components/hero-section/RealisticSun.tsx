@@ -551,8 +551,8 @@ export function RealisticSun({ className = '', onFallback }: RealisticSunProps) 
         isReady ? 'opacity-100' : 'opacity-0'
       } ${className}`}
       style={{
-        width: 'min(600px, 46vw)',
-        height: 'min(600px, 46vw)',
+        width: 'min(500px, 42vw, 55vh)',
+        height: 'min(500px, 42vw, 55vh)',
       }}
       aria-hidden="true"
     >

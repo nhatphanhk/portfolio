@@ -572,7 +572,7 @@ export function LiveResumeCanvas({
     switch (sec.id) {
       case 'bio': {
         bodyContent = (
-          <div className="text-xs sm:text-[13px] font-serif text-gray-800 leading-relaxed space-y-2">
+          <div className="text-xs sm:text-sm md:text-[14.5px] font-serif text-gray-800 leading-relaxed sm:leading-[1.7] space-y-2">
             <InlineEditable
               as="p"
               multiline
@@ -580,10 +580,10 @@ export function LiveResumeCanvas({
               value={profile.bio || ''}
               onChange={v => onUpdateProfile('bio', v)}
               placeholder="Giới thiệu tóm tắt hồ sơ chuyên môn và định hướng sự nghiệp theo chuẩn Harvard..."
-              className="block"
+              className="block text-justify"
             />
             {(profile.careerObjective || isEditMode) && (
-              <p className="italic text-gray-700">
+              <p className="italic text-gray-700 text-justify">
                 <span className="font-semibold not-italic text-gray-900">Career Objective: </span>
                 <InlineEditable
                   isEditMode={isEditMode}
@@ -601,7 +601,7 @@ export function LiveResumeCanvas({
       case 'education': {
         const edus = sec.education || [];
         bodyContent = (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {edus.map((edu: any, eduIdx: number) => (
               <div key={edu.id} className="group/edu relative">
                 {/* Action Bar on hover in Edit Mode */}
@@ -647,7 +647,7 @@ export function LiveResumeCanvas({
 
                 {/* Line 1: Institution (Bold left) — Date (Right) */}
                 <div className="flex justify-between items-baseline gap-2">
-                  <span className="font-bold font-serif text-xs sm:text-[13px] text-gray-950">
+                  <span className="font-bold font-serif text-xs sm:text-sm md:text-[14.5px] text-gray-950">
                     <InlineEditable
                       isEditMode={isEditMode}
                       value={edu.institution}
@@ -660,7 +660,7 @@ export function LiveResumeCanvas({
                   </span>
                   <span
                     onClick={() => isEditMode && onOpenDialog('education', edu)}
-                    className={`text-xs font-serif font-medium text-gray-800 shrink-0 ${
+                    className={`text-xs sm:text-[13px] md:text-[13.5px] font-serif font-medium text-gray-700 shrink-0 ${
                       isEditMode ? 'cursor-pointer hover:text-blue-600' : ''
                     }`}
                     title={isEditMode ? 'Nhấp để đổi mốc thời gian' : undefined}
@@ -671,8 +671,8 @@ export function LiveResumeCanvas({
                 </div>
 
                 {/* Line 2: Degree in Field (Italic left) — GPA / Location (Right) */}
-                <div className="flex justify-between items-baseline gap-2">
-                  <span className="font-serif italic text-xs sm:text-[13px] text-gray-800">
+                <div className="flex justify-between items-baseline gap-2 mt-0.5">
+                  <span className="font-serif italic text-xs sm:text-sm md:text-[14px] text-gray-800">
                     <InlineEditable
                       isEditMode={isEditMode}
                       value={edu.degree}
@@ -698,7 +698,7 @@ export function LiveResumeCanvas({
                     )}
                   </span>
                   {(edu.gpa || isEditMode) && (
-                    <span className="font-serif text-xs text-gray-700 shrink-0">
+                    <span className="font-serif text-xs sm:text-[13px] text-gray-700 shrink-0 font-medium">
                       GPA:{' '}
                       <InlineEditable
                         isEditMode={isEditMode}
@@ -725,7 +725,7 @@ export function LiveResumeCanvas({
                       onUpdateProfile('_touch', Date.now());
                     }}
                     placeholder="Môn học tiêu biểu, đề tài nghiên cứu hoặc thành tích..."
-                    className="text-xs font-serif text-gray-700 leading-relaxed mt-0.5 block"
+                    className="text-xs sm:text-sm md:text-[13.5px] font-serif text-gray-700 leading-relaxed mt-1 block text-justify"
                   />
                 )}
               </div>
@@ -753,7 +753,7 @@ export function LiveResumeCanvas({
       case 'experience': {
         const exps = sec.experiences || [];
         bodyContent = (
-          <div className="space-y-4">
+          <div className="space-y-4 sm:space-y-5">
             {exps.map((exp: any, expIdx: number) => {
               const bulletPoints = (exp.achievements || '')
                 .split('\n')
@@ -805,7 +805,7 @@ export function LiveResumeCanvas({
 
                   {/* Line 1: Company (Bold left) — Date (Right) */}
                   <div className="flex justify-between items-baseline gap-2">
-                    <span className="font-bold font-serif text-xs sm:text-[13px] text-gray-950">
+                    <span className="font-bold font-serif text-xs sm:text-sm md:text-[14.5px] text-gray-950">
                       <InlineEditable
                         isEditMode={isEditMode}
                         value={exp.company}
@@ -818,7 +818,7 @@ export function LiveResumeCanvas({
                     </span>
                     <span
                       onClick={() => isEditMode && onOpenDialog('experience', exp)}
-                      className={`text-xs font-serif font-medium text-gray-800 shrink-0 ${
+                      className={`text-xs sm:text-[13px] md:text-[13.5px] font-serif font-medium text-gray-700 shrink-0 ${
                         isEditMode ? 'cursor-pointer hover:text-blue-600' : ''
                       }`}
                       title={isEditMode ? 'Nhấp để đổi mốc thời gian' : undefined}
@@ -836,8 +836,8 @@ export function LiveResumeCanvas({
                   </div>
 
                   {/* Line 2: Position (Italic left) — Location (Right) */}
-                  <div className="flex justify-between items-baseline gap-2">
-                    <span className="font-serif italic text-xs sm:text-[13px] text-gray-800">
+                  <div className="flex justify-between items-baseline gap-2 mt-0.5">
+                    <span className="font-serif italic text-xs sm:text-sm md:text-[14px] text-gray-800 font-medium">
                       <InlineEditable
                         isEditMode={isEditMode}
                         value={exp.position}
@@ -849,7 +849,7 @@ export function LiveResumeCanvas({
                       />
                     </span>
                     {profile.location && (
-                      <span className="font-serif italic text-xs text-gray-600 shrink-0">
+                      <span className="font-serif italic text-xs sm:text-[13px] text-gray-600 shrink-0">
                         {profile.location}
                       </span>
                     )}
@@ -867,12 +867,12 @@ export function LiveResumeCanvas({
                         onUpdateProfile('_touch', Date.now());
                       }}
                       placeholder="Mô tả phạm vi trách nhiệm tổng quát..."
-                      className="text-xs font-serif text-gray-700 leading-relaxed mt-0.5 block"
+                      className="text-xs sm:text-sm md:text-[13.5px] font-serif text-gray-700 leading-relaxed mt-1 block text-justify"
                     />
                   )}
 
                   {/* Bullet points with Action Verbs */}
-                  <ul className="mt-1 list-disc pl-5 space-y-0.5 text-xs sm:text-[13px] font-serif text-gray-800 leading-relaxed">
+                  <ul className="mt-1.5 list-disc pl-5 sm:pl-6 space-y-1 sm:space-y-1.5 text-xs sm:text-sm md:text-[13.5px] font-serif text-gray-800 leading-relaxed text-justify">
                     {bulletPoints.map((point: string, pIdx: number) => (
                       <li key={pIdx} className="group/bullet">
                         <div className="flex items-start justify-between gap-1">
@@ -924,8 +924,8 @@ export function LiveResumeCanvas({
 
                   {/* Technologies (Harvard inline format) */}
                   {(exp.techStack || isEditMode) && (
-                    <p className="mt-1 text-xs font-serif text-gray-700">
-                      <span className="font-semibold text-gray-900">Technologies: </span>
+                    <p className="mt-2 text-xs sm:text-sm md:text-[13.5px] font-serif text-gray-700">
+                      <span className="font-semibold text-gray-950">Technologies: </span>
                       <InlineEditable
                         isEditMode={isEditMode}
                         value={exp.techStack || ''}
@@ -961,7 +961,7 @@ export function LiveResumeCanvas({
       case 'skills': {
         const cats = sec.skillCats || [];
         bodyContent = (
-          <div className="space-y-1 text-xs sm:text-[13px] font-serif text-gray-800 leading-relaxed">
+          <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm md:text-[14px] font-serif text-gray-800 leading-relaxed">
             {cats.map(cat => {
               const skills = skillsByCategory[cat] ?? [];
               return (
@@ -996,7 +996,7 @@ export function LiveResumeCanvas({
 
       case 'softSkills': {
         bodyContent = (
-          <div className="text-xs sm:text-[13px] font-serif text-gray-800 leading-relaxed">
+          <div className="text-xs sm:text-sm md:text-[14px] font-serif text-gray-800 leading-relaxed">
             <span className="font-bold text-gray-950">Core Competencies: </span>
             <InlineEditable
               isEditMode={isEditMode}
@@ -1013,7 +1013,7 @@ export function LiveResumeCanvas({
       case 'achievements': {
         const achs = sec.achievements || [];
         bodyContent = (
-          <div className="space-y-1.5 text-xs sm:text-[13px] font-serif text-gray-800">
+          <div className="space-y-2.5 sm:space-y-3 text-xs sm:text-sm md:text-[14px] font-serif text-gray-800">
             {achs.map((ach: any) => (
               <div key={ach.id} className="group/ach flex justify-between items-baseline gap-2">
                 <div className="flex-1">
@@ -1045,7 +1045,7 @@ export function LiveResumeCanvas({
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   {ach.date && (
-                    <span className="text-xs text-gray-600">
+                    <span className="text-xs sm:text-[13px] text-gray-600">
                       {new Date(ach.date).getFullYear()}
                     </span>
                   )}
@@ -1073,7 +1073,7 @@ export function LiveResumeCanvas({
       case 'activities': {
         const acts = sec.activities || [];
         bodyContent = (
-          <div className="space-y-2 text-xs sm:text-[13px] font-serif text-gray-800">
+          <div className="space-y-2.5 sm:space-y-3 text-xs sm:text-sm md:text-[14px] font-serif text-gray-800">
             {acts.map((act: any) => (
               <div key={act.id} className="group/act">
                 <div className="flex justify-between items-baseline gap-2">
@@ -1090,7 +1090,7 @@ export function LiveResumeCanvas({
                   </span>
                   <div className="flex items-center gap-1 shrink-0">
                     {act.startDate && (
-                      <span className="text-xs text-gray-600">
+                      <span className="text-xs sm:text-[13px] text-gray-600">
                         {new Date(act.startDate).getFullYear()}
                       </span>
                     )}
@@ -1116,7 +1116,7 @@ export function LiveResumeCanvas({
                       onUpdateProfile('_touch', Date.now());
                     }}
                     placeholder="Mô tả vai trò đóng góp và kết quả..."
-                    className="text-xs text-gray-700 leading-relaxed mt-0.5 block"
+                    className="text-xs sm:text-sm md:text-[13.5px] font-serif text-gray-700 leading-relaxed mt-1 block text-justify"
                   />
                 )}
               </div>
@@ -1133,7 +1133,7 @@ export function LiveResumeCanvas({
       case 'languages': {
         const langs = sec.spokenLanguages || [];
         bodyContent = (
-          <div className="text-xs sm:text-[13px] font-serif text-gray-800 leading-relaxed">
+          <div className="text-xs sm:text-sm md:text-[14px] font-serif text-gray-800 leading-relaxed">
             <span className="font-bold text-gray-950">Languages: </span>
             {langs.map((lang: any, lIdx: number) => (
               <span key={lang.id} className="group/lang">
@@ -1176,8 +1176,8 @@ export function LiveResumeCanvas({
         className="group/sec relative scroll-mt-6 mb-4"
       >
         {/* Harvard Section Heading: Uppercase, bold, serif, solid 1px full-width border */}
-        <div className="border-b border-gray-950 pb-0.5 mt-3 mb-2 flex items-baseline justify-between">
-          <h3 className="text-xs sm:text-sm font-bold font-serif uppercase tracking-wider text-gray-950 select-text">
+        <div className="border-b border-gray-950 pb-1 mt-4 sm:mt-5 mb-2.5 sm:mb-3 flex items-baseline justify-between">
+          <h3 className="text-xs sm:text-sm md:text-[14.5px] font-bold font-serif uppercase tracking-wider text-gray-950 select-text">
             {title}
           </h3>
 
@@ -1805,11 +1805,11 @@ export function LiveResumeCanvas({
               )}
 
               <ResumeCard3D>
-                <div className="bg-white text-gray-900 p-8 sm:p-12 rounded-sm font-serif min-h-[920px] flex flex-col justify-between select-text shadow-sm">
+                <div className="bg-white text-gray-900 p-6 sm:p-10 md:p-12 rounded-sm font-serif min-h-[960px] flex flex-col justify-between select-text shadow-sm">
                   <div>
                     {/* ── Page 1: Centered Harvard Ivy League Header ── */}
                     {page.pageNumber === 1 ? (
-                      <header id="section-profile" className="text-center pb-3 border-b-2 border-gray-950 mb-5 scroll-mt-6">
+                      <header id="section-profile" className="text-center pb-3.5 border-b-2 border-gray-950 mb-5 sm:mb-6 scroll-mt-6">
                         {/* Candidate Full Name */}
                         <InlineEditable
                           as="h1"
@@ -1817,7 +1817,7 @@ export function LiveResumeCanvas({
                           value={profile.name}
                           onChange={v => onUpdateProfile('name', v)}
                           placeholder="HỌ VÀ TÊN CỦA BẠN"
-                          className="text-2xl sm:text-3xl font-bold font-serif uppercase tracking-widest text-gray-950 mb-1.5 block"
+                          className="text-2xl sm:text-3xl md:text-[34px] font-bold font-serif uppercase tracking-widest text-gray-950 mb-1.5 block"
                         />
 
                         {/* Professional Title / Subtitle */}
@@ -1828,12 +1828,12 @@ export function LiveResumeCanvas({
                             value={profile.title || ''}
                             onChange={v => onUpdateProfile('title', v)}
                             placeholder="Chức danh nghề nghiệp (VD: Senior Software Engineer)"
-                            className="text-xs sm:text-sm font-serif italic text-gray-700 mb-2 block"
+                            className="text-xs sm:text-sm md:text-base font-serif italic text-gray-700 mb-2.5 block"
                           />
                         )}
 
                         {/* Centered Contact Bar with Bullets (•) */}
-                        <div id="section-social" className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-xs font-serif text-gray-700 scroll-mt-6">
+                        <div id="section-social" className="flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1.5 text-xs sm:text-[13.5px] font-serif text-gray-700 scroll-mt-6">
                           {(profile.location || isEditMode) && (
                             <span className="inline-flex items-center gap-1">
                               <MapPin className="w-3 h-3 text-gray-500 shrink-0" />
@@ -1915,7 +1915,7 @@ export function LiveResumeCanvas({
                       </header>
                     ) : (
                       /* ── Page 2+: Harvard Continuation Header ── */
-                      <header className="flex items-center justify-between pb-1.5 border-b border-gray-950 mb-5 text-xs font-serif text-gray-600">
+                      <header className="flex items-center justify-between pb-2 border-b-2 border-gray-950 mb-5 sm:mb-6 text-xs sm:text-sm font-serif text-gray-600">
                         <span className="font-bold text-gray-950 uppercase tracking-wider">
                           {profile.name}
                         </span>
@@ -1926,7 +1926,7 @@ export function LiveResumeCanvas({
                     )}
 
                     {/* ── Harvard Flow: 100% Single-Column Flow ── */}
-                    <div className="space-y-4">
+                    <div className="space-y-4 sm:space-y-5">
                       {page.sections.map((secSlice, sIdx) =>
                         renderHarvardSection(
                           secSlice,
@@ -1945,7 +1945,7 @@ export function LiveResumeCanvas({
                   </div>
 
                   {/* ── Harvard Subtle Page Footer ── */}
-                  <footer className="mt-8 pt-2.5 border-t border-gray-200 flex items-center justify-between text-[10px] font-serif text-gray-500">
+                  <footer className="mt-8 pt-3 border-t border-gray-200 flex items-center justify-between text-xs font-serif text-gray-500">
                     <span>{profile.name} — Curriculum Vitae</span>
                     <span>Trang {page.pageNumber} / {totalPages}</span>
                   </footer>
@@ -1966,7 +1966,7 @@ export function LiveResumeCanvas({
           return (
             <div key={`modern-page-${page.pageNumber}`} className="relative">
               {totalPages > 1 && (
-                <div className="max-w-5xl mx-auto flex items-center justify-between mb-2 px-2 text-xs text-muted-foreground">
+                <div className="max-w-4xl mx-auto flex items-center justify-between mb-2 px-2 text-xs text-muted-foreground">
                   <span className="font-bold uppercase tracking-wider text-[11px] text-primary">
                     Sheet {page.pageNumber} / {totalPages}
                   </span>

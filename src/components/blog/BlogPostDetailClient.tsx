@@ -120,11 +120,11 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations, is
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start">
+    <div className="flex flex-col xl:flex-row gap-8 xl:gap-10 items-start min-w-0 w-full">
       {/* Article in elevated reading canvas to guarantee visual focus */}
-      <article className="reading-canvas flex-1 min-w-0 max-w-4xl p-6 sm:p-10 md:p-12 w-full">
+      <article className="reading-canvas flex-1 min-w-0 max-w-4xl p-5 sm:p-8 md:p-12 w-full">
         {/* Article header */}
-        <header className="mb-10">
+        <header className="mb-10 min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div className="flex flex-wrap gap-2">
               {post.tags.map(tag => (
@@ -164,11 +164,11 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations, is
             )}
           </div>
 
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground mb-3 leading-tight tracking-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground mb-3 leading-tight tracking-tight break-words">
             {currentTitle}
           </h1>
 
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
             <time dateTime={post.publishedAt}>
               {formatDate(post.publishedAt, locale, 'long')}
             </time>
@@ -180,14 +180,14 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations, is
           </div>
 
           {currentExcerpt && (
-            <p className="mt-6 text-lg text-muted-foreground leading-relaxed italic border-l-4 border-primary/30 pl-4 bg-muted/30 py-3 rounded-r-lg">
+            <p className="mt-6 text-base sm:text-lg text-muted-foreground leading-relaxed italic border-l-4 border-primary/30 pl-4 bg-muted/30 py-3 rounded-r-lg break-words">
               {currentExcerpt}
             </p>
           )}
         </header>
 
         {/* Mobile Table of Contents */}
-        <div className="lg:hidden mb-8">
+        <div className="xl:hidden mb-8">
           <BlogOutline headings={headings} readTime={`${post.readTime} ${t('common.readingTime')}`} />
         </div>
 
@@ -199,7 +199,7 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations, is
       </article>
 
       {/* Table of contents sidebar (Desktop) */}
-      <aside className="hidden lg:block w-80 shrink-0">
+      <aside className="hidden xl:block w-72 xl:w-80 shrink-0">
         <div className="sticky top-28">
           <BlogOutline headings={headings} readTime={`${post.readTime} ${t('common.readingTime')}`} />
         </div>

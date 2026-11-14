@@ -181,7 +181,7 @@ export function AboutSection({ profile, content }: AboutSectionProps) {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* ══ Section Header ══ */}
-        <div data-about="content-col" className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-5 pb-6 border-b border-border/60">
+        <div data-about="content-col" className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-5 pb-6 border-b border-border/60 flex-wrap">
           <div>
             <div
               data-about="label"
@@ -204,9 +204,9 @@ export function AboutSection({ profile, content }: AboutSectionProps) {
             />
           </div>
 
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-400 text-xs sm:text-sm font-semibold self-start md:self-auto">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>{isEn ? 'Open for new challenges & projects' : 'Sẵn sàng cho dự án & thử thách mới'}</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-400 text-xs sm:text-sm font-semibold self-start md:self-auto max-w-full">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <span className="truncate">{isEn ? 'Open for new challenges & projects' : 'Sẵn sàng cho dự án & thử thách mới'}</span>
           </div>
         </div>
 
@@ -215,20 +215,20 @@ export function AboutSection({ profile, content }: AboutSectionProps) {
           {/* ── LEFT COLUMN: Portrait Card (Matches Right Column Natural Height) ── */}
           <div
             data-about="portrait-card"
-            className="relative group rounded-2xl overflow-hidden shadow-lg border border-border/70 bg-card min-h-[380px] lg:min-h-0"
+            className="relative group rounded-2xl overflow-hidden shadow-lg border border-border/70 bg-card min-h-[280px] sm:min-h-[360px] lg:min-h-0 hover:border-amber-400/40 hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-500"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={authorImg1}
               alt={profile.name}
-              className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+              className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
               loading="lazy"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent" />
             <div className="absolute bottom-6 left-6 right-6 text-white">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/15 backdrop-blur-md border border-white/25 text-xs font-bold mb-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900/60 backdrop-blur-md border border-amber-400/30 text-xs font-bold mb-2.5 shadow-sm">
                 <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>{getC('about_author_role', isEn ? 'Lead Engineer' : 'Kỹ Sư Phần Mềm')}</span>
+                <span className="text-amber-200">{getC('about_author_role', isEn ? 'Lead Engineer' : 'Kỹ Sư Phần Mềm')}</span>
               </div>
               <h3 className="text-2xl sm:text-3xl font-black tracking-tight">{profile.name}</h3>
               <p className="text-xs sm:text-sm text-slate-300 line-clamp-1 mt-1">{profile.title}</p>
@@ -236,69 +236,69 @@ export function AboutSection({ profile, content }: AboutSectionProps) {
           </div>
 
           {/* ── RIGHT COLUMN: Bio + Stats + Photos (Defines Natural Row Height) ── */}
-          <div data-about="right-col" className="flex flex-col gap-4">
+          <div data-about="right-col" className="flex flex-col gap-4 min-w-0">
             {/* Bio Card (Clean Natural Spacing) */}
-            <div data-about="bio-card" className="p-6 rounded-2xl bg-card border border-border/70 shadow-sm">
+            <div data-about="bio-card" className="p-5 sm:p-6 rounded-2xl bg-card border border-border/80 shadow-sm hover:border-border transition-colors">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider text-blue-600 bg-blue-500/10 border border-blue-500/20 mb-3 w-fit">
                 <Code2 className="w-3.5 h-3.5" />
                 <span>{isEn ? 'Engineering Story' : 'Câu Chuyện Nghề Nghiệp'}</span>
               </div>
-              <p className="text-sm sm:text-base text-foreground/80 leading-relaxed">
+              <p className="text-sm sm:text-base text-foreground/85 leading-relaxed">
                 {(isEn && (profile as any)?.translations?.en?.bio) || profile.bio}
               </p>
             </div>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
               <div
                 data-about="stat-card"
-                className="p-4 rounded-2xl bg-card border border-border/70 shadow-sm text-center hover:border-amber-500/30 hover:shadow-md transition-all"
+                className="p-3.5 sm:p-4 rounded-2xl bg-card border border-border/70 shadow-sm text-center hover:border-amber-500/40 hover:shadow-lg hover:shadow-amber-500/10 hover:-translate-y-1 transition-all duration-300 min-w-0"
               >
-                <p data-about="stat-number" data-target={content?.stat_years_value || '5'} className="text-2xl sm:text-3xl font-black text-amber-500">{content?.stat_years_value || '5'}+</p>
-                <p className="text-[11px] font-semibold text-muted-foreground mt-1 leading-tight">{getC('stat_years_label', t.landing.statYearsLabel)}</p>
+                <p data-about="stat-number" data-target={content?.stat_years_value || '5'} className="text-xl sm:text-2xl lg:text-3xl font-black text-amber-500">{content?.stat_years_value || '5'}+</p>
+                <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground mt-1 leading-tight break-words">{getC('stat_years_label', t.landing.statYearsLabel)}</p>
               </div>
               <div
                 data-about="stat-card"
-                className="p-4 rounded-2xl bg-card border border-border/70 shadow-sm text-center hover:border-blue-500/30 hover:shadow-md transition-all"
+                className="p-3.5 sm:p-4 rounded-2xl bg-card border border-border/70 shadow-sm text-center hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300 min-w-0"
               >
-                <p data-about="stat-number" data-target={content?.stat_projects_value || '20'} className="text-2xl sm:text-3xl font-black text-blue-600">{content?.stat_projects_value || '20'}+</p>
-                <p className="text-[11px] font-semibold text-muted-foreground mt-1 leading-tight">{getC('stat_projects_label', t.landing.statProjectsLabel)}</p>
+                <p data-about="stat-number" data-target={content?.stat_projects_value || '20'} className="text-xl sm:text-2xl lg:text-3xl font-black text-blue-600">{content?.stat_projects_value || '20'}+</p>
+                <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground mt-1 leading-tight break-words">{getC('stat_projects_label', t.landing.statProjectsLabel)}</p>
               </div>
               <div
                 data-about="stat-card"
-                className="p-4 rounded-2xl bg-card border border-border/70 shadow-sm text-center hover:border-teal-500/30 hover:shadow-md transition-all"
+                className="p-3.5 sm:p-4 rounded-2xl bg-card border border-border/70 shadow-sm text-center hover:border-teal-500/40 hover:shadow-lg hover:shadow-teal-500/10 hover:-translate-y-1 transition-all duration-300 min-w-0"
               >
-                <p data-about="stat-number" data-target={content?.stat_clients_value || '15'} className="text-2xl sm:text-3xl font-black text-teal-600">{content?.stat_clients_value || '15'}+</p>
-                <p className="text-[11px] font-semibold text-muted-foreground mt-1 leading-tight">{getC('stat_clients_label', t.landing.statClientsLabel)}</p>
+                <p data-about="stat-number" data-target={content?.stat_clients_value || '15'} className="text-xl sm:text-2xl lg:text-3xl font-black text-teal-600">{content?.stat_clients_value || '15'}+</p>
+                <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground mt-1 leading-tight break-words">{getC('stat_clients_label', t.landing.statClientsLabel)}</p>
               </div>
             </div>
 
             {/* Workspace Photos */}
             <div className="grid grid-cols-2 gap-3">
-              <div data-about="photo-card" className="group relative rounded-2xl overflow-hidden border border-border/70 bg-card aspect-[4/3] sm:aspect-[16/10]">
+              <div data-about="photo-card" className="group relative rounded-2xl overflow-hidden border border-border/70 bg-card aspect-[4/3] sm:aspect-[16/10] hover:border-border hover:shadow-md transition-all duration-300">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={authorImg2}
                   alt="Workspace Setup"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/65 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
                 <div className="absolute bottom-2.5 left-3 right-3 text-white">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300">{isEn ? 'Workspace' : 'Làm việc'}</p>
                   <p className="text-[11px] font-semibold text-slate-100 leading-tight">{isEn ? 'Clean Setup' : 'Tối giản'}</p>
                 </div>
               </div>
 
-              <div data-about="photo-card" className="group relative rounded-2xl overflow-hidden border border-border/70 bg-card aspect-[4/3] sm:aspect-[16/10]">
+              <div data-about="photo-card" className="group relative rounded-2xl overflow-hidden border border-border/70 bg-card aspect-[4/3] sm:aspect-[16/10] hover:border-border hover:shadow-md transition-all duration-300">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={authorImg3}
                   alt="Coding & Architecture"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/65 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
                 <div className="absolute bottom-2.5 left-3 right-3 text-white">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-blue-300">{isEn ? 'In Action' : 'Thực chiến'}</p>
                   <p className="text-[11px] font-semibold text-slate-100 leading-tight">{isEn ? 'Architecture & AI' : 'Kiến trúc & AI'}</p>

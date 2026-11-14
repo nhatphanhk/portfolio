@@ -589,11 +589,11 @@ export function ResumeMultiPage({
     switch (sec.id) {
       case 'bio': {
         bodyContent = (
-          <div className="text-xs sm:text-[13px] font-serif text-gray-800 leading-relaxed space-y-1.5">
+          <div className="text-xs sm:text-sm md:text-[14.5px] font-serif text-gray-800 leading-relaxed sm:leading-[1.7] space-y-2 text-justify">
             {profile.bio && <p>{profile.bio}</p>}
             {profile.careerObjective && (
               <p className="italic text-gray-700">
-                <span className="font-semibold not-italic text-gray-900">Career Objective: </span>
+                <span className="font-semibold not-italic text-gray-950">Career Objective: </span>
                 {profile.careerObjective}
               </p>
             )}
@@ -606,31 +606,31 @@ export function ResumeMultiPage({
         const edus = sec.education || [];
         if (edus.length === 0) return null;
         bodyContent = (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {edus.map(edu => (
               <div key={edu.id}>
                 <div className="flex justify-between items-baseline gap-2">
-                  <span className="font-bold font-serif text-xs sm:text-[13px] text-gray-950">
+                  <span className="font-bold font-serif text-xs sm:text-sm md:text-[14.5px] text-gray-950">
                     {edu.institution}
                   </span>
-                  <span className="text-xs font-serif font-medium text-gray-800 shrink-0">
+                  <span className="text-xs sm:text-[13px] md:text-[13.5px] font-serif font-medium text-gray-700 shrink-0">
                     {new Date(edu.startDate).getFullYear()} –{' '}
                     {edu.isCurrent ? 'Present' : edu.endDate ? new Date(edu.endDate).getFullYear() : ''}
                   </span>
                 </div>
-                <div className="flex justify-between items-baseline gap-2">
-                  <span className="font-serif italic text-xs sm:text-[13px] text-gray-800">
+                <div className="flex justify-between items-baseline gap-2 mt-0.5">
+                  <span className="font-serif italic text-xs sm:text-sm md:text-[14px] text-gray-800">
                     {edu.degree}
                     {edu.fieldOfStudy && <span> in {edu.fieldOfStudy}</span>}
                   </span>
                   {edu.gpa && (
-                    <span className="font-serif text-xs text-gray-700 shrink-0">
+                    <span className="font-serif text-xs sm:text-[13px] text-gray-700 shrink-0 font-medium">
                       GPA: {edu.gpa}
                     </span>
                   )}
                 </div>
                 {edu.description && (
-                  <p className="text-xs font-serif text-gray-700 leading-relaxed mt-0.5">
+                  <p className="text-xs sm:text-sm md:text-[13.5px] font-serif text-gray-700 leading-relaxed mt-1 text-justify">
                     {edu.description}
                   </p>
                 )}
@@ -645,7 +645,7 @@ export function ResumeMultiPage({
         const exps = sec.experiences || [];
         if (exps.length === 0) return null;
         bodyContent = (
-          <div className="space-y-3.5">
+          <div className="space-y-4 sm:space-y-5">
             {exps.map(exp => {
               const bullets = (exp.achievements || '')
                 .split('\n')
@@ -655,10 +655,10 @@ export function ResumeMultiPage({
               return (
                 <div key={exp.id}>
                   <div className="flex justify-between items-baseline gap-2">
-                    <span className="font-bold font-serif text-xs sm:text-[13px] text-gray-950">
+                    <span className="font-bold font-serif text-xs sm:text-sm md:text-[14.5px] text-gray-950">
                       {exp.company}
                     </span>
-                    <span className="text-xs font-serif font-medium text-gray-800 shrink-0">
+                    <span className="text-xs sm:text-[13px] md:text-[13.5px] font-serif font-medium text-gray-700 shrink-0">
                       {formatDate(exp.startDate, 'en', 'monthYear')} –{' '}
                       {exp.isCurrent
                         ? 'Present'
@@ -667,25 +667,25 @@ export function ResumeMultiPage({
                         : ''}
                     </span>
                   </div>
-                  <div className="flex justify-between items-baseline gap-2">
-                    <span className="font-serif italic text-xs sm:text-[13px] text-gray-800">
+                  <div className="flex justify-between items-baseline gap-2 mt-0.5">
+                    <span className="font-serif italic text-xs sm:text-sm md:text-[14px] text-gray-800 font-medium">
                       {exp.position}
                     </span>
                     {profile.location && (
-                      <span className="font-serif italic text-xs text-gray-600 shrink-0">
+                      <span className="font-serif italic text-xs sm:text-[13px] text-gray-600 shrink-0">
                         {profile.location}
                       </span>
                     )}
                   </div>
 
                   {exp.description && (
-                    <p className="text-xs font-serif text-gray-700 leading-relaxed mt-0.5">
+                    <p className="text-xs sm:text-sm md:text-[13.5px] font-serif text-gray-700 leading-relaxed mt-1 text-justify">
                       {exp.description}
                     </p>
                   )}
 
                   {bullets.length > 0 && (
-                    <ul className="mt-1 list-disc pl-5 space-y-0.5 text-xs sm:text-[13px] font-serif text-gray-800 leading-relaxed">
+                    <ul className="mt-1.5 list-disc pl-5 sm:pl-6 space-y-1 sm:space-y-1.5 text-xs sm:text-sm md:text-[13.5px] font-serif text-gray-800 leading-relaxed text-justify">
                       {bullets.map((b, bIdx) => (
                         <li key={bIdx}>{b}</li>
                       ))}
@@ -693,8 +693,8 @@ export function ResumeMultiPage({
                   )}
 
                   {exp.techStack && (
-                    <p className="mt-1 text-xs font-serif text-gray-700">
-                      <span className="font-semibold text-gray-900">Technologies: </span>
+                    <p className="mt-2 text-xs sm:text-sm md:text-[13.5px] font-serif text-gray-700">
+                      <span className="font-semibold text-gray-950">Technologies: </span>
                       <span>{exp.techStack}</span>
                     </p>
                   )}
@@ -710,7 +710,7 @@ export function ResumeMultiPage({
         const cats = sec.skillCats || [];
         if (cats.length === 0) return null;
         bodyContent = (
-          <div className="space-y-1 text-xs sm:text-[13px] font-serif text-gray-800 leading-relaxed">
+          <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm md:text-[14px] font-serif text-gray-800 leading-relaxed">
             {cats.map(cat => {
               const skills = skillsByCategory[cat] ?? [];
               if (skills.length === 0) return null;
@@ -731,7 +731,7 @@ export function ResumeMultiPage({
       case 'softSkills': {
         if (!profile.softSkills) return null;
         bodyContent = (
-          <div className="text-xs sm:text-[13px] font-serif text-gray-800 leading-relaxed">
+          <div className="text-xs sm:text-sm md:text-[14px] font-serif text-gray-800 leading-relaxed">
             <span className="font-bold text-gray-950">Core Competencies: </span>
             <span>{profile.softSkills}</span>
           </div>
@@ -743,7 +743,7 @@ export function ResumeMultiPage({
         const achs = sec.achievements || [];
         if (achs.length === 0) return null;
         bodyContent = (
-          <div className="space-y-1.5 text-xs sm:text-[13px] font-serif text-gray-800">
+          <div className="space-y-2.5 sm:space-y-3 text-xs sm:text-sm md:text-[14px] font-serif text-gray-800">
             {achs.map(ach => (
               <div key={ach.id} className="flex justify-between items-baseline gap-2">
                 <div>
@@ -751,7 +751,7 @@ export function ResumeMultiPage({
                   {ach.description && <span className="text-gray-700"> — {ach.description}</span>}
                 </div>
                 {ach.date && (
-                  <span className="text-xs text-gray-600 shrink-0">
+                  <span className="text-xs sm:text-[13px] text-gray-600 shrink-0">
                     {new Date(ach.date).getFullYear()}
                   </span>
                 )}
@@ -766,19 +766,19 @@ export function ResumeMultiPage({
         const acts = sec.activities || [];
         if (acts.length === 0) return null;
         bodyContent = (
-          <div className="space-y-2 text-xs sm:text-[13px] font-serif text-gray-800">
+          <div className="space-y-2.5 sm:space-y-3 text-xs sm:text-sm md:text-[14px] font-serif text-gray-800">
             {acts.map(act => (
               <div key={act.id}>
                 <div className="flex justify-between items-baseline gap-2">
                   <span className="font-bold text-gray-950">{act.title}</span>
                   {act.startDate && (
-                    <span className="text-xs text-gray-600 shrink-0">
+                    <span className="text-xs sm:text-[13px] text-gray-600 shrink-0">
                       {new Date(act.startDate).getFullYear()}
                     </span>
                   )}
                 </div>
                 {act.description && (
-                  <p className="text-xs text-gray-700 leading-relaxed mt-0.5">{act.description}</p>
+                  <p className="text-xs sm:text-sm md:text-[13.5px] text-gray-700 leading-relaxed mt-1 text-justify">{act.description}</p>
                 )}
               </div>
             ))}
@@ -791,12 +791,12 @@ export function ResumeMultiPage({
         const langs = sec.spokenLanguages || [];
         if (langs.length === 0) return null;
         bodyContent = (
-          <div className="text-xs sm:text-[13px] font-serif text-gray-800 leading-relaxed">
+          <div className="text-xs sm:text-sm md:text-[14px] font-serif text-gray-800 leading-relaxed">
             <span className="font-bold text-gray-950">Languages: </span>
             {langs.map((l, i) => (
               <span key={l.id}>
                 {i > 0 && '; '}
-                <span className="font-medium text-gray-900">{l.language}</span> ({l.level})
+                <span className="font-medium text-gray-950">{l.language}</span> ({l.level})
               </span>
             ))}
           </div>
@@ -808,9 +808,9 @@ export function ResumeMultiPage({
     if (!bodyContent) return null;
 
     return (
-      <section key={`${sec.id}-${sec.isContinued ? 'cont' : 'main'}`} className="mb-4">
-        <div className="border-b border-gray-950 pb-0.5 mt-3 mb-2 flex items-baseline justify-between">
-          <h3 className="text-xs sm:text-sm font-bold font-serif uppercase tracking-wider text-gray-950">
+      <section key={`${sec.id}-${sec.isContinued ? 'cont' : 'main'}`}>
+        <div className="border-b border-gray-950 pb-1 mt-4 sm:mt-5 mb-2.5 sm:mb-3 flex items-baseline justify-between">
+          <h3 className="text-xs sm:text-sm md:text-[14.5px] font-bold font-serif uppercase tracking-wider text-gray-950">
             {title}
           </h3>
         </div>
@@ -832,10 +832,10 @@ export function ResumeMultiPage({
         if (!pageColData.showBio || (!profile.bio && !profile.careerObjective)) return null;
         return (
           <section key="bio">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Profile</h3>
-            {profile.bio && <p className="text-sm text-gray-600 leading-relaxed">{profile.bio}</p>}
+            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3">Profile</h3>
+            {profile.bio && <p className="text-xs sm:text-sm md:text-[14px] text-gray-700 leading-relaxed text-justify">{profile.bio}</p>}
             {profile.careerObjective && (
-              <p className="text-sm text-gray-600 leading-relaxed mt-2 italic">{profile.careerObjective}</p>
+              <p className="text-xs sm:text-sm md:text-[14px] text-gray-700 leading-relaxed mt-2.5 italic text-justify">{profile.careerObjective}</p>
             )}
           </section>
         );
@@ -845,7 +845,7 @@ export function ResumeMultiPage({
         if (pageColData.experiences.length === 0) return null;
         return (
           <section key="experience">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">
+            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-4">
               {pageNumber === 1 ? 'Experience' : 'Experience (Continued)'}
             </h3>
             <div className="space-y-5">
@@ -855,31 +855,31 @@ export function ResumeMultiPage({
                   className="relative pl-4 border-l-2 border-gray-200 hover:border-blue-400 transition-colors"
                 >
                   <div className="flex flex-wrap justify-between items-baseline gap-2 mb-0.5">
-                    <h4 className="font-bold text-gray-900 text-sm">{exp.position}</h4>
-                    <span className="text-xs text-gray-400 font-mono">
+                    <h4 className="font-bold text-gray-900 text-sm sm:text-base">{exp.position}</h4>
+                    <span className="text-xs sm:text-[13px] text-gray-500 font-mono">
                       {new Date(exp.startDate).getFullYear()} –{' '}
                       {exp.isCurrent ? 'Present' : exp.endDate ? new Date(exp.endDate).getFullYear() : ''}
                     </span>
                   </div>
-                  <p className="text-xs font-semibold text-blue-600 mb-1.5">{exp.company}</p>
+                  <p className="text-xs sm:text-sm font-semibold text-blue-600 mb-1.5">{exp.company}</p>
                   {exp.description && (
-                    <p className="text-xs text-gray-500 leading-relaxed">{exp.description}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{exp.description}</p>
                   )}
                   {exp.achievements && (
-                    <ul className="mt-1.5 space-y-0.5">
+                    <ul className="mt-2 space-y-1">
                       {exp.achievements
                         .split('\n')
                         .filter(Boolean)
                         .map((a, i) => (
-                          <li key={i} className="text-xs text-gray-500 flex gap-1.5">
-                            <span className="text-blue-400 mt-0.5">•</span>
+                          <li key={i} className="text-xs sm:text-sm text-gray-600 flex gap-2 leading-relaxed">
+                            <span className="text-blue-500 mt-0.5 shrink-0">•</span>
                             <span>{a}</span>
                           </li>
                         ))}
                     </ul>
                   )}
                   {exp.techStack && (
-                    <div className="flex flex-wrap gap-1 mt-2">
+                    <div className="flex flex-wrap gap-1.5 mt-2.5">
                       {exp.techStack
                         .split(',')
                         .map(t => t.trim())
@@ -887,7 +887,7 @@ export function ResumeMultiPage({
                         .map(t => (
                           <span
                             key={t}
-                            className="px-1.5 py-0.5 text-[10px] bg-gray-100 rounded text-gray-500 font-medium"
+                            className="px-2 py-0.5 text-xs bg-gray-100 rounded text-gray-700 font-medium"
                           >
                             {t}
                           </span>
@@ -905,7 +905,7 @@ export function ResumeMultiPage({
         if (pageColData.education.length === 0) return null;
         return (
           <section key="education">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Education</h3>
+            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-4">Education</h3>
             <div className="space-y-4">
               {pageColData.education.map(edu => (
                 <div
@@ -913,16 +913,16 @@ export function ResumeMultiPage({
                   className="relative pl-4 border-l-2 border-gray-200 hover:border-blue-400 transition-colors"
                 >
                   <div className="flex flex-wrap justify-between items-baseline gap-2 mb-0.5">
-                    <h4 className="font-bold text-gray-900 text-sm">{edu.degree}</h4>
-                    <span className="text-xs text-gray-400 font-mono">
+                    <h4 className="font-bold text-gray-900 text-sm sm:text-base">{edu.degree}</h4>
+                    <span className="text-xs sm:text-[13px] text-gray-500 font-mono">
                       {new Date(edu.startDate).getFullYear()} –{' '}
                       {edu.isCurrent ? 'Present' : edu.endDate ? new Date(edu.endDate).getFullYear() : ''}
                     </span>
                   </div>
-                  <p className="text-xs text-blue-600 font-semibold">{edu.institution}</p>
-                  {edu.fieldOfStudy && <p className="text-xs text-gray-400">{edu.fieldOfStudy}</p>}
+                  <p className="text-xs sm:text-sm text-blue-600 font-semibold">{edu.institution}</p>
+                  {edu.fieldOfStudy && <p className="text-xs sm:text-sm text-gray-500">{edu.fieldOfStudy}</p>}
                   {edu.description && (
-                    <p className="text-xs text-gray-500 leading-relaxed mt-1">{edu.description}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed mt-1">{edu.description}</p>
                   )}
                 </div>
               ))}
@@ -935,20 +935,20 @@ export function ResumeMultiPage({
         if (pageColData.skillCats.length === 0) return null;
         return (
           <section key="skills">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3.5">
+            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3.5">
               {pageNumber === 1 ? 'Technical Skills' : 'Additional Skills'}
             </h3>
             <div className="space-y-4">
               {pageColData.skillCats.map(cat => (
                 <div key={cat}>
-                  <h4 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-2">
+                  <h4 className="text-xs font-bold text-gray-750 uppercase tracking-wider mb-2">
                     {CATEGORY_LABELS[cat] ?? cat}
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
                     {(skillsByCategory[cat] ?? []).map(skill => (
                       <span
                         key={skill.id}
-                        className="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 rounded-md font-medium"
+                        className="px-2.5 py-1 text-xs bg-gray-100 text-gray-700 rounded-md font-medium"
                       >
                         {skill.name}
                       </span>
@@ -965,7 +965,7 @@ export function ResumeMultiPage({
         if (!pageColData.showSoftSkills || !profile.softSkills) return null;
         return (
           <section key="softSkills">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Soft Skills</h3>
+            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3">Soft Skills</h3>
             <div className="flex flex-wrap gap-1.5">
               {profile.softSkills
                 .split(',')
@@ -974,7 +974,7 @@ export function ResumeMultiPage({
                 .map(s => (
                   <span
                     key={s}
-                    className="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded-full font-medium"
+                    className="px-2.5 py-1 text-xs bg-blue-50 text-blue-700 rounded-full font-medium"
                   >
                     {s}
                   </span>
@@ -988,12 +988,12 @@ export function ResumeMultiPage({
         if (pageColData.spokenLanguages.length === 0) return null;
         return (
           <section key="languages">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Languages</h3>
-            <div className="space-y-2">
+            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3">Languages</h3>
+            <div className="space-y-2.5">
               {pageColData.spokenLanguages.map(lang => (
                 <div key={lang.id} className="flex justify-between items-center">
-                  <span className="text-xs text-gray-700 font-semibold">{lang.language}</span>
-                  <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                  <span className="text-xs sm:text-sm text-gray-700 font-semibold">{lang.language}</span>
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
                     {lang.level}
                   </span>
                 </div>
@@ -1007,13 +1007,13 @@ export function ResumeMultiPage({
         if (pageColData.achievements.length === 0) return null;
         return (
           <section key="achievements">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Achievements</h3>
-            <div className="space-y-2">
+            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3">Achievements</h3>
+            <div className="space-y-2.5">
               {pageColData.achievements.map(ach => (
-                <div key={ach.id} className="text-xs">
+                <div key={ach.id} className="text-xs sm:text-sm">
                   <p className="font-semibold text-gray-800">{ach.title}</p>
                   {ach.description && (
-                    <p className="text-gray-500 text-[11px] mt-0.5">{ach.description}</p>
+                    <p className="text-gray-600 text-xs sm:text-[13px] mt-0.5">{ach.description}</p>
                   )}
                 </div>
               ))}
@@ -1026,13 +1026,13 @@ export function ResumeMultiPage({
         if (pageColData.activities.length === 0) return null;
         return (
           <section key="activities">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2.5">Activities</h3>
-            <div className="space-y-2">
+            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3">Activities</h3>
+            <div className="space-y-2.5">
               {pageColData.activities.map(act => (
-                <div key={act.id} className="text-xs">
+                <div key={act.id} className="text-xs sm:text-sm">
                   <p className="font-semibold text-gray-800">{act.title}</p>
                   {act.description && (
-                    <p className="text-gray-500 text-[11px] mt-0.5">{act.description}</p>
+                    <p className="text-gray-600 text-xs sm:text-[13px] mt-0.5">{act.description}</p>
                   )}
                 </div>
               ))}
@@ -1046,23 +1046,23 @@ export function ResumeMultiPage({
   return (
     <div className="w-full">
       {/* ── Document Toolbar & Page Controls ── */}
-      <div className="max-w-5xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-3 bg-card/60 backdrop-blur-sm border border-border px-4 py-2.5 rounded-xl print:hidden shadow-xs">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
-          <FileText className="w-4 h-4 text-primary" />
+      <div className="max-w-4xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-3 bg-card/60 backdrop-blur-sm border border-border px-3 sm:px-4 py-2.5 rounded-xl print:hidden shadow-xs min-w-0 w-full">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium flex-wrap">
+          <FileText className="w-4 h-4 text-primary shrink-0" />
           <span>
             Document format:{' '}
             <strong className="text-foreground font-semibold">
               {isHarvard ? 'Harvard / Oxford Ivy League (Single Column)' : 'Standard Executive (2 Columns)'}
             </strong>
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-semibold">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-semibold shrink-0">
             {totalPages === 1 ? '1 Page' : `${totalPages} Pages (Auto-paginated)`}
           </span>
         </div>
 
         {/* Multi-page controls */}
         {totalPages > 1 && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center bg-muted/60 p-0.5 rounded-lg border border-border/50 text-xs">
               <button
                 type="button"
@@ -1152,43 +1152,43 @@ export function ResumeMultiPage({
                 )}
 
                 <ResumeCard3D>
-                  <div className="bg-white text-gray-900 p-8 sm:p-12 rounded-sm font-serif min-h-[920px] flex flex-col justify-between shadow-sm">
+                  <div className="bg-white text-gray-900 p-6 sm:p-10 md:p-12 rounded-sm font-serif min-h-[960px] flex flex-col justify-between shadow-sm min-w-0 w-full">
                     <div>
                       {/* Page 1 Header */}
                       {page.pageNumber === 1 ? (
-                        <header className="text-center pb-3 border-b-2 border-gray-950 mb-5">
-                          <h1 className="text-3xl sm:text-4xl font-bold font-serif uppercase tracking-widest text-gray-950 mb-1.5">
+                        <header className="text-center pb-3.5 border-b-2 border-gray-950 mb-5 sm:mb-6">
+                          <h1 className="text-2xl sm:text-3xl md:text-[34px] font-bold font-serif uppercase tracking-widest text-gray-950 mb-1.5">
                             {profile.name}
                           </h1>
                           {profile.title && (
-                            <p className="text-xs sm:text-sm font-serif italic text-gray-700 mb-2">
+                            <p className="text-xs sm:text-sm md:text-base font-serif italic text-gray-700 mb-2.5">
                               {profile.title}
                             </p>
                           )}
-                          <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-xs font-serif text-gray-700">
+                          <div className="flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1.5 text-xs sm:text-[13.5px] font-serif text-gray-700">
                             {profile.location && (
-                              <span className="inline-flex items-center gap-1">
-                                <MapPin className="w-3 h-3 text-gray-500 shrink-0" />
+                              <span className="inline-flex items-center gap-1.5">
+                                <MapPin className="w-3.5 h-3.5 text-gray-500 shrink-0" />
                                 <span>{profile.location}</span>
                               </span>
                             )}
-                            {profile.location && profile.phone && <span>•</span>}
+                            {profile.location && profile.phone && <span className="text-gray-400 select-none">•</span>}
                             {profile.phone && (
-                              <span className="inline-flex items-center gap-1">
-                                <Phone className="w-3 h-3 text-gray-500 shrink-0" />
+                              <span className="inline-flex items-center gap-1.5">
+                                <Phone className="w-3.5 h-3.5 text-gray-500 shrink-0" />
                                 <span>{profile.phone}</span>
                               </span>
                             )}
-                            {((profile.phone || profile.location) && profile.email) && <span>•</span>}
+                            {((profile.phone || profile.location) && profile.email) && <span className="text-gray-400 select-none">•</span>}
                             {profile.email && (
-                              <span className="inline-flex items-center gap-1">
-                                <Mail className="w-3 h-3 text-gray-500 shrink-0" />
+                              <span className="inline-flex items-center gap-1.5">
+                                <Mail className="w-3.5 h-3.5 text-gray-500 shrink-0" />
                                 <span>{profile.email}</span>
                               </span>
                             )}
                             {socialLinks.map(link => (
                               <React.Fragment key={link.id}>
-                                <span>•</span>
+                                <span className="text-gray-400 select-none">•</span>
                                 <a
                                   href={link.url}
                                   target="_blank"
@@ -1202,7 +1202,7 @@ export function ResumeMultiPage({
                           </div>
                         </header>
                       ) : (
-                        <header className="flex items-center justify-between pb-1.5 border-b border-gray-950 mb-5 text-xs font-serif text-gray-600">
+                        <header className="flex items-center justify-between pb-2 border-b-2 border-gray-950 mb-5 sm:mb-6 text-xs sm:text-sm font-serif text-gray-600">
                           <span className="font-bold text-gray-950 uppercase tracking-wider">
                             {profile.name}
                           </span>
@@ -1213,13 +1213,13 @@ export function ResumeMultiPage({
                       )}
 
                       {/* Single Column Sections */}
-                      <div className="space-y-4">
+                      <div className="space-y-4 sm:space-y-5">
                         {page.sections.map(secSlice => renderHarvardSection(secSlice))}
                       </div>
                     </div>
 
                     {/* Subtle Harvard Footer */}
-                    <footer className="mt-8 pt-2.5 border-t border-gray-200 flex items-center justify-between text-[10px] font-serif text-gray-500">
+                    <footer className="mt-8 pt-3 border-t border-gray-200 flex items-center justify-between text-xs font-serif text-gray-500">
                       <span>{profile.name} — Curriculum Vitae</span>
                       <span>Page {page.pageNumber} of {totalPages}</span>
                     </footer>
@@ -1241,7 +1241,7 @@ export function ResumeMultiPage({
                 style={{ breakAfter: idx < totalPages - 1 ? 'page' : 'auto' }}
               >
                 {totalPages > 1 && (
-                  <div className="max-w-5xl mx-auto flex items-center justify-between mb-2 px-1 text-xs text-muted-foreground print:hidden">
+                  <div className="max-w-4xl mx-auto flex items-center justify-between mb-2 px-1 text-xs text-muted-foreground print:hidden">
                     <span className="font-semibold uppercase tracking-wider text-[11px] text-primary/80">
                       Sheet {page.pageNumber} of {totalPages}
                     </span>
@@ -1252,7 +1252,7 @@ export function ResumeMultiPage({
                 )}
 
                 <ResumeCard3D>
-                  <div className="bg-white text-gray-800 p-8 sm:p-12 rounded-sm font-sans min-h-[850px] flex flex-col justify-between">
+                  <div className="bg-white text-gray-800 p-6 sm:p-10 md:p-12 rounded-sm font-sans min-h-[880px] flex flex-col justify-between min-w-0 w-full">
                     <div>
                       {page.pageNumber === 1 ? (
                         <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 border-b-2 border-gray-900 mb-8">
@@ -1306,14 +1306,14 @@ export function ResumeMultiPage({
                         </header>
                       )}
 
-                      <div className="grid grid-cols-1 md:grid-cols-[2fr_1px_1fr] gap-8">
-                        <div className="flex flex-col gap-7 min-h-[50px]">
+                      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1px_1fr] gap-6 lg:gap-8 min-w-0">
+                        <div className="flex flex-col gap-7 min-h-[50px] min-w-0">
                           {page.left.sections.map(secId =>
                             renderModernSection(secId, page.left, page.pageNumber)
                           )}
                         </div>
-                        <div className="hidden md:block bg-gray-100 w-px" />
-                        <div className="flex flex-col gap-6 min-h-[50px]">
+                        <div className="hidden lg:block bg-gray-100 w-px" />
+                        <div className="flex flex-col gap-6 min-h-[50px] min-w-0">
                           {page.right.sections.map(secId =>
                             renderModernSection(secId, page.right, page.pageNumber)
                           )}

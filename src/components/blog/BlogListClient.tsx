@@ -148,9 +148,9 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
   }, [seriesList, selectedSeriesSlug]);
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 min-w-0 w-full">
       {/* Search & Series / Tag Filter Bar */}
-      <div className="space-y-4 p-5 rounded-2xl border border-border bg-card shadow-xs">
+      <div className="space-y-4 p-4 sm:p-5 rounded-2xl border border-border bg-card shadow-xs min-w-0">
         {/* Search Input */}
         <div className="relative w-full">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -166,13 +166,13 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
         {/* ── 1-Row Series Tag Filter ── */}
         {seriesList.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-border/60">
-            <span className="text-xs font-bold text-primary flex items-center gap-1 mr-1">
+            <span className="text-xs font-bold text-primary flex items-center gap-1 mr-1 shrink-0">
               <Layers className="w-3.5 h-3.5" /> {t('blog.series')}:
             </span>
             <button
               type="button"
               onClick={() => handleSeriesClick(null)}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer shrink-0 ${
                 selectedSeriesSlug === null
                   ? 'bg-foreground text-background shadow-xs font-semibold'
                   : 'bg-muted/70 hover:bg-muted text-muted-foreground hover:text-foreground'
@@ -190,7 +190,7 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
                   key={s.id}
                   type="button"
                   onClick={() => handleSeriesClick(s.slug || s.id)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer shrink-0 ${
                     isSelected
                       ? 'bg-primary text-primary-foreground shadow-xs font-semibold ring-2 ring-primary/30'
                       : 'bg-muted/70 hover:bg-muted text-muted-foreground hover:text-foreground'
@@ -204,7 +204,7 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
             {/* Direct Link to Series Directory */}
             <Link
               href="/blog/series"
-              className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline transition-colors pl-2"
+              className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline transition-colors pl-2 shrink-0"
             >
               <span>{t('seriesPage.viewAll')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -215,11 +215,11 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
         {/* ── Topic Tag Pills ── */}
         {allTags.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-border/40">
-            <span className="text-xs font-medium text-muted-foreground mr-1">{t('blog.tags')}:</span>
+            <span className="text-xs font-medium text-muted-foreground mr-1 shrink-0">{t('blog.tags')}:</span>
             <button
               type="button"
               onClick={() => handleTagClick('ALL')}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer shrink-0 ${
                 selectedTag === 'ALL'
                   ? 'bg-foreground text-background shadow-xs font-semibold'
                   : 'bg-muted/70 hover:bg-muted text-muted-foreground hover:text-foreground'
@@ -234,7 +234,7 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
                   key={tag}
                   type="button"
                   onClick={() => handleTagClick(tag)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer shrink-0 ${
                     selectedTag === tag
                       ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
                       : 'bg-muted/70 hover:bg-muted text-muted-foreground hover:text-foreground'
@@ -250,7 +250,7 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
 
       {/* Filter status header */}
       {isFiltering && (
-        <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground px-1">
           <p>
             Found <span className="font-semibold text-foreground">{filteredPosts.length}</span> matching{' '}
             {filteredPosts.length === 1 ? 'article' : 'articles'}

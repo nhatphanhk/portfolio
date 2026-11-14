@@ -115,9 +115,9 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
   const isFiltering = search.trim() !== '' || selectedTag !== 'ALL';
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-w-0 w-full">
       {/* Search & Filter Controls */}
-      <div className="p-4 rounded-2xl border border-border/70 bg-card shadow-sm space-y-3">
+      <div className="p-4 rounded-2xl border border-border/70 bg-card shadow-sm space-y-3 min-w-0">
         {/* Search input */}
         <div className="relative w-full">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -226,11 +226,11 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
                 }`}
               >
                 <div>
-                  <div className="flex items-start justify-between gap-3 mb-2.5">
-                    <div className="flex items-center gap-2 flex-wrap min-w-0">
+                  <div className="flex items-start justify-between gap-2.5 mb-2.5">
+                    <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
                       <Link
                         href={`/project/${project.slug}`}
-                        className="text-lg font-bold text-foreground hover:text-primary transition-colors line-clamp-1"
+                        className="text-base sm:text-lg font-bold text-foreground hover:text-primary transition-colors line-clamp-1 break-words"
                       >
                         {projectTitle}
                       </Link>

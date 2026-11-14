@@ -78,9 +78,9 @@ export default function ContactSection({ profile, socialLinks, hideHeader = fals
   };
 
   const formAndInfo = (
-    <div className="grid lg:grid-cols-5 gap-12">
+    <div className="grid lg:grid-cols-5 gap-8 lg:gap-10 min-w-0 w-full">
       {/* Form — 3 columns */}
-      <div className="lg:col-span-3">
+      <div className="lg:col-span-3 min-w-0">
             <form
               id="contact-form"
               onSubmit={handleSubmit(onSubmit)}
@@ -178,7 +178,7 @@ export default function ContactSection({ profile, socialLinks, hideHeader = fals
           </div>
 
           {/* Info — 2 columns */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-8 min-w-0">
             <div>
               <h3 className="font-semibold text-foreground mb-4">{t('contact.directContact')}</h3>
               <div className="space-y-3">

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import { CommandPalette } from '@/components/ui/CommandPalette';
@@ -9,6 +9,12 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL, buildOpenGraph } from '@/lib/constants';
 import { getServerLocale } from '@/lib/i18n/server';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 const inter = Inter({
   variable: '--font-inter',

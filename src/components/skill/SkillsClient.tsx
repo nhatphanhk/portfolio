@@ -66,9 +66,9 @@ export default function SkillsClient({ skillsByCategory }: SkillsClientProps) {
           <Sparkles className="w-3.5 h-3.5" />
           <span>{t('skills.badge')}</span>
         </div>
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-foreground tracking-tight mb-2">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 flex-wrap">
+          <div className="min-w-0">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground tracking-tight mb-2 break-words">
               {t('skills.title')}
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed">
@@ -90,7 +90,7 @@ export default function SkillsClient({ skillsByCategory }: SkillsClientProps) {
       </div>
 
       {/* Categories Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 min-w-0">
         {categories.map(cat => {
           const skills = skillsByCategory[cat] ?? [];
           if (skills.length === 0) return null;
