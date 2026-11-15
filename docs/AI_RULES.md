@@ -362,7 +362,7 @@ inventing a new one:
 ```
 Prisma model + migration (prisma/schema.prisma, npx prisma migrate dev)
 Server Action file (src/lib/actions/{resource}.ts — public get*, admin CRUD, ensureAdmin() on writes)
-Admin UI (page.tsx + client.tsx under src/app/admin/(dashboard)/{resource}/, dialogs in src/components/admin/ if needed)
+Admin UI (page.tsx + client.tsx under src/app/nhatphanhk102/(dashboard)/{resource}/, dialogs in src/components/admin/ if needed)
 Public UI (page.tsx under src/app/{resource}/ if the resource has a public-facing view)
 Wire into sitemap.ts/robots.ts if it's publicly indexable content
 ```

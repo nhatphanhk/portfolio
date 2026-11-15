@@ -23,15 +23,19 @@ app/
 │   ├── upload/route.ts                        # Authenticated upload endpoint (rate-limited)
 │   ├── resume/parse-pdf/route.ts              # Authenticated CV parsing with Gemini AI (rate-limited)
 │   └── swagger/route.ts                       # Raw OpenAPI JSON (rate-limited, what api-doc/ renders)
-└── admin/
+└── nhatphanhk102/                              # The admin CMS, served at /nhatphanhk102
     ├── login/page.tsx                          # Outside (dashboard) group — no sidebar
     └── (dashboard)/
-        ├── layout.tsx                          # Sidebar (AppSidebar) + SidebarInset
+        ├── layout.tsx                          # Sidebar (AppSidebar) + SidebarInset; ensureAdmin() role check
+        ├── loading.tsx, error.tsx              # Admin-only skeleton + error boundary (see KNOWN_ISSUES #1)
         ├── page.tsx                            # Dashboard home
-        └── {blogs,projects,certifications,contacts,skills,resume,visitors}/
+        └── {blogs,projects,certifications,contacts,skills,resume,visitors,media,landing}/
             ├── page.tsx                        # Server Component, fetches data
             └── client.tsx                      # Client Component, the actual form/table UI
 ```
+
+The admin UI is **Vietnamese-only** (hard-coded strings, no i18n); the public site is
+bilingual via `src/lib/i18n/locales/{en,vi}.ts`.
 
 `blogs/` and `projects/` additionally have a nested `dashboard/page.tsx` (analytics
 sub-route) — the other resources don't. This is an intentional asymmetry (those two
@@ -51,7 +55,10 @@ components/
 ├── VisitorModal.tsx                          # Single-use, imported directly by MainLayout (not barrel-exported)
 ├── SwaggerUIClient.tsx                       # Single-use, imported directly by app/api-doc/page.tsx
 ├── ui/                                        # shadcn/ui primitives — regenerate via `npx shadcn@latest add <name>`
-├── admin/                                     # Admin-only: *Dialog.tsx (create/edit modals), sidebar/
+│                                              #   + hand-authored PublicPageHeader, CardGridSkeleton, PaginationControl
+├── admin/                                     # Admin-only: *Dialog.tsx (create/edit modals), sidebar/,
+│                                              #   AdminPageHeader + ADMIN_PAGE_CLASS, StatusBadge,
+│                                              #   DeleteDialog + useConfirmDialog() (use instead of window.confirm)
 └── hero-section/                              # Homepage sections: Hero, About, BPSCSection, Contact
 ```
 
@@ -95,12 +102,12 @@ lib/
 
 ```
 data/
-├── content.ts   # PROFILE, EXPERIENCES — fallback used by lib/actions/about.ts when the
-│                 # Profile/Experience tables are empty (fresh install, no admin data yet)
-└── skills.ts    # SKILL_CATEGORY_LABELS — a display-label lookup for a few common skill
-                  # categories (src/app/skills/page.tsx falls back to the raw enum value
-                  # for any category not listed here)
+└── content.ts   # PROFILE, EXPERIENCES — fallback used by lib/actions/about.ts when the
+                  # Profile/Experience tables are empty (fresh install, no admin data yet)
 ```
+
+Skill-category display labels live in the locale files (`skills.categories.*`), shared by
+`/skills` and the public résumé — there is no separate label map.
 
 **Nothing in this folder is the source of truth.** Once the admin has saved real content
 via the database, these files stop being read. Don't add new "static content" files here
