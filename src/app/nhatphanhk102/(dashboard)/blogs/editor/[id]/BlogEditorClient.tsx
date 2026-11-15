@@ -13,6 +13,7 @@ import {
 } from '@/lib/actions/blog';
 import { TranslationPreviewDialog, TranslatedData } from '@/components/admin/TranslationPreviewDialog';
 import { UnsavedChangesDialog } from '@/components/admin/UnsavedChangesDialog';
+import { useConfirmDialog } from '@/components/admin/DeleteDialog';
 import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes-guard';
 import { toast } from 'sonner';
 import {
@@ -190,6 +191,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
 
   // Guards unsaved work against tab close/reload, every in-app link (sidebar, breadcrumb) and the back button
   const leaveGuard = useUnsavedChangesGuard(isDirty);
+  const { confirm, confirmDialog } = useConfirmDialog();
   const handleBackClick = () => leaveGuard.requestNavigation('/nhatphanhk102/blogs');
 
   // Auto-generate slug from title (if slug is empty, temporary draft slug, or new post)
@@ -446,24 +448,24 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
     }
   };
 
-  const handleApplyToEditor = (data: TranslatedData) => {
-    if (
-      !window.confirm(
-        'Áp dụng bản dịch sẽ THAY THẾ tiêu đề, tóm tắt và nội dung đang soạn (ngôn ngữ gốc) trong trình soạn thảo. Tiếp tục?'
-      )
-    ) {
-      return;
-    }
+  const handleApplyToEditor = async (data: TranslatedData) => {
+    const ok = await confirm({
+      title: 'Áp dụng bản dịch vào trình soạn thảo?',
+      description: 'Tiêu đề, tóm tắt và nội dung đang soạn (ngôn ngữ gốc) sẽ bị thay bằng bản dịch.',
+      confirmLabel: 'Thay thế',
+    });
+    if (!ok) return false;
     setValue('title', data.title, { shouldDirty: true });
     setValue('excerpt', data.excerpt, { shouldDirty: true });
     setValue('content', data.content, { shouldDirty: true });
-    toast.success('Đã áp dụng bản dịch vào trình soạn thảo!');
+    toast.success('Đã áp dụng bản dịch vào trình soạn thảo.');
+    return true;
   };
 
   // Throws on failure so the preview dialog stays open with the edited translation intact
   const handleSaveToDb = async (data: TranslatedData) => {
     if (!currentBlogId) {
-      toast.warning('Vui lòng bấm Save để lưu bài viết trước khi lưu bản dịch vào CSDL!');
+      toast.warning('Hãy lưu bài viết trước khi lưu bản dịch.');
       throw new Error('Bài viết chưa được lưu');
     }
 
@@ -537,7 +539,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
               <input
                 {...register('title')}
                 onBlur={onTitleBlur}
-                placeholder="My awesome post"
+                placeholder="Tiêu đề bài viết"
                 className={inputCls}
               />
             </Field>
@@ -885,6 +887,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
       />
 
       {/* Unsaved changes confirmation dialog */}
+      {confirmDialog}
       <UnsavedChangesDialog
         open={leaveGuard.isBlocking}
         onOpenChange={open => {

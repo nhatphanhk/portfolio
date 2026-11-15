@@ -606,15 +606,16 @@ export function LiveResumeCanvas({
               <div key={edu.id} className="group/edu relative">
                 {/* Action Bar on hover in Edit Mode */}
                 {isEditMode && (
-                  <div className="absolute -top-1 right-0 opacity-0 group-hover/edu:opacity-100 transition-opacity bg-white/95 border border-gray-300 rounded px-1 py-0.5 flex items-center gap-1 shadow-xs z-20">
+                  <div className="absolute -top-1 right-0 opacity-0 group-hover/edu:opacity-100 focus-within:opacity-100 transition-opacity bg-white/95 border border-gray-300 rounded px-1 py-0.5 flex items-center gap-1 shadow-xs z-20">
                     <button
                       type="button"
                       onClick={() => onMoveItem('education', edu.id, 'up')}
                       disabled={eduIdx === 0}
                       className="p-0.5 hover:text-blue-600 text-gray-500 disabled:opacity-20"
                       title="Chuyển lên"
+                      aria-label="Chuyển lên"
                     >
-                      <ArrowUp className="w-3 h-3" />
+                      <ArrowUp className="w-3 h-3" aria-hidden="true" />
                     </button>
                     <button
                       type="button"
@@ -622,8 +623,9 @@ export function LiveResumeCanvas({
                       disabled={eduIdx === edus.length - 1}
                       className="p-0.5 hover:text-blue-600 text-gray-500 disabled:opacity-20"
                       title="Chuyển xuống"
+                      aria-label="Chuyển xuống"
                     >
-                      <ArrowDown className="w-3 h-3" />
+                      <ArrowDown className="w-3 h-3" aria-hidden="true" />
                     </button>
                     <div className="w-px h-3 bg-gray-200" />
                     <button
@@ -631,16 +633,18 @@ export function LiveResumeCanvas({
                       onClick={() => onOpenDialog('education', edu)}
                       className="p-0.5 hover:text-blue-600 text-gray-500"
                       title="Sửa chi tiết"
+                      aria-label="Sửa chi tiết"
                     >
-                      <Edit className="w-3 h-3" />
+                      <Edit className="w-3 h-3" aria-hidden="true" />
                     </button>
                     <button
                       type="button"
                       onClick={() => onDeleteItem('education', edu.id)}
                       className="p-0.5 hover:text-red-600 text-gray-500"
                       title="Xóa học vấn"
+                      aria-label="Xóa học vấn"
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <Trash2 className="w-3 h-3" aria-hidden="true" />
                     </button>
                   </div>
                 )}
@@ -741,7 +745,7 @@ export function LiveResumeCanvas({
                 onClick={() => onOpenDialog('education')}
                 className="w-full py-1.5 border border-dashed border-gray-300 hover:border-gray-900 text-gray-600 hover:text-gray-950 text-xs font-serif rounded flex items-center justify-center gap-1 transition"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                 Thêm học vấn / bằng cấp
               </button>
             )}
@@ -764,15 +768,16 @@ export function LiveResumeCanvas({
                 <div key={exp.id} className="group/exp relative">
                   {/* Action Bar on hover in Edit Mode */}
                   {isEditMode && (
-                    <div className="absolute -top-1 right-0 opacity-0 group-hover/exp:opacity-100 transition-opacity bg-white/95 border border-gray-300 rounded px-1 py-0.5 flex items-center gap-1 shadow-xs z-20">
+                    <div className="absolute -top-1 right-0 opacity-0 group-hover/exp:opacity-100 focus-within:opacity-100 transition-opacity bg-white/95 border border-gray-300 rounded px-1 py-0.5 flex items-center gap-1 shadow-xs z-20">
                       <button
                         type="button"
                         onClick={() => onMoveItem('experience', exp.id, 'up')}
                         disabled={expIdx === 0}
                         className="p-0.5 hover:text-blue-600 text-gray-500 disabled:opacity-20"
                         title="Chuyển lên"
+                        aria-label="Chuyển lên"
                       >
-                        <ArrowUp className="w-3 h-3" />
+                        <ArrowUp className="w-3 h-3" aria-hidden="true" />
                       </button>
                       <button
                         type="button"
@@ -780,8 +785,9 @@ export function LiveResumeCanvas({
                         disabled={expIdx === exps.length - 1}
                         className="p-0.5 hover:text-blue-600 text-gray-500 disabled:opacity-20"
                         title="Chuyển xuống"
+                        aria-label="Chuyển xuống"
                       >
-                        <ArrowDown className="w-3 h-3" />
+                        <ArrowDown className="w-3 h-3" aria-hidden="true" />
                       </button>
                       <div className="w-px h-3 bg-gray-200" />
                       <button
@@ -789,16 +795,18 @@ export function LiveResumeCanvas({
                         onClick={() => onOpenDialog('experience', exp)}
                         className="p-0.5 hover:text-blue-600 text-gray-500"
                         title="Sửa chi tiết"
+                        aria-label="Sửa chi tiết"
                       >
-                        <Edit className="w-3 h-3" />
+                        <Edit className="w-3 h-3" aria-hidden="true" />
                       </button>
                       <button
                         type="button"
                         onClick={() => onDeleteItem('experience', exp.id)}
                         className="p-0.5 hover:text-red-600 text-gray-500"
                         title="Xóa kinh nghiệm"
+                        aria-label="Xóa kinh nghiệm"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-3 h-3" aria-hidden="true" />
                       </button>
                     </div>
                   )}
@@ -896,10 +904,11 @@ export function LiveResumeCanvas({
                                 const updated = bulletPoints.filter((_: any, i: number) => i !== pIdx);
                                 onUpdateExperienceAchievements(exp.id, updated.join('\n'));
                               }}
-                              className="opacity-0 group-hover/bullet:opacity-100 p-0.5 text-gray-300 hover:text-red-500 shrink-0 transition"
+                              className="opacity-0 group-hover/bullet:opacity-100 focus-within:opacity-100 p-0.5 text-gray-300 hover:text-red-500 shrink-0 transition"
                               title="Xóa bullet"
+                              aria-label="Xóa bullet"
                             >
-                              <X className="w-3 h-3" />
+                              <X className="w-3 h-3" aria-hidden="true" />
                             </button>
                           )}
                         </div>
@@ -917,7 +926,7 @@ export function LiveResumeCanvas({
                       }}
                       className="text-[11px] font-serif text-gray-500 hover:text-gray-900 flex items-center gap-1 mt-1 opacity-70 hover:opacity-100 transition"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="w-3 h-3" aria-hidden="true" />
                       Thêm bullet thành tích
                     </button>
                   )}
@@ -949,7 +958,7 @@ export function LiveResumeCanvas({
                 onClick={() => onOpenDialog('experience')}
                 className="w-full py-1.5 border border-dashed border-gray-300 hover:border-gray-900 text-gray-600 hover:text-gray-950 text-xs font-serif rounded flex items-center justify-center gap-1 transition"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                 Thêm vị trí kinh nghiệm
               </button>
             )}
@@ -976,9 +985,9 @@ export function LiveResumeCanvas({
                     <button
                       type="button"
                       onClick={() => onQuickAddSkill(cat)}
-                      className="text-[10px] font-sans text-blue-600 hover:underline inline-flex items-center gap-0.5 ml-1 opacity-0 group-hover/skillrow:opacity-100 transition"
+                      className="text-[10px] font-sans text-blue-600 hover:underline inline-flex items-center gap-0.5 ml-1 opacity-0 group-hover/skillrow:opacity-100 focus-within:opacity-100 transition"
                     >
-                      <Plus className="w-2.5 h-2.5" />
+                      <Plus className="w-2.5 h-2.5" aria-hidden="true" />
                       <span>Thêm</span>
                     </button>
                   )}
@@ -1052,10 +1061,11 @@ export function LiveResumeCanvas({
                   {isEditMode && (
                     <button
                       type="button"
+                      aria-label="Xóa thành tích"
                       onClick={() => onDeleteItem('achievement', ach.id)}
-                      className="opacity-0 group-hover/ach:opacity-100 hover:text-red-500 text-gray-400 p-0.5 transition"
+                      className="opacity-0 group-hover/ach:opacity-100 focus-within:opacity-100 hover:text-red-500 text-gray-400 p-0.5 transition"
                     >
-                      <Trash2 className="w-2.5 h-2.5" />
+                      <Trash2 className="w-2.5 h-2.5" aria-hidden="true" />
                     </button>
                   )}
                 </div>
@@ -1097,10 +1107,11 @@ export function LiveResumeCanvas({
                     {isEditMode && (
                       <button
                         type="button"
+                        aria-label="Xóa hoạt động"
                         onClick={() => onDeleteItem('activity', act.id)}
-                        className="opacity-0 group-hover/act:opacity-100 hover:text-red-500 text-gray-400 p-0.5 transition"
+                        className="opacity-0 group-hover/act:opacity-100 focus-within:opacity-100 hover:text-red-500 text-gray-400 p-0.5 transition"
                       >
-                        <Trash2 className="w-2.5 h-2.5" />
+                        <Trash2 className="w-2.5 h-2.5" aria-hidden="true" />
                       </button>
                     )}
                   </div>
@@ -1142,10 +1153,11 @@ export function LiveResumeCanvas({
                 {isEditMode && (
                   <button
                     type="button"
+                    aria-label={`Xóa ngôn ngữ ${lang.language}`}
                     onClick={() => onDeleteItem('language', lang.id)}
-                    className="opacity-0 group-hover/lang:opacity-100 text-gray-400 hover:text-red-500 ml-0.5 p-0.5"
+                    className="opacity-0 group-hover/lang:opacity-100 focus-within:opacity-100 text-gray-400 hover:text-red-500 ml-0.5 p-0.5"
                   >
-                    <X className="w-2.5 h-2.5 inline" />
+                    <X className="w-2.5 h-2.5 inline" aria-hidden="true" />
                   </button>
                 )}
               </span>
@@ -1156,7 +1168,7 @@ export function LiveResumeCanvas({
                 onClick={() => onOpenDialog('language')}
                 className="text-[10px] font-sans text-blue-600 hover:underline inline-flex items-center gap-0.5 ml-1.5"
               >
-                <Plus className="w-2.5 h-2.5" />
+                <Plus className="w-2.5 h-2.5" aria-hidden="true" />
                 <span>Thêm</span>
               </button>
             )}
@@ -1183,7 +1195,7 @@ export function LiveResumeCanvas({
 
           {/* Reorder & Visibility controls in edit mode */}
           {isEditMode && (
-            <div className="opacity-0 group-hover/sec:opacity-100 transition-opacity flex items-center gap-1 bg-white/95 border border-gray-300 rounded px-1.5 py-0.5 shadow-xs text-xs font-sans">
+            <div className="opacity-0 group-hover/sec:opacity-100 focus-within:opacity-100 transition-opacity flex items-center gap-1 bg-white/95 border border-gray-300 rounded px-1.5 py-0.5 shadow-xs text-xs font-sans">
               <span className="text-[10px] text-gray-500 font-semibold uppercase mr-1">
                 {SECTION_META[sec.id]?.label || sec.id}
               </span>
@@ -1193,8 +1205,9 @@ export function LiveResumeCanvas({
                 onClick={() => onMoveSection(sec.id, 'up')}
                 className="p-0.5 hover:text-blue-600 text-gray-500 disabled:opacity-25"
                 title="Đưa lên trên"
+                aria-label="Đưa lên trên"
               >
-                <ArrowUp className="w-3 h-3" />
+                <ArrowUp className="w-3 h-3" aria-hidden="true" />
               </button>
               <button
                 type="button"
@@ -1202,16 +1215,18 @@ export function LiveResumeCanvas({
                 onClick={() => onMoveSection(sec.id, 'down')}
                 className="p-0.5 hover:text-blue-600 text-gray-500 disabled:opacity-25"
                 title="Đưa xuống dưới"
+                aria-label="Đưa xuống dưới"
               >
-                <ArrowDown className="w-3 h-3" />
+                <ArrowDown className="w-3 h-3" aria-hidden="true" />
               </button>
               <button
                 type="button"
                 onClick={() => onToggleHideSection(sec.id)}
                 className="p-0.5 hover:text-red-500 text-gray-400 ml-0.5"
                 title="Ẩn mục này khỏi CV"
+                aria-label="Ẩn mục này khỏi CV"
               >
-                <EyeOff className="w-3 h-3" />
+                <EyeOff className="w-3 h-3" aria-hidden="true" />
               </button>
             </div>
           )}
@@ -1301,15 +1316,16 @@ export function LiveResumeCanvas({
                     className="group/exp relative pl-4 border-l-2 border-gray-200 hover:border-blue-400 transition-colors"
                   >
                     {isEditMode && (
-                      <div className="absolute top-0 right-0 opacity-0 group-hover/exp:opacity-100 transition-opacity bg-white/95 border border-gray-200 rounded-md p-0.5 flex items-center gap-1 shadow-xs z-20">
+                      <div className="absolute top-0 right-0 opacity-0 group-hover/exp:opacity-100 focus-within:opacity-100 transition-opacity bg-white/95 border border-gray-200 rounded-md p-0.5 flex items-center gap-1 shadow-xs z-20">
                         <button
                           type="button"
                           onClick={() => onMoveItem('experience', exp.id, 'up')}
                           disabled={expIdx === 0}
                           className="p-1 hover:text-blue-600 text-gray-500 disabled:opacity-30"
                           title="Chuyển lên"
+                          aria-label="Chuyển lên"
                         >
-                          <ArrowUp className="w-3 h-3" />
+                          <ArrowUp className="w-3 h-3" aria-hidden="true" />
                         </button>
                         <button
                           type="button"
@@ -1317,8 +1333,9 @@ export function LiveResumeCanvas({
                           disabled={expIdx === expsToRender.length - 1}
                           className="p-1 hover:text-blue-600 text-gray-500 disabled:opacity-30"
                           title="Chuyển xuống"
+                          aria-label="Chuyển xuống"
                         >
-                          <ArrowDown className="w-3 h-3" />
+                          <ArrowDown className="w-3 h-3" aria-hidden="true" />
                         </button>
                         <div className="w-px h-3 bg-gray-200" />
                         <button
@@ -1326,16 +1343,18 @@ export function LiveResumeCanvas({
                           onClick={() => onOpenDialog('experience', exp)}
                           className="p-1 hover:text-blue-600 text-gray-500"
                           title="Sửa chi tiết"
+                          aria-label="Sửa chi tiết"
                         >
-                          <Edit className="w-3 h-3" />
+                          <Edit className="w-3 h-3" aria-hidden="true" />
                         </button>
                         <button
                           type="button"
                           onClick={() => onDeleteItem('experience', exp.id)}
                           className="p-1 hover:text-red-600 text-gray-500"
                           title="Xóa kinh nghiệm"
+                          aria-label="Xóa kinh nghiệm"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-3 h-3" aria-hidden="true" />
                         </button>
                       </div>
                     )}
@@ -1414,10 +1433,11 @@ export function LiveResumeCanvas({
                                 const updated = bulletPoints.filter((_: any, i: number) => i !== pIdx);
                                 onUpdateExperienceAchievements(exp.id, updated.join('\n'));
                               }}
-                              className="opacity-0 group-hover/bullet:opacity-100 p-0.5 text-gray-300 hover:text-red-500 transition-opacity"
+                              className="opacity-0 group-hover/bullet:opacity-100 focus-within:opacity-100 p-0.5 text-gray-300 hover:text-red-500 transition-opacity"
                               title="Xóa bullet"
+                              aria-label="Xóa bullet"
                             >
-                              <X className="w-3 h-3" />
+                              <X className="w-3 h-3" aria-hidden="true" />
                             </button>
                           )}
                         </li>
@@ -1438,9 +1458,10 @@ export function LiveResumeCanvas({
                                 const updated = techTags.filter((_: any, i: number) => i !== tIdx);
                                 onUpdateExperienceTechStack(exp.id, updated.join(', '));
                               }}
+                              aria-label={`Xóa công nghệ ${tech}`}
                               className="opacity-40 hover:opacity-100 hover:text-red-500"
                             >
-                              <X className="w-2.5 h-2.5" />
+                              <X className="w-2.5 h-2.5" aria-hidden="true" />
                             </button>
                           )}
                         </span>
@@ -1473,15 +1494,16 @@ export function LiveResumeCanvas({
                   className="group/edu relative pl-4 border-l-2 border-gray-200 hover:border-blue-400 transition-colors"
                 >
                   {isEditMode && (
-                    <div className="absolute top-0 right-0 opacity-0 group-hover/edu:opacity-100 transition-opacity bg-white/95 border border-gray-200 rounded-md p-0.5 flex items-center gap-1 shadow-xs z-20">
+                    <div className="absolute top-0 right-0 opacity-0 group-hover/edu:opacity-100 focus-within:opacity-100 transition-opacity bg-white/95 border border-gray-200 rounded-md p-0.5 flex items-center gap-1 shadow-xs z-20">
                       <button
                         type="button"
                         onClick={() => onMoveItem('education', edu.id, 'up')}
                         disabled={eduIdx === 0}
                         className="p-1 hover:text-blue-600 text-gray-500 disabled:opacity-30"
                         title="Chuyển lên"
+                        aria-label="Chuyển lên"
                       >
-                        <ArrowUp className="w-3 h-3" />
+                        <ArrowUp className="w-3 h-3" aria-hidden="true" />
                       </button>
                       <button
                         type="button"
@@ -1489,8 +1511,9 @@ export function LiveResumeCanvas({
                         disabled={eduIdx === edusToRender.length - 1}
                         className="p-1 hover:text-blue-600 text-gray-500 disabled:opacity-30"
                         title="Chuyển xuống"
+                        aria-label="Chuyển xuống"
                       >
-                        <ArrowDown className="w-3 h-3" />
+                        <ArrowDown className="w-3 h-3" aria-hidden="true" />
                       </button>
                       <div className="w-px h-3 bg-gray-200" />
                       <button
@@ -1498,16 +1521,18 @@ export function LiveResumeCanvas({
                         onClick={() => onOpenDialog('education', edu)}
                         className="p-1 hover:text-blue-600 text-gray-500"
                         title="Sửa chi tiết"
+                        aria-label="Sửa chi tiết"
                       >
-                        <Edit className="w-3 h-3" />
+                        <Edit className="w-3 h-3" aria-hidden="true" />
                       </button>
                       <button
                         type="button"
                         onClick={() => onDeleteItem('education', edu.id)}
                         className="p-1 hover:text-red-600 text-gray-500"
                         title="Xóa học vấn"
+                        aria-label="Xóa học vấn"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-3 h-3" aria-hidden="true" />
                       </button>
                     </div>
                   )}
@@ -1608,8 +1633,9 @@ export function LiveResumeCanvas({
                               onClick={() => onDeleteSkill(skill.id)}
                               className="opacity-30 group-hover/skill:opacity-100 hover:text-red-500"
                               title="Xóa kỹ năng"
+                              aria-label="Xóa kỹ năng"
                             >
-                              <X className="w-2.5 h-2.5" />
+                              <X className="w-2.5 h-2.5" aria-hidden="true" />
                             </button>
                           )}
                         </span>
@@ -1727,8 +1753,9 @@ export function LiveResumeCanvas({
               }}
               className="p-1 hover:bg-slate-800 rounded text-slate-300 hover:text-white disabled:opacity-25 transition-colors"
               title="Di chuyển lên trên"
+              aria-label="Di chuyển lên trên"
             >
-              <ArrowUp className="w-3.5 h-3.5" />
+              <ArrowUp className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
 
             <button
@@ -1740,8 +1767,9 @@ export function LiveResumeCanvas({
               }}
               className="p-1 hover:bg-slate-800 rounded text-slate-300 hover:text-white disabled:opacity-25 transition-colors"
               title="Di chuyển xuống dưới"
+              aria-label="Di chuyển xuống dưới"
             >
-              <ArrowDown className="w-3.5 h-3.5" />
+              <ArrowDown className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
 
             <div className="w-px h-3.5 bg-slate-700 mx-0.5" />
@@ -1754,7 +1782,7 @@ export function LiveResumeCanvas({
               }}
               className="px-2 py-0.5 hover:bg-slate-800 rounded text-[11px] font-medium text-blue-300 hover:text-blue-200 flex items-center gap-1 transition-colors"
             >
-              <ArrowLeftRight className="w-3 h-3" />
+              <ArrowLeftRight className="w-3 h-3" aria-hidden="true" />
               <span>{col === 'left' ? 'Sang phải' : 'Sang trái'}</span>
             </button>
 
@@ -1768,8 +1796,9 @@ export function LiveResumeCanvas({
               }}
               className="p-1 hover:bg-red-500/30 rounded text-slate-400 hover:text-red-300 transition-colors"
               title="Ẩn mục này khỏi CV"
+              aria-label="Ẩn mục này khỏi CV"
             >
-              <EyeOff className="w-3.5 h-3.5" />
+              <EyeOff className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -1891,10 +1920,11 @@ export function LiveResumeCanvas({
                                   <button
                                     type="button"
                                     onClick={() => onDeleteItem('social', link.id)}
-                                    className="opacity-0 group-hover/link:opacity-100 hover:text-red-500 text-gray-400 p-0.5"
+                                    className="opacity-0 group-hover/link:opacity-100 focus-within:opacity-100 hover:text-red-500 text-gray-400 p-0.5"
                                     title="Xóa link"
+                                    aria-label="Xóa link"
                                   >
-                                    <Trash2 className="w-2.5 h-2.5" />
+                                    <Trash2 className="w-2.5 h-2.5" aria-hidden="true" />
                                   </button>
                                 )}
                               </span>
@@ -1907,7 +1937,7 @@ export function LiveResumeCanvas({
                               onClick={() => onOpenDialog('social')}
                               className="text-[11px] font-sans text-blue-600 hover:underline inline-flex items-center gap-0.5 ml-1"
                             >
-                              <Plus className="w-3 h-3" />
+                              <Plus className="w-3 h-3" aria-hidden="true" />
                               <span>Link</span>
                             </button>
                           )}
@@ -2049,10 +2079,11 @@ export function LiveResumeCanvas({
                                   <button
                                     type="button"
                                     onClick={() => onDeleteItem('social', link.id)}
-                                    className="opacity-0 group-hover/link:opacity-100 hover:text-red-500 text-gray-400 p-0.5"
+                                    className="opacity-0 group-hover/link:opacity-100 focus-within:opacity-100 hover:text-red-500 text-gray-400 p-0.5"
                                     title="Xóa link"
+                                    aria-label="Xóa link"
                                   >
-                                    <Trash2 className="w-2.5 h-2.5" />
+                                    <Trash2 className="w-2.5 h-2.5" aria-hidden="true" />
                                   </button>
                                 )}
                               </div>

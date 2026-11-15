@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { Code, Plus, Pencil, Trash2, ExternalLink, Github, Search, Filter } from 'lucide-react';
 import { ProjectDialog } from '@/components/admin/ProjectDialog';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
+import { StatusBadge } from '@/components/admin/StatusBadge';
+import { AdminPageHeader, ADMIN_PAGE_CLASS } from '@/components/admin/AdminPageHeader';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { deleteProject } from '@/lib/actions/project';
 
@@ -59,22 +61,22 @@ export function AdminProjectsClient({ projects }: { projects: Project[] }) {
   }, [filtered, currentPage]);
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-5xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Projects</h1>
-          <p className="text-sm text-muted-foreground">{projects.length} projects total</p>
-        </div>
-        <button
-          id="create-project-btn"
-          type="button"
-          onClick={() => setCreateOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/90 transition-colors self-start sm:self-auto cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          New Project
-        </button>
-      </div>
+    <main className={ADMIN_PAGE_CLASS}>
+      <AdminPageHeader
+        title="Dự án"
+        description={`${projects.length} dự án`}
+        actions={
+          <button
+            id="create-project-btn"
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/90 transition-colors cursor-pointer"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Thêm dự án
+          </button>
+        }
+      />
 
       {/* Search & Filters */}
       <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -83,7 +85,8 @@ export function AdminProjectsClient({ projects }: { projects: Project[] }) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <input
             type="text"
-            placeholder="Search projects by name, description, or tag..."
+            placeholder="Tìm theo tên, mô tả hoặc thẻ…"
+            aria-label="Tìm dự án"
             value={search}
             onChange={e => {
               setSearch(e.target.value);
@@ -96,24 +99,26 @@ export function AdminProjectsClient({ projects }: { projects: Project[] }) {
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-card shadow-xs text-xs text-muted-foreground transition-colors">
             <Filter className="h-3.5 w-3.5" />
-            <span className="font-medium">Status:</span>
+            <span className="font-medium">Trạng thái:</span>
             <select
               value={statusFilter}
+              aria-label="Lọc theo trạng thái"
               onChange={e => {
                 setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
               className="bg-transparent text-foreground outline-none font-medium cursor-pointer"
             >
-              <option value="ALL">All Statuses</option>
-              <option value="PUBLISHED">Published</option>
-              <option value="DRAFT">Draft</option>
-              <option value="ARCHIVED">Archived</option>
+              <option value="ALL">Tất cả</option>
+              <option value="PUBLISHED">Đã xuất bản</option>
+              <option value="DRAFT">Bản nháp</option>
+              <option value="ARCHIVED">Lưu trữ</option>
             </select>
           </div>
 
           <button
             type="button"
+            aria-pressed={featuredOnly}
             onClick={() => {
               setFeaturedOnly(!featuredOnly);
               setCurrentPage(1);
@@ -124,7 +129,7 @@ export function AdminProjectsClient({ projects }: { projects: Project[] }) {
                 : 'border-border bg-card text-muted-foreground hover:text-foreground shadow-xs'
             }`}
           >
-            ★ Featured Only
+            ★ Chỉ dự án nổi bật
           </button>
         </div>
       </div>
@@ -134,22 +139,22 @@ export function AdminProjectsClient({ projects }: { projects: Project[] }) {
         {paginated.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground bg-card">
             <Code className="h-10 w-10 mb-3 opacity-30" />
-            <p className="font-medium text-foreground">No projects found</p>
+            <p className="font-medium text-foreground">Không có dự án nào</p>
             <p className="text-xs text-muted-foreground mt-1">
               {search || statusFilter !== 'ALL' || featuredOnly
-                ? 'Try adjusting your search or filter options'
-                : 'Add your first project to display your work'}
+                ? 'Thử đổi từ khóa hoặc bộ lọc'
+                : 'Nhấn "Thêm dự án" để tạo dự án đầu tiên'}
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-100/90 dark:bg-slate-800/90 border-b border-border text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
+              <thead className="bg-muted/60 border-b border-border text-foreground/80 font-semibold text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">Project Name</th>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden md:table-cell">Tags</th>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden sm:table-cell">Status</th>
-                  <th className="px-4 py-3.5 text-right font-semibold text-slate-700 dark:text-slate-300">Actions</th>
+                  <th className="text-left px-4 py-3.5 font-semibold">Tên dự án</th>
+                  <th className="text-left px-4 py-3.5 font-semibold hidden md:table-cell">Thẻ</th>
+                  <th className="text-left px-4 py-3.5 font-semibold">Trạng thái</th>
+                  <th className="px-4 py-3.5 text-right font-semibold">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-card">
@@ -174,7 +179,7 @@ export function AdminProjectsClient({ projects }: { projects: Project[] }) {
                                 onClick={(e) => e.stopPropagation()}
                                 className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
                               >
-                                <ExternalLink className="h-3 w-3" /> Demo
+                                <ExternalLink className="h-3 w-3" aria-hidden="true" /> Demo
                               </a>
                             )}
                             {project.repoUrl && (
@@ -185,7 +190,7 @@ export function AdminProjectsClient({ projects }: { projects: Project[] }) {
                                 onClick={(e) => e.stopPropagation()}
                                 className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
                               >
-                                <Github className="h-3 w-3" /> Repo
+                                <Github className="h-3 w-3" aria-hidden="true" /> Mã nguồn
                               </a>
                             )}
                           </div>
@@ -204,49 +209,39 @@ export function AdminProjectsClient({ projects }: { projects: Project[] }) {
                         ))}
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 hidden sm:table-cell">
-                      <div className="flex items-center gap-2">
+                    <td className="px-4 py-3.5">
+                      <div className="flex flex-wrap items-center gap-2">
                         {project.featured && (
                           <span className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary font-medium border border-primary/20">
-                            ★ Featured
+                            ★ Nổi bật
                           </span>
                         )}
-                        <span
-                          className={`px-2 py-0.5 text-xs rounded-full font-medium ${
-                            project.status === 'PUBLISHED'
-                              ? 'bg-green-500/10 text-green-700 dark:text-green-400'
-                              : project.status === 'DRAFT'
-                                ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                                : 'bg-muted text-muted-foreground'
-                          }`}
-                        >
-                          {project.status}
-                        </span>
+                        <StatusBadge status={project.status} />
                       </div>
                     </td>
                     <td className="px-4 py-3.5 text-right">
                       <div className="flex items-center gap-1 justify-end">
                         <button
                           type="button"
-                          aria-label={`Edit ${project.title}`}
+                          aria-label={`Sửa ${project.title}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             setEditTarget(project);
                           }}
                           className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted cursor-pointer"
                         >
-                          <Pencil className="h-3.5 w-3.5" />
+                          <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                         </button>
                         <button
                           type="button"
-                          aria-label={`Delete ${project.title}`}
+                          aria-label={`Xóa ${project.title}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             setDeleteTarget(project);
                           }}
                           className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 cursor-pointer"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                         </button>
                       </div>
                     </td>
@@ -297,7 +292,9 @@ export function AdminProjectsClient({ projects }: { projects: Project[] }) {
         <DeleteDialog
           open={!!deleteTarget}
           onOpenChange={open => !open && setDeleteTarget(null)}
-          title={`Delete "${deleteTarget.title}"?`}
+          title={`Xóa "${deleteTarget.title}"?`}
+          description="Dự án cùng các bản dịch sẽ bị xóa vĩnh viễn."
+          successMessage="Đã xóa dự án."
           onConfirm={() => deleteProject(deleteTarget.id)}
         />
       )}

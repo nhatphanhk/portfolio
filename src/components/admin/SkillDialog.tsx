@@ -9,32 +9,32 @@ import { toast } from 'sonner';
 import { createSkill, updateSkill, type SkillFormData } from '@/lib/actions/skill';
 
 const schema = z.object({
-  name: z.string().min(1, 'Please enter skill name').max(100),
+  name: z.string().min(1, 'Vui lòng nhập tên kỹ năng').max(100, 'Tên tối đa 100 ký tự'),
   category: z.enum([
     'FRONTEND', 'BACKEND', 'DEVOPS', 'TOOLS', 'OTHER', 
     'LANGUAGE', 'FRAMEWORK', 'DATABASE', 'CLOUD', 'IAC', 
     'MONITORING', 'VERSION_CONTROL'
   ]),
   level: z.number().int().min(1).max(5),
-  iconUrl: z.string().url().optional().or(z.literal('')),
-  order: z.number().int(),
+  iconUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
+  order: z.number({ message: 'Vui lòng nhập số' }).int('Thứ tự phải là số nguyên'),
 });
 
 type FormData = z.infer<typeof schema>;
 
-const CATEGORY_LABELS: Record<string, string> = {
-  LANGUAGE: 'Language',
+export const SKILL_CATEGORY_ADMIN_LABELS: Record<string, string> = {
+  LANGUAGE: 'Ngôn ngữ lập trình',
   FRAMEWORK: 'Framework',
   FRONTEND: 'Frontend',
   BACKEND: 'Backend',
-  DATABASE: 'Database',
+  DATABASE: 'Cơ sở dữ liệu',
   CLOUD: 'Cloud',
   DEVOPS: 'DevOps',
   IAC: 'IaC',
-  MONITORING: 'Monitoring',
-  VERSION_CONTROL: 'Version Control',
-  TOOLS: 'Tools',
-  OTHER: 'Other',
+  MONITORING: 'Giám sát',
+  VERSION_CONTROL: 'Quản lý phiên bản',
+  TOOLS: 'Công cụ',
+  OTHER: 'Khác',
 };
 
 interface SkillDialogProps {
@@ -66,12 +66,12 @@ export function SkillDialog({ mode, open, onOpenChange, initialData }: SkillDial
         : await updateSkill(initialData!.id!, payload);
 
       if (result.ok) {
-        toast.success(mode === 'create' ? 'Skill added!' : 'Skill updated!');
+        toast.success(mode === 'create' ? 'Đã thêm kỹ năng.' : 'Đã lưu kỹ năng.');
         reset();
         onOpenChange(false);
       } else {
         const err = (result as { error?: unknown }).error;
-        toast.error(typeof err === 'string' ? err : 'Something went wrong.');
+        toast.error(`Không thể lưu kỹ năng: ${typeof err === 'string' ? err : 'Vui lòng thử lại.'}`);
       }
     });
   };
@@ -80,13 +80,14 @@ export function SkillDialog({ mode, open, onOpenChange, initialData }: SkillDial
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{mode === 'create' ? 'Add Skill' : 'Edit Skill'}</DialogTitle>
+          <DialogTitle>{mode === 'create' ? 'Thêm kỹ năng' : 'Sửa kỹ năng'}</DialogTitle>
         </DialogHeader>
 
         <form id="skill-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
           <div>
-            <label className="block text-sm font-medium mb-1">Name *</label>
+            <label htmlFor="skill-name" className="block text-sm font-medium mb-1">Tên *</label>
             <input
+              id="skill-name"
               {...register('name')}
               placeholder="React, TypeScript, Docker..."
               className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -94,32 +95,36 @@ export function SkillDialog({ mode, open, onOpenChange, initialData }: SkillDial
             {errors.name && <p className="text-xs text-destructive mt-1">{errors.name.message}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Category</label>
+              <label htmlFor="skill-category" className="block text-sm font-medium mb-1">Nhóm</label>
               <select
+                id="skill-category"
                 {...register('category')}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                {Object.entries(CATEGORY_LABELS).map(([val, label]) => (
+                {Object.entries(SKILL_CATEGORY_ADMIN_LABELS).map(([val, label]) => (
                   <option key={val} value={val}>{label}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Display Order</label>
+              <label htmlFor="skill-order" className="block text-sm font-medium mb-1">Thứ tự hiển thị</label>
               <input
+                id="skill-order"
                 type="number"
                 {...register('order', { valueAsNumber: true })}
                 min={0}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
+              {errors.order && <p className="text-xs text-destructive mt-1">{errors.order.message}</p>}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Level (1–5)</label>
+            <label htmlFor="skill-level" className="block text-sm font-medium mb-1">Mức độ thành thạo (1–5)</label>
             <select
+              id="skill-level"
               {...register('level', { valueAsNumber: true })}
               className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
@@ -132,8 +137,9 @@ export function SkillDialog({ mode, open, onOpenChange, initialData }: SkillDial
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Icon URL (optional)</label>
+            <label htmlFor="skill-icon" className="block text-sm font-medium mb-1">URL biểu tượng (không bắt buộc)</label>
             <input
+              id="skill-icon"
               {...register('iconUrl')}
               placeholder="https://..."
               className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -148,7 +154,7 @@ export function SkillDialog({ mode, open, onOpenChange, initialData }: SkillDial
             onClick={() => onOpenChange(false)}
             className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
           >
-            Cancel
+            Hủy
           </button>
           <button
             type="submit"
@@ -156,7 +162,7 @@ export function SkillDialog({ mode, open, onOpenChange, initialData }: SkillDial
             disabled={isPending}
             className="px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/90 disabled:opacity-60 transition-colors"
           >
-            {isPending ? 'Saving…' : mode === 'create' ? 'Add Skill' : 'Save Changes'}
+            {isPending ? 'Đang lưu…' : mode === 'create' ? 'Thêm kỹ năng' : 'Lưu thay đổi'}
           </button>
         </DialogFooter>
       </DialogContent>

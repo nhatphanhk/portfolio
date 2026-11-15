@@ -10,8 +10,9 @@ import { z } from 'zod';
 import { Eye, EyeOff, Lock, Mail, AlertCircle } from 'lucide-react';
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().email('Email không hợp lệ'),
+  // Length rules belong to "change password"; at sign-in only require a value
+  password: z.string().min(1, 'Vui lòng nhập mật khẩu'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -43,7 +44,7 @@ function LoginForm() {
       });
 
       if (result?.error) {
-        setError('Invalid email or password. Please try again.');
+        setError('Email hoặc mật khẩu không đúng. Vui lòng thử lại.');
         return;
       }
 
@@ -57,7 +58,7 @@ function LoginForm() {
       router.push(callbackUrl);
       router.refresh();
     } catch {
-      setError('An unexpected error occurred. Please try again.');
+      setError('Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.');
     }
   };
 
@@ -73,11 +74,11 @@ function LoginForm() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-foreground mb-4">
-            <Lock className="h-6 w-6 text-background" />
+            <Lock className="h-6 w-6 text-background" aria-hidden="true" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Admin Login</h1>
+          <h1 className="text-2xl font-bold text-foreground">Đăng nhập quản trị</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Sign in to access the dashboard
+            Đăng nhập để vào trang quản trị
           </p>
         </div>
 
@@ -86,8 +87,8 @@ function LoginForm() {
           <form id="admin-login-form" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
             {/* Error Alert */}
             {error && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-                <AlertCircle className="h-4 w-4 shrink-0" />
+              <div role="alert" className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                 {error}
               </div>
             )}
@@ -98,12 +99,14 @@ function LoginForm() {
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 <input
                   id="admin-email"
                   type="email"
                   placeholder="admin@example.com"
                   autoComplete="email"
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? 'admin-email-error' : undefined}
                   {...register('email')}
                   className={`w-full pl-10 pr-4 py-2.5 rounded-lg border bg-muted/40 text-foreground text-sm outline-none focus:bg-card focus:ring-2 focus:ring-ring transition-colors ${
                     errors.email ? 'border-destructive' : 'border-input hover:border-foreground/30'
@@ -111,22 +114,24 @@ function LoginForm() {
                 />
               </div>
               {errors.email && (
-                <p className="mt-1 text-xs text-destructive">{errors.email.message}</p>
+                <p id="admin-email-error" className="mt-1 text-xs text-destructive">{errors.email.message}</p>
               )}
             </div>
 
             {/* Password */}
             <div>
               <label htmlFor="admin-password" className="block text-sm font-medium text-foreground mb-1.5">
-                Password
+                Mật khẩu
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 <input
                   id="admin-password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   autoComplete="current-password"
+                  aria-invalid={!!errors.password}
+                  aria-describedby={errors.password ? 'admin-password-error' : undefined}
                   {...register('password')}
                   className={`w-full pl-10 pr-10 py-2.5 rounded-lg border bg-muted/40 text-foreground text-sm outline-none focus:bg-card focus:ring-2 focus:ring-ring transition-colors ${
                     errors.password ? 'border-destructive' : 'border-input hover:border-foreground/30'
@@ -138,11 +143,11 @@ function LoginForm() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-1 text-xs text-destructive">{errors.password.message}</p>
+                <p id="admin-password-error" className="mt-1 text-xs text-destructive">{errors.password.message}</p>
               )}
             </div>
 
@@ -153,7 +158,7 @@ function LoginForm() {
               disabled={isSubmitting}
               className="w-full py-2.5 px-4 bg-foreground text-background rounded-lg font-medium text-sm hover:bg-foreground/90 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
             >
-              {isSubmitting ? 'Signing in…' : 'Sign In'}
+              {isSubmitting ? 'Đang đăng nhập…' : 'Đăng nhập'}
             </button>
           </form>
         </div>
@@ -161,7 +166,7 @@ function LoginForm() {
         {/* Back to site */}
         <div className="text-center mt-4">
           <Link href="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-            ← Back to site
+            ← Về trang chủ
           </Link>
         </div>
       </div>

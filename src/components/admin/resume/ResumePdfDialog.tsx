@@ -26,6 +26,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirmDialog } from '@/components/admin/DeleteDialog';
 
 interface ResumePdfDialogProps {
   open: boolean;
@@ -47,6 +48,7 @@ export function ResumePdfDialog({
   const [customUrl, setCustomUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const { confirm, confirmDialog } = useConfirmDialog();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Extract a readable file name from URL
@@ -147,7 +149,12 @@ export function ResumePdfDialog({
   };
 
   const handleRemovePdf = async () => {
-    if (!confirm('Bạn có chắc chắn muốn xóa liên kết file PDF này khỏi Resume?')) return;
+    const ok = await confirm({
+      title: 'Gỡ file PDF khỏi CV?',
+      description: 'Liên kết tải CV trên trang công khai sẽ bị gỡ. Tệp trong thư viện không bị xóa.',
+      confirmLabel: 'Gỡ file',
+    });
+    if (!ok) return;
     try {
       await onSavePdfUrl(null);
       toast.success('Đã gỡ bỏ file PDF Resume');
@@ -453,6 +460,7 @@ export function ResumePdfDialog({
             </button>
           </div>
         )}
+        {confirmDialog}
       </DialogContent>
     </Dialog>
   );

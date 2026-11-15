@@ -23,11 +23,11 @@ import { Sparkles, Languages, CheckCircle2, Loader2, ChevronDown, ChevronUp } fr
 import { slugify } from '@/lib/utils';
 
 const schema = z.object({
-  title: z.string().min(2, 'Title required').max(255),
+  title: z.string().min(2, 'Tiêu đề cần ít nhất 2 ký tự').max(255, 'Tiêu đề tối đa 255 ký tự'),
   tags: z.string().optional(),
   slug: z.string().regex(/^[a-z0-9-]*$/, 'Slug chỉ gồm chữ thường, số và dấu gạch nối').optional(),
   description: z.string().max(1000).optional(),
-  coverUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  coverUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -228,12 +228,12 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
           : await updateSeries(initialData!.id!, payload);
 
       if (result.ok) {
-        toast.success(mode === 'create' ? 'Series created!' : 'Series updated!');
+        toast.success(mode === 'create' ? 'Đã tạo series.' : 'Đã lưu series.');
         reset();
         onOpenChange(false);
         onSuccess?.();
       } else {
-        toast.error(typeof result.error === 'string' ? result.error : 'Failed to save series');
+        toast.error(`Không thể lưu series: ${typeof result.error === 'string' ? result.error : 'Vui lòng thử lại.'}`);
       }
     });
   };
@@ -242,24 +242,26 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{mode === 'create' ? 'New Blog Series' : 'Edit Blog Series'}</DialogTitle>
+          <DialogTitle>{mode === 'create' ? 'Thêm series' : 'Sửa series'}</DialogTitle>
         </DialogHeader>
 
         <form id="series-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
           <div>
-            <label className="block text-sm font-medium mb-1">Title *</label>
+            <label htmlFor="series-title" className="block text-sm font-medium mb-1">Tiêu đề *</label>
             <input
+              id="series-title"
               {...register('title')}
               onBlur={onTitleBlur}
-              placeholder="Full-Stack Web Development Series"
+              placeholder="Lập trình web full-stack"
               className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
             {errors.title && <p className="text-xs text-destructive mt-1">{errors.title.message}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Slug</label>
+            <label htmlFor="series-slug" className="block text-sm font-medium mb-1">Slug</label>
             <input
+              id="series-slug"
               {...register('slug', { onChange: () => setSlugTouched(true) })}
               placeholder="full-stack-web-development"
               className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring"
@@ -271,23 +273,25 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Tags / Topics</label>
+            <label htmlFor="series-tags" className="block text-sm font-medium mb-1">Thẻ / chủ đề</label>
             <input
+              id="series-tags"
               {...register('tags')}
-              placeholder="React, Next.js, Architecture (comma separated)"
+              placeholder="React, Next.js, Kiến trúc"
               className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
             <p className="text-[11px] text-muted-foreground mt-1">
-              Used for organizing and filtering series by technology or topic.
+              Phân tách bằng dấu phẩy. Dùng để phân loại và lọc series theo công nghệ hoặc chủ đề.
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Description</label>
+            <label htmlFor="series-description" className="block text-sm font-medium mb-1">Mô tả</label>
             <textarea
+              id="series-description"
               {...register('description')}
               rows={3}
-              placeholder="A comprehensive guide to building modern full-stack web applications..."
+              placeholder="Hướng dẫn toàn diện xây dựng ứng dụng web full-stack hiện đại…"
               className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
             />
             {errors.description && (
@@ -296,8 +300,9 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Cover Image URL</label>
+            <label htmlFor="series-cover" className="block text-sm font-medium mb-1">URL ảnh bìa</label>
             <input
+              id="series-cover"
               {...register('coverUrl')}
               placeholder="https://..."
               className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -315,7 +320,7 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
                   <Languages className="w-4 h-4 text-primary" />
                   <span className="text-sm font-semibold text-foreground">Bản dịch Tiếng Anh (EN)</span>
                   {hasTranslation ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/10 text-green-700 border border-green-500/20">
                       <CheckCircle2 className="w-3 h-3" /> Đã có bản dịch
                     </span>
                   ) : (
@@ -349,8 +354,10 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
                       onClick={() => setShowTransPreview(!showTransPreview)}
                       className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted"
                       title={showTransPreview ? 'Thu gọn' : 'Xem bản dịch'}
+                      aria-label={showTransPreview ? 'Thu gọn bản dịch' : 'Xem bản dịch'}
+                      aria-expanded={showTransPreview}
                     >
-                      {showTransPreview ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      {showTransPreview ? <ChevronUp className="w-4 h-4" aria-hidden="true" /> : <ChevronDown className="w-4 h-4" aria-hidden="true" />}
                     </button>
                   )}
                 </div>
@@ -360,10 +367,11 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
               {showTransPreview && (
                 <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
                   <div>
-                    <label className="block text-xs font-semibold text-foreground mb-1">
-                      Tên Series Tiếng Anh (English Title)
+                    <label htmlFor="series-trans-title" className="block text-xs font-semibold text-foreground mb-1">
+                      Tên series tiếng Anh
                     </label>
                     <input
+                      id="series-trans-title"
                       type="text"
                       value={transData.title}
                       onChange={e => setTransData({ ...transData, title: e.target.value })}
@@ -373,10 +381,11 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-foreground mb-1">
-                      Mô tả Series Tiếng Anh (English Description)
+                    <label htmlFor="series-trans-desc" className="block text-xs font-semibold text-foreground mb-1">
+                      Mô tả series tiếng Anh
                     </label>
                     <textarea
+                      id="series-trans-desc"
                       rows={2}
                       value={transData.description}
                       onChange={e => setTransData({ ...transData, description: e.target.value })}
@@ -408,7 +417,7 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
             onClick={() => onOpenChange(false)}
             className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            Cancel
+            Hủy
           </button>
           <button
             type="submit"
@@ -416,7 +425,7 @@ export function SeriesDialog({ mode, open, onOpenChange, initialData, onSuccess 
             disabled={isPending}
             className="px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/90 disabled:opacity-60 transition-colors"
           >
-            {isPending ? 'Saving...' : mode === 'create' ? 'Create Series' : 'Save Changes'}
+            {isPending ? 'Đang lưu…' : mode === 'create' ? 'Tạo series' : 'Lưu thay đổi'}
           </button>
         </DialogFooter>
       </DialogContent>

@@ -46,7 +46,8 @@ interface TranslationPreviewDialogProps {
   };
   translated: TranslatedData | null;
   targetLocale?: 'vi' | 'en';
-  onApplyToEditor: (data: TranslatedData) => void;
+  /** Resolves false when the user backs out, which keeps the preview open. */
+  onApplyToEditor: (data: TranslatedData) => boolean | Promise<boolean>;
   onSaveToDb: (data: TranslatedData) => Promise<void>;
   onApplyAndSave: (data: TranslatedData) => Promise<void>;
 }
@@ -197,9 +198,8 @@ export function TranslationPreviewDialog({
     }
   };
 
-  const handleApplyOnly = () => {
-    onApplyToEditor(editedData);
-    onOpenChange(false);
+  const handleApplyOnly = async () => {
+    if (await onApplyToEditor(editedData)) onOpenChange(false);
   };
 
   // Content height class dynamically adapting to window size and maximize mode
@@ -257,9 +257,10 @@ export function TranslationPreviewDialog({
                 onClick={() => setIsMaximized(prev => !prev)}
                 className="p-1.5 rounded-lg border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shadow-2xs cursor-pointer"
                 title={isMaximized ? 'Thu nhỏ cửa sổ' : 'Phóng to toàn màn hình'}
-                aria-label="Toggle Fullscreen"
+                aria-label={isMaximized ? 'Thu nhỏ cửa sổ' : 'Phóng to toàn màn hình'}
+                aria-pressed={isMaximized}
               >
-                {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                {isMaximized ? <Minimize2 className="w-4 h-4" aria-hidden="true" /> : <Maximize2 className="w-4 h-4" aria-hidden="true" />}
               </button>
             </div>
           </div>

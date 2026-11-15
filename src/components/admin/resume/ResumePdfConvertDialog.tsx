@@ -25,6 +25,7 @@ import {
   Bot,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirmDialog } from '@/components/admin/DeleteDialog';
 import { ParsedResumeData } from '@/lib/pdf-resume-parser';
 
 interface ResumePdfConvertDialogProps {
@@ -46,6 +47,7 @@ export function ResumePdfConvertDialog({
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('');
   const [importMode, setImportMode] = useState<'replace' | 'merge'>('merge');
+  const { confirm, confirmDialog } = useConfirmDialog();
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -190,7 +192,7 @@ export function ResumePdfConvertDialog({
     }
   };
 
-  const handleApply = () => {
+  const handleApply = async () => {
     if (!parsedData) return;
 
     // Filter parsed data based on user toggles
@@ -206,9 +208,12 @@ export function ResumePdfConvertDialog({
 
     if (
       importMode === 'replace' &&
-      !window.confirm(
-        'Chế độ "Thay thế" sẽ XÓA toàn bộ kinh nghiệm, học vấn, kỹ năng và ngoại ngữ hiện có khi bạn bấm "Lưu thay đổi". Tiếp tục?'
-      )
+      !(await confirm({
+        title: 'Thay thế toàn bộ dữ liệu CV?',
+        description:
+          'Chế độ "Thay thế" sẽ xóa toàn bộ kinh nghiệm, học vấn, kỹ năng và ngoại ngữ hiện có khi bạn bấm "Lưu thay đổi".',
+        confirmLabel: 'Thay thế',
+      }))
     ) {
       return;
     }
@@ -654,6 +659,7 @@ export function ResumePdfConvertDialog({
             </div>
           </div>
         )}
+        {confirmDialog}
       </DialogContent>
     </Dialog>
   );

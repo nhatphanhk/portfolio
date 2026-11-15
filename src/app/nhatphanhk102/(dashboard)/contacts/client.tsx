@@ -5,6 +5,7 @@ import { Trash2, Mail, ExternalLink, Calendar, MessageSquare, Search, Filter } f
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
+import { AdminPageHeader, ADMIN_PAGE_CLASS } from '@/components/admin/AdminPageHeader';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { deleteContact, updateContactStatus } from '@/lib/actions/contact';
 import { formatDate } from '@/lib/utils';
@@ -95,14 +96,11 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
   const unreadCount = rows.filter(c => c.status === 'UNREAD').length;
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-5xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground mb-1">Hộp thư liên hệ</h1>
-        <p className="text-sm text-muted-foreground">
-          Tin nhắn gửi từ form liên hệ ({rows.length} tin nhắn, {unreadCount} chưa đọc). Khách truy cập qua cổng chào
-          nằm ở mục Visitor Logs.
-        </p>
-      </div>
+    <main className={ADMIN_PAGE_CLASS}>
+      <AdminPageHeader
+        title="Hộp thư liên hệ"
+        description={`${rows.length} tin nhắn từ form liên hệ, ${unreadCount} chưa đọc. Khách qua cổng chào nằm ở mục Khách truy cập.`}
+      />
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -186,7 +184,7 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
                             onClick={e => e.stopPropagation()}
                             className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
                           >
-                            <Mail className="h-3 w-3" /> {contact.email}
+                            <Mail className="h-3 w-3" aria-hidden="true" /> {contact.email}
                           </a>
                         </div>
                       </div>
@@ -234,7 +232,7 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
                           }}
                           className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted cursor-pointer"
                         >
-                          <ExternalLink className="h-3.5 w-3.5" />
+                          <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                         </button>
                         <button
                           type="button"
@@ -245,7 +243,7 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
                           }}
                           className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 cursor-pointer"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                         </button>
                       </div>
                     </td>
@@ -319,7 +317,7 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
                   }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   Xóa
                 </button>
               </div>
@@ -335,6 +333,7 @@ export function AdminContactsClient({ contacts }: { contacts: Contact[] }) {
           onOpenChange={open => !open && setDeleteTarget(null)}
           title="Xóa tin nhắn này?"
           description="Tin nhắn sẽ bị xóa vĩnh viễn và không thể khôi phục."
+          successMessage="Đã xóa tin nhắn."
           onConfirm={() => deleteContact(deleteTarget.id)}
         />
       )}

@@ -19,13 +19,17 @@ import { Sparkles, Languages, CheckCircle2, Loader2, ChevronDown, ChevronUp } fr
 import { slugify } from '@/lib/utils';
 
 const schema = z.object({
-  title: z.string().min(3).max(255),
-  slug: z.string().min(3).max(255).regex(/^[a-z0-9-]+$/),
-  description: z.string().max(1000).optional(),
+  title: z.string().min(3, 'Tiêu đề cần ít nhất 3 ký tự').max(255, 'Tiêu đề tối đa 255 ký tự'),
+  slug: z
+    .string()
+    .min(3, 'Slug cần ít nhất 3 ký tự')
+    .max(255, 'Slug tối đa 255 ký tự')
+    .regex(/^[a-z0-9-]+$/, 'Slug chỉ gồm chữ thường, số và dấu gạch ngang'),
+  description: z.string().max(1000, 'Mô tả tối đa 1000 ký tự').optional(),
   content: z.string().optional(),
-  thumbnailUrl: z.string().url().optional().or(z.literal('')),
-  demoUrl: z.string().url().optional().or(z.literal('')),
-  repoUrl: z.string().url().optional().or(z.literal('')),
+  thumbnailUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
+  demoUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
+  repoUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']),
   featured: z.boolean(),
   tags: z.string().optional(),
@@ -218,12 +222,12 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
         : await updateProject(initialData!.id!, payload);
 
       if (result.ok) {
-        toast.success(mode === 'create' ? 'Project created!' : 'Project updated!');
+        toast.success(mode === 'create' ? 'Đã tạo dự án.' : 'Đã lưu dự án.');
         reset();
         onOpenChange(false);
       } else {
         const err = (result as { error?: unknown }).error;
-        toast.error(typeof err === 'string' ? err : 'Something went wrong.');
+        toast.error(`Không thể lưu dự án: ${typeof err === 'string' ? err : 'Vui lòng thử lại.'}`);
       }
     });
   };
@@ -232,69 +236,69 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{mode === 'create' ? 'New Project' : 'Edit Project'}</DialogTitle>
+          <DialogTitle>{mode === 'create' ? 'Thêm dự án' : 'Sửa dự án'}</DialogTitle>
         </DialogHeader>
 
         <form id="project-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Title *</label>
-              <input {...register('title')} onBlur={onTitleBlur} placeholder="My Project" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <label htmlFor="project-title" className="block text-sm font-medium mb-1">Tiêu đề *</label>
+              <input id="project-title" {...register('title')} onBlur={onTitleBlur} placeholder="Dự án của tôi" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               {errors.title && <p className="text-xs text-destructive mt-1">{errors.title.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Slug *</label>
-              <input {...register('slug', { onChange: () => setSlugTouched(true) })} placeholder="my-project" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <label htmlFor="project-slug" className="block text-sm font-medium mb-1">Slug *</label>
+              <input id="project-slug" {...register('slug', { onChange: () => setSlugTouched(true) })} placeholder="my-project" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               {errors.slug && <p className="text-xs text-destructive mt-1">{errors.slug.message}</p>}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Description</label>
-            <textarea {...register('description')} rows={3} placeholder="Short description..." className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+            <label htmlFor="project-description" className="block text-sm font-medium mb-1">Mô tả ngắn</label>
+            <textarea id="project-description" {...register('description')} rows={3} placeholder="Mô tả ngắn gọn…" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Content</label>
+            <p className="block text-sm font-medium mb-1">Nội dung chi tiết</p>
             <TipTapEditor
               content={watch('content') ?? ''}
               onChange={(html: string) => setValue('content', html, { shouldValidate: true })}
-              placeholder="Describe the project in detail..."
+              placeholder="Mô tả chi tiết dự án…"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Demo URL</label>
-              <input {...register('demoUrl')} placeholder="https://demo.example.com" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <label htmlFor="project-demo" className="block text-sm font-medium mb-1">URL demo</label>
+              <input id="project-demo" {...register('demoUrl')} placeholder="https://demo.example.com" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               {errors.demoUrl && <p className="text-xs text-destructive mt-1">{errors.demoUrl.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Repo URL</label>
-              <input {...register('repoUrl')} placeholder="https://github.com/..." className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <label htmlFor="project-repo" className="block text-sm font-medium mb-1">URL mã nguồn</label>
+              <input id="project-repo" {...register('repoUrl')} placeholder="https://github.com/..." className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               {errors.repoUrl && <p className="text-xs text-destructive mt-1">{errors.repoUrl.message}</p>}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Tags</label>
-              <input {...register('tags')} placeholder="react, nextjs, typescript" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-              <p className="text-xs text-muted-foreground mt-0.5">Comma-separated</p>
+              <label htmlFor="project-tags" className="block text-sm font-medium mb-1">Thẻ</label>
+              <input id="project-tags" {...register('tags')} placeholder="react, nextjs, typescript" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <p className="text-xs text-muted-foreground mt-0.5">Phân tách bằng dấu phẩy</p>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Status</label>
-              <select {...register('status')} className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                <option value="DRAFT">Draft</option>
-                <option value="PUBLISHED">Published</option>
-                <option value="ARCHIVED">Archived</option>
+              <label htmlFor="project-status" className="block text-sm font-medium mb-1">Trạng thái</label>
+              <select id="project-status" {...register('status')} className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                <option value="DRAFT">Bản nháp</option>
+                <option value="PUBLISHED">Đã xuất bản</option>
+                <option value="ARCHIVED">Lưu trữ</option>
               </select>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <input type="checkbox" id="featured-check" {...register('featured')} className="rounded" />
-            <label htmlFor="featured-check" className="text-sm font-medium">Featured project</label>
+            <label htmlFor="featured-check" className="text-sm font-medium">Dự án nổi bật</label>
           </div>
 
           {/* AI Translation Section */}
@@ -305,7 +309,7 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
                   <Languages className="w-4 h-4 text-primary" />
                   <span className="text-sm font-semibold text-foreground">Bản dịch Tiếng Anh (EN)</span>
                   {hasTranslation ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/10 text-green-700 border border-green-500/20">
                       <CheckCircle2 className="w-3 h-3" /> Đã có bản dịch
                     </span>
                   ) : (
@@ -339,8 +343,10 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
                       onClick={() => setShowTransPreview(!showTransPreview)}
                       className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted"
                       title={showTransPreview ? 'Thu gọn' : 'Xem bản dịch'}
+                      aria-label={showTransPreview ? 'Thu gọn bản dịch' : 'Xem bản dịch'}
+                      aria-expanded={showTransPreview}
                     >
-                      {showTransPreview ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      {showTransPreview ? <ChevronUp className="w-4 h-4" aria-hidden="true" /> : <ChevronDown className="w-4 h-4" aria-hidden="true" />}
                     </button>
                   )}
                 </div>
@@ -350,10 +356,11 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
               {showTransPreview && (
                 <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
                   <div>
-                    <label className="block text-xs font-semibold text-foreground mb-1">
-                      Tiêu đề Tiếng Anh (English Title)
+                    <label htmlFor="project-trans-title" className="block text-xs font-semibold text-foreground mb-1">
+                      Tiêu đề tiếng Anh
                     </label>
                     <input
+                      id="project-trans-title"
                       type="text"
                       value={transData.title}
                       onChange={e => setTransData({ ...transData, title: e.target.value })}
@@ -363,10 +370,11 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-foreground mb-1">
-                      Mô tả ngắn Tiếng Anh (English Description)
+                    <label htmlFor="project-trans-desc" className="block text-xs font-semibold text-foreground mb-1">
+                      Mô tả ngắn tiếng Anh
                     </label>
                     <textarea
+                      id="project-trans-desc"
                       rows={2}
                       value={transData.description}
                       onChange={e => setTransData({ ...transData, description: e.target.value })}
@@ -377,10 +385,11 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
 
                   {transData.content && (
                     <div>
-                      <label className="block text-xs font-semibold text-foreground mb-1">
-                        Nội dung chi tiết Tiếng Anh (English Content HTML)
+                      <label htmlFor="project-trans-content" className="block text-xs font-semibold text-foreground mb-1">
+                        Nội dung chi tiết tiếng Anh (HTML)
                       </label>
                       <textarea
+                        id="project-trans-content"
                         rows={5}
                         value={transData.content}
                         onChange={e => setTransData({ ...transData, content: e.target.value })}
@@ -408,9 +417,9 @@ export function ProjectDialog({ mode, open, onOpenChange, initialData }: Project
         </form>
 
         <DialogFooter>
-          <button type="button" onClick={() => onOpenChange(false)} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">Cancel</button>
+          <button type="button" onClick={() => onOpenChange(false)} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">Hủy</button>
           <button type="submit" form="project-form" disabled={isPending} className="px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/90 disabled:opacity-60 transition-colors">
-            {isPending ? 'Saving…' : mode === 'create' ? 'Create Project' : 'Save Changes'}
+            {isPending ? 'Đang lưu…' : mode === 'create' ? 'Tạo dự án' : 'Lưu thay đổi'}
           </button>
         </DialogFooter>
       </DialogContent>

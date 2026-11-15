@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition, useCallback, useRef } from 'react';
+import React, { useState, useTransition, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { ResumeToolbar } from '@/components/admin/resume/ResumeToolbar';
 import { LiveResumeCanvas } from '@/components/admin/resume/LiveResumeCanvas';
@@ -10,6 +10,7 @@ import { ResumePdfDialog } from '@/components/admin/resume/ResumePdfDialog';
 import { ResumePdfConvertDialog } from '@/components/admin/resume/ResumePdfConvertDialog';
 import { ResumeTranslateDialog } from '@/components/admin/resume/ResumeTranslateDialog';
 import { UnsavedChangesDialog } from '@/components/admin/UnsavedChangesDialog';
+import { useConfirmDialog } from '@/components/admin/DeleteDialog';
 import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes-guard';
 import { ParsedResumeData } from '@/lib/pdf-resume-parser';
 import {
@@ -156,6 +157,10 @@ export function AdminResumeClient({
   // ── UI Controls State ──────────────────────────────────────
   const [isEditMode, setIsEditMode] = useState(true);
   const [isSectionSidebarOpen, setIsSectionSidebarOpen] = useState(true);
+  // The section sidebar covers the canvas on phones; start it collapsed there
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 767px)').matches) setIsSectionSidebarOpen(false);
+  }, []);
   const [isPdfDialogOpen, setIsPdfDialogOpen] = useState(false);
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
   const [isTranslateDialogOpen, setIsTranslateDialogOpen] = useState(false);
@@ -165,6 +170,7 @@ export function AdminResumeClient({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, startSavingTransition] = useTransition();
   const leaveGuard = useUnsavedChangesGuard(hasUnsavedChanges);
+  const { confirm, confirmDialog } = useConfirmDialog();
 
   // Pending deletion tracking for replaced items
   const [deletedExpIds, setDeletedExpIds] = useState<string[]>([]);
@@ -321,13 +327,18 @@ export function AdminResumeClient({
     toast.info(`Đã cập nhật hiển thị của "${SECTION_META[id]?.label || id}"`);
   }, []);
 
-  const handleResetLayout = useCallback(() => {
-    if (window.confirm('Khôi phục lại bố cục và thứ tự mặc định của các mục trên CV?')) {
+  const handleResetLayout = useCallback(async () => {
+    const ok = await confirm({
+      title: 'Khôi phục bố cục mặc định?',
+      description: 'Thứ tự và trạng thái ẩn/hiện của các mục trên CV sẽ trở về mặc định.',
+      confirmLabel: 'Khôi phục',
+    });
+    if (ok) {
       setSectionLayout(DEFAULT_SECTION_LAYOUT);
       setHasUnsavedChanges(true);
       toast.info('Đã khôi phục bố cục mặc định.');
     }
-  }, []);
+  }, [confirm]);
 
   // ── Apply Parsed Data from PDF CV ──────────────────────────
   const handleApplyParsedResume = useCallback(
@@ -734,8 +745,13 @@ export function AdminResumeClient({
   };
 
   // ── Reset to Initial Data ──────────────────────────────────
-  const handleReset = () => {
-    if (window.confirm('Bạn có chắc muốn hoàn tác các thay đổi chưa lưu trên CV?')) {
+  const handleReset = async () => {
+    const ok = await confirm({
+      title: 'Hoàn tác thay đổi chưa lưu?',
+      description: 'Mọi chỉnh sửa trên CV từ lần lưu gần nhất sẽ bị bỏ.',
+      confirmLabel: 'Hoàn tác',
+    });
+    if (ok) {
       const b = baseline.current;
       setProfile(b.profile);
       setExperiences(b.experiences);
@@ -911,7 +927,7 @@ export function AdminResumeClient({
 
   // ── Item Actions: Delete ───────────────────────────────────
   const handleDeleteItem = async (type: ItemType, id: string) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa mục này?')) return;
+    if (!(await confirm({ title: 'Xóa mục này?', description: 'Mục sẽ bị xóa khỏi CV và cơ sở dữ liệu.', confirmLabel: 'Xóa' }))) return;
     const removeById = (prev: any[]) => prev.filter(item => item.id !== id);
 
     try {
@@ -1000,7 +1016,7 @@ export function AdminResumeClient({
   };
 
   const handleDeleteSkill = async (id: string) => {
-    if (!window.confirm('Xóa kỹ năng này khỏi CV?')) return;
+    if (!(await confirm({ title: 'Xóa kỹ năng này khỏi CV?', confirmLabel: 'Xóa' }))) return;
     try {
       if (!isTempId(id)) assertOk(await deleteSkill(id), 'xóa kỹ năng');
       commitSkills(prev =>
@@ -1163,6 +1179,7 @@ export function AdminResumeClient({
         }}
         onConfirmLeave={leaveGuard.confirmLeave}
       />
+      {confirmDialog}
     </div>
   );
 }

@@ -3,8 +3,10 @@ import { Code, Star, BarChart3, Archive, TrendingUp, Tag, ExternalLink } from 'l
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { formatDate } from '@/lib/utils';
+import { StatusBadge } from '@/components/admin/StatusBadge';
+import { AdminPageHeader, ADMIN_PAGE_CLASS } from '@/components/admin/AdminPageHeader';
 
-export const metadata: Metadata = { title: 'Projects Dashboard — Admin' };
+export const metadata: Metadata = { title: 'Thống kê dự án — Admin' };
 
 function StatCard({ title, value, icon: Icon, color = 'default', sub }: {
   title: string; value: number | string; icon: React.ComponentType<{ className?: string }>;
@@ -12,18 +14,18 @@ function StatCard({ title, value, icon: Icon, color = 'default', sub }: {
 }) {
   const colors = {
     default: 'bg-muted text-muted-foreground',
-    green: 'bg-green-500/10 text-green-600 dark:text-green-400',
-    yellow: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
-    blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-    purple: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
-    orange: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+    green: 'bg-green-500/10 text-green-700',
+    yellow: 'bg-amber-500/10 text-amber-700',
+    blue: 'bg-blue-500/10 text-blue-700',
+    purple: 'bg-purple-500/10 text-purple-700',
+    orange: 'bg-orange-500/10 text-orange-700',
   };
   return (
     <div className="p-5 rounded-xl border border-border bg-card">
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm font-medium text-muted-foreground">{title}</p>
         <div className={`p-2 rounded-lg ${colors[color]}`}>
-          <Icon className="h-4 w-4" />
+          <Icon className="h-4 w-4" aria-hidden="true" />
         </div>
       </div>
       <p className="text-3xl font-bold text-foreground">{value}</p>
@@ -69,7 +71,7 @@ export default async function ProjectsDashboardPage() {
   const now = new Date();
   const months = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
-    return { label: d.toLocaleString('en-US', { month: 'short' }), year: d.getFullYear(), month: d.getMonth() };
+    return { label: `T${d.getMonth() + 1}`, year: d.getFullYear(), month: d.getMonth() };
   });
   const projectsByMonth = months.map(m => ({
     ...m,
@@ -84,37 +86,37 @@ export default async function ProjectsDashboardPage() {
   const recent = [...projects].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 5);
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-6xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Projects Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Overview and analytics for your projects</p>
-        </div>
-        <Link
-          href="/nhatphanhk102/projects"
-          className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors"
-        >
-          <Code className="h-4 w-4" /> View All Projects
-        </Link>
-      </div>
+    <main className={ADMIN_PAGE_CLASS}>
+      <AdminPageHeader
+        title="Thống kê dự án"
+        description="Tổng quan và phân tích các dự án"
+        actions={
+          <Link
+            href="/nhatphanhk102/projects"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+          >
+            <Code className="h-4 w-4" aria-hidden="true" /> Xem tất cả dự án
+          </Link>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StatCard title="Total" value={total} icon={Code} />
-        <StatCard title="Published" value={published} icon={TrendingUp} color="green" sub="Live" />
-        <StatCard title="Draft" value={draft} icon={BarChart3} color="yellow" />
-        <StatCard title="Archived" value={archived} icon={Archive} color="purple" />
-        <StatCard title="Featured" value={featured} icon={Star} color="orange" sub="Highlighted" />
-        <StatCard title="With Demo" value={withDemo} icon={ExternalLink} color="blue" sub="Has live URL" />
+        <StatCard title="Tổng số" value={total} icon={Code} />
+        <StatCard title="Đã xuất bản" value={published} icon={TrendingUp} color="green" sub="Đang hiển thị" />
+        <StatCard title="Bản nháp" value={draft} icon={BarChart3} color="yellow" />
+        <StatCard title="Lưu trữ" value={archived} icon={Archive} color="purple" />
+        <StatCard title="Nổi bật" value={featured} icon={Star} color="orange" sub="Được làm nổi bật" />
+        <StatCard title="Có demo" value={withDemo} icon={ExternalLink} color="blue" sub="Có URL chạy thử" />
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Projects by month */}
         <div className="p-6 rounded-xl border border-border bg-card">
           <div className="flex items-center gap-2 mb-5">
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            <h2 className="font-semibold text-foreground">Projects Added</h2>
-            <span className="text-xs text-muted-foreground ml-auto">Last 6 months</span>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            <h2 className="font-semibold text-foreground">Dự án mới thêm</h2>
+            <span className="text-xs text-muted-foreground ml-auto">6 tháng gần nhất</span>
           </div>
           <div className="flex items-end gap-2 h-32">
             {projectsByMonth.map(m => {
@@ -138,11 +140,11 @@ export default async function ProjectsDashboardPage() {
         {/* Top tech tags */}
         <div className="p-6 rounded-xl border border-border bg-card">
           <div className="flex items-center gap-2 mb-5">
-            <Tag className="h-4 w-4 text-muted-foreground" />
-            <h2 className="font-semibold text-foreground">Top Technologies</h2>
+            <Tag className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            <h2 className="font-semibold text-foreground">Công nghệ phổ biến</h2>
           </div>
           {topTags.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No tags yet</p>
+            <p className="text-sm text-muted-foreground">Chưa có thẻ nào.</p>
           ) : (
             <div className="space-y-3">
               {topTags.map(([name, count]) => (
@@ -156,15 +158,15 @@ export default async function ProjectsDashboardPage() {
       <div className="grid md:grid-cols-2 gap-6">
         {/* Status breakdown */}
         <div className="p-6 rounded-xl border border-border bg-card">
-          <h2 className="font-semibold text-foreground mb-4">Status Breakdown</h2>
+          <h2 className="font-semibold text-foreground mb-4">Phân bố trạng thái</h2>
           {total === 0 ? (
-            <p className="text-sm text-muted-foreground">No projects yet. <Link href="/nhatphanhk102/projects" className="text-primary underline">Add your first project.</Link></p>
+            <p className="text-sm text-muted-foreground">Chưa có dự án nào. <Link href="/nhatphanhk102/projects" className="text-primary underline">Thêm dự án đầu tiên.</Link></p>
           ) : (
             <div className="space-y-3">
-              <MiniBar label="Published" value={published} max={total} color="bg-green-500" />
-              <MiniBar label="Draft" value={draft} max={total} color="bg-yellow-500" />
-              <MiniBar label="Archived" value={archived} max={total} color="bg-purple-500" />
-              <MiniBar label="Featured" value={featured} max={total} color="bg-orange-500" />
+              <MiniBar label="Đã xuất bản" value={published} max={total} color="bg-green-500" />
+              <MiniBar label="Bản nháp" value={draft} max={total} color="bg-amber-500" />
+              <MiniBar label="Lưu trữ" value={archived} max={total} color="bg-purple-500" />
+              <MiniBar label="Nổi bật" value={featured} max={total} color="bg-orange-500" />
             </div>
           )}
         </div>
@@ -172,11 +174,11 @@ export default async function ProjectsDashboardPage() {
         {/* Featured projects */}
         <div className="p-6 rounded-xl border border-border bg-card">
           <div className="flex items-center gap-2 mb-4">
-            <Star className="h-4 w-4 text-orange-500" />
-            <h2 className="font-semibold text-foreground">Featured Projects</h2>
+            <Star className="h-4 w-4 text-orange-500" aria-hidden="true" />
+            <h2 className="font-semibold text-foreground">Dự án nổi bật</h2>
           </div>
           {featuredProjects.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No featured projects yet.</p>
+            <p className="text-sm text-muted-foreground">Chưa có dự án nổi bật.</p>
           ) : (
             <div className="space-y-2">
               {featuredProjects.map(p => (
@@ -190,8 +192,8 @@ export default async function ProjectsDashboardPage() {
                     </div>
                   </div>
                   {p.demoUrl && (
-                    <a href={p.demoUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground ml-2">
-                      <ExternalLink className="h-3.5 w-3.5" />
+                    <a href={p.demoUrl} target="_blank" rel="noopener noreferrer" aria-label={`Mở demo ${p.title}`} className="text-muted-foreground hover:text-foreground ml-2">
+                      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                     </a>
                   )}
                 </div>
@@ -203,9 +205,9 @@ export default async function ProjectsDashboardPage() {
 
       {/* Recent projects */}
       <div className="p-6 rounded-xl border border-border bg-card">
-        <h2 className="font-semibold text-foreground mb-4">Recently Added</h2>
+        <h2 className="font-semibold text-foreground mb-4">Mới thêm gần đây</h2>
         {recent.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No projects yet.</p>
+          <p className="text-sm text-muted-foreground">Chưa có dự án nào.</p>
         ) : (
           <div className="divide-y divide-border">
             {recent.map(project => (
@@ -214,18 +216,14 @@ export default async function ProjectsDashboardPage() {
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium text-foreground truncate">{project.title}</p>
                     {project.featured && (
-                      <Star className="h-3 w-3 text-orange-500 shrink-0" />
+                      <Star className="h-3 w-3 text-orange-500 shrink-0" aria-label="Nổi bật" />
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {formatDate(project.createdAt, 'vi')}
                   </p>
                 </div>
-                <span className={`px-2 py-0.5 text-xs rounded-full shrink-0 ${
-                  project.status === 'PUBLISHED' ? 'bg-green-500/10 text-green-600 dark:text-green-400'
-                  : project.status === 'DRAFT' ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400'
-                  : 'bg-muted text-muted-foreground'
-                }`}>{project.status}</span>
+                <StatusBadge status={project.status} className="shrink-0" />
               </div>
             ))}
           </div>
