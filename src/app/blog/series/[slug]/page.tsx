@@ -4,6 +4,7 @@ import { getPublicSeriesBySlug, getPublicSeries } from '@/lib/actions/series';
 import { SeriesDetailClient } from '@/components/blog/SeriesDetailClient';
 import { UserBreadcrumb } from '@/components/UserBreadcrumb';
 import type { Metadata } from 'next';
+import { buildOpenGraph } from '@/lib/constants';
 
 interface SeriesPageProps {
   params: Promise<{ slug: string }>;
@@ -29,18 +30,19 @@ export async function generateMetadata({ params }: SeriesPageProps): Promise<Met
     };
   }
 
+  const description =
+    series.description || `Explore all parts of the ${series.title} series.`;
+
   return {
-    title: `${series.title} | Series`,
-    description:
-      series.description ||
-      `Explore all parts of the ${series.title} series on nhatphanhk102.`,
-    openGraph: {
-      title: `${series.title} | Series`,
-      description:
-        series.description ||
-        `Explore all parts of the ${series.title} series on nhatphanhk102.`,
-      images: series.coverUrl ? [{ url: series.coverUrl }] : undefined,
-    },
+    title: series.title,
+    description,
+    openGraph: buildOpenGraph({
+      title: series.title,
+      description,
+      path: `/blog/series/${slug}`,
+      locale,
+      images: series.coverUrl ? [series.coverUrl] : undefined,
+    }),
   };
 }
 

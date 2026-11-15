@@ -6,6 +6,8 @@ import { getSeriesForBlog } from '@/lib/actions/series';
 import { BlogPostDetailClient } from '@/components/blog/BlogPostDetailClient';
 import { UserBreadcrumb } from '@/components/UserBreadcrumb';
 import type { Metadata } from 'next';
+import { buildOpenGraph } from '@/lib/constants';
+import { getServerLocale } from '@/lib/i18n/server';
 
 export const revalidate = 3600;
 
@@ -15,7 +17,8 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPublicBlogBySlug(slug);
+  const locale = await getServerLocale();
+  const post = await getPublicBlogBySlug(slug, locale);
 
   if (!post) {
     return { title: 'Post Not Found' };
@@ -24,19 +27,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: post.title,
     description: post.excerpt,
-    openGraph: {
+    alternates: { canonical: `/blog/${slug}` },
+    openGraph: buildOpenGraph({
       title: post.title,
       description: post.excerpt,
+      path: `/blog/${slug}`,
+      locale,
       type: 'article',
+      images: post.thumbnailUrl ? [post.thumbnailUrl] : undefined,
       publishedTime: post.publishedAt,
+      modifiedTime: post.updatedAt,
       authors: ['Phan Hoàng Nhật'],
-    },
+    }),
   };
 }
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
-  const post = await getPublicBlogBySlug(slug);
+  const locale = await getServerLocale();
+  const post = await getPublicBlogBySlug(slug, locale);
 
   if (!post) notFound();
 
@@ -44,7 +53,7 @@ export default async function BlogPostPage({ params }: Props) {
   const [session, translations, seriesData] = await Promise.all([
     auth(),
     getBlogTranslations(post.id),
-    post.seriesId ? getSeriesForBlog(post.id) : Promise.resolve(null),
+    post.seriesId ? getSeriesForBlog(post.id, locale) : Promise.resolve(null),
   ]);
 
   const isAdmin = (session?.user as { role?: string } | undefined)?.role === 'ADMIN';

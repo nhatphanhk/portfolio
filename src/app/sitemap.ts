@@ -29,14 +29,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const blogRoutes: MetadataRoute.Sitemap = blogs.map(post => ({
     url: `${SITE_URL}/blog/${post.slug}`,
-    lastModified: new Date(post.publishedAt),
+    lastModified: new Date(post.updatedAt),
     changeFrequency: 'monthly',
     priority: 0.6,
   }));
 
   const projectRoutes: MetadataRoute.Sitemap = projects.map(project => ({
     url: `${SITE_URL}/project/${project.slug}`,
-    lastModified: new Date(project.publishedAt),
+    lastModified: new Date(project.updatedAt),
     changeFrequency: 'monthly',
     priority: 0.6,
   }));

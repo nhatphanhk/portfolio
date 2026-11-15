@@ -1,33 +1,41 @@
 import React from 'react';
-import { FileText, Code, Users, Layers, Award, BarChart3, TrendingUp, Mail } from 'lucide-react';
+import Link from 'next/link';
+import { FileText, Code, Layers, Award, BarChart3, TrendingUp, Mail } from 'lucide-react';
 import { getAllBlogsFromDb } from '@/lib/actions/blog';
 import { getAllProjectsFromDb } from '@/lib/actions/project';
 import { getAllSkillsFromDb } from '@/lib/actions/skill';
 import { getAllCertificationsFromDb } from '@/lib/actions/certification';
 import { getAllContactsFromDb } from '@/lib/actions/contact';
+import { StatusBadge } from '@/components/admin/StatusBadge';
+import { AdminPageHeader, ADMIN_PAGE_CLASS } from '@/components/admin/AdminPageHeader';
 import type { Metadata } from 'next';
+import { formatDate } from '@/lib/utils';
 
-export const metadata: Metadata = { title: 'Dashboard — Admin' };
+export const metadata: Metadata = { title: 'Tổng quan — Admin' };
 
 interface StatCardProps {
   title: string;
   value: number;
   icon: React.ComponentType<{ className?: string }>;
   description?: string;
+  href: string;
 }
 
-function StatCard({ title, value, icon: Icon, description }: StatCardProps) {
+function StatCard({ title, value, icon: Icon, description, href }: StatCardProps) {
   return (
-    <div className="p-6 rounded-xl border border-border bg-card">
+    <Link
+      href={href}
+      className="p-6 rounded-xl border border-border bg-card hover:border-primary/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm font-medium text-muted-foreground">{title}</p>
         <div className="p-2 rounded-lg bg-muted">
-          <Icon className="h-4 w-4 text-muted-foreground" />
+          <Icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
         </div>
       </div>
-      <p className="text-3xl font-bold text-foreground">{value}</p>
+      <p className="text-3xl font-bold text-foreground">{value.toLocaleString('vi-VN')}</p>
       {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
-    </div>
+    </Link>
   );
 }
 
@@ -40,24 +48,33 @@ export default async function DashboardPage() {
     getAllContactsFromDb(),
   ]);
 
-  const stats = [
-    { title: 'Blog Posts', value: blogs.length, icon: FileText, description: 'Total articles' },
-    { title: 'Projects', value: projects.length, icon: Code, description: 'Total projects' },
-    { title: 'Skills', value: skills.length, icon: Layers, description: 'Tracked technologies' },
-    { title: 'Certifications', value: certifications.length, icon: Award, description: 'Credentials earned' },
-    { title: 'Messages', value: contacts.filter(c => c.status === 'UNREAD').length, icon: Mail, description: 'Unread contact messages' },
-    { title: 'Page Views', value: 0, icon: BarChart3, description: 'All time (analytics pending)' },
-  ] as const;
+  const stats: StatCardProps[] = [
+    { title: 'Bài viết', value: blogs.length, icon: FileText, description: 'Tổng số bài viết', href: '/nhatphanhk102/blogs' },
+    { title: 'Dự án', value: projects.length, icon: Code, description: 'Tổng số dự án', href: '/nhatphanhk102/projects' },
+    { title: 'Kỹ năng', value: skills.length, icon: Layers, description: 'Công nghệ đang theo dõi', href: '/nhatphanhk102/skills' },
+    { title: 'Chứng chỉ', value: certifications.length, icon: Award, description: 'Chứng chỉ đã đạt', href: '/nhatphanhk102/certifications' },
+    {
+      title: 'Tin nhắn',
+      value: contacts.filter(c => c.status === 'UNREAD').length,
+      icon: Mail,
+      description: 'Tin nhắn liên hệ chưa đọc',
+      href: '/nhatphanhk102/contacts',
+    },
+    {
+      title: 'Lượt xem',
+      value: blogs.reduce((n, b) => n + (b.viewCount ?? 0), 0),
+      icon: BarChart3,
+      description: 'Tổng lượt xem bài viết',
+      href: '/nhatphanhk102/blogs/dashboard',
+    },
+  ];
 
   const recentPosts = blogs.slice(0, 3);
   const recentProjects = projects.slice(0, 3);
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-6xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Overview of your portfolio content</p>
-      </div>
+    <main className={ADMIN_PAGE_CLASS}>
+      <AdminPageHeader title="Tổng quan" description="Tóm tắt nội dung portfolio" />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -68,62 +85,65 @@ export default async function DashboardPage() {
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Recent Posts */}
-        <div className="p-6 rounded-xl border border-border bg-card">
+        <section className="p-6 rounded-xl border border-border bg-card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-foreground">Recent Blog Posts</h2>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <h2 className="font-semibold text-foreground">Bài viết gần đây</h2>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
           </div>
           <div className="space-y-3">
+            {recentPosts.length === 0 && (
+              <p className="text-sm text-muted-foreground py-6 text-center">Chưa có bài viết nào.</p>
+            )}
             {recentPosts.map(post => (
-              <div key={post.id} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
-                <FileText className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <Link
+                key={post.id}
+                href={`/nhatphanhk102/blogs/editor/${post.id}`}
+                className="flex items-start gap-3 py-2 border-b border-border last:border-0 group"
+              >
+                <FileText className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" aria-hidden="true" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground truncate">{post.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(post.createdAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
+                  <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                    {post.title}
                   </p>
+                  <p className="text-xs text-muted-foreground">{formatDate(post.createdAt, 'vi')}</p>
                 </div>
-                <span className={`px-2 py-0.5 text-xs rounded-full shrink-0 ${post.status === 'PUBLISHED' ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-muted text-muted-foreground'}`}>
-                  {post.status}
-                </span>
-              </div>
+                <StatusBadge status={post.status} className="shrink-0" />
+              </Link>
             ))}
           </div>
-        </div>
+        </section>
 
         {/* Recent Projects */}
-        <div className="p-6 rounded-xl border border-border bg-card">
+        <section className="p-6 rounded-xl border border-border bg-card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-foreground">Recent Projects</h2>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <h2 className="font-semibold text-foreground">Dự án gần đây</h2>
+            <Code className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
           </div>
           <div className="space-y-3">
+            {recentProjects.length === 0 && (
+              <p className="text-sm text-muted-foreground py-6 text-center">Chưa có dự án nào.</p>
+            )}
             {recentProjects.map(project => (
               <div key={project.id} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
-                <Code className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <Code className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" aria-hidden="true" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground truncate">{project.title}</p>
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {project.featured && <span aria-label="Nổi bật">★ </span>}
+                    {project.title}
+                  </p>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {project.tags.slice(0, 2).map(pt => (
-                      <span key={pt.tag.name} className="text-xs text-muted-foreground">{pt.tag.name}</span>
+                      <span key={pt.tag.name} className="text-xs text-muted-foreground">
+                        {pt.tag.name}
+                      </span>
                     ))}
                   </div>
                 </div>
-                <span className={`px-2 py-0.5 text-xs rounded-full shrink-0 ${
-                  project.featured
-                    ? 'bg-primary/10 text-primary'
-                    : 'bg-muted text-muted-foreground'
-                }`}>
-                  {project.featured ? 'Featured' : 'Active'}
-                </span>
+                <StatusBadge status={project.status} className="shrink-0" />
               </div>
             ))}
           </div>
-        </div>
+        </section>
       </div>
     </main>
   );

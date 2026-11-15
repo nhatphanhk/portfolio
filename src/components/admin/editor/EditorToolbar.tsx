@@ -41,7 +41,7 @@ function Divider() {
 
 function IconButton({
   onClick,
-  isActive = false,
+  isActive,
   disabled = false,
   children,
   title,
@@ -58,6 +58,9 @@ function IconButton({
       onClick={onClick}
       disabled={disabled}
       title={title}
+      aria-label={title}
+      // Only formatting toggles (callers that pass isActive) expose a pressed state
+      aria-pressed={isActive === undefined ? undefined : isActive}
       className={`p-1.5 rounded-md transition-colors cursor-pointer ${
         isActive ? 'bg-primary/15 text-primary font-bold' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
       } ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
@@ -115,14 +118,14 @@ export function EditorToolbar({ editor, onInsertImage, onOpenCheatsheet }: Edito
       <IconButton
         onClick={() => editor.chain().focus().undo().run()}
         disabled={!editor.can().undo()}
-        title="Undo (Ctrl+Z)"
+        title="Hoàn tác (Ctrl+Z)"
       >
         <Undo className="w-4 h-4" />
       </IconButton>
       <IconButton
         onClick={() => editor.chain().focus().redo().run()}
         disabled={!editor.can().redo()}
-        title="Redo (Ctrl+Shift+Z)"
+        title="Làm lại (Ctrl+Shift+Z)"
       >
         <Redo className="w-4 h-4" />
       </IconButton>
@@ -133,21 +136,21 @@ export function EditorToolbar({ editor, onInsertImage, onOpenCheatsheet }: Edito
       <IconButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
         isActive={editor.isActive('heading', { level: 1 })}
-        title="Heading 1"
+        title="Tiêu đề 1"
       >
         <Heading1 className="w-4 h-4" />
       </IconButton>
       <IconButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         isActive={editor.isActive('heading', { level: 2 })}
-        title="Heading 2"
+        title="Tiêu đề 2"
       >
         <Heading2 className="w-4 h-4" />
       </IconButton>
       <IconButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
         isActive={editor.isActive('heading', { level: 3 })}
-        title="Heading 3"
+        title="Tiêu đề 3"
       >
         <Heading3 className="w-4 h-4" />
       </IconButton>
@@ -159,7 +162,7 @@ export function EditorToolbar({ editor, onInsertImage, onOpenCheatsheet }: Edito
         onClick={() => editor.chain().focus().toggleBold().run()}
         disabled={!editor.can().toggleBold()}
         isActive={editor.isActive('bold')}
-        title="Bold (Ctrl+B)"
+        title="In đậm (Ctrl+B)"
       >
         <Bold className="w-4 h-4" />
       </IconButton>
@@ -167,7 +170,7 @@ export function EditorToolbar({ editor, onInsertImage, onOpenCheatsheet }: Edito
         onClick={() => editor.chain().focus().toggleItalic().run()}
         disabled={!editor.can().toggleItalic()}
         isActive={editor.isActive('italic')}
-        title="Italic (Ctrl+I)"
+        title="In nghiêng (Ctrl+I)"
       >
         <Italic className="w-4 h-4" />
       </IconButton>
@@ -175,14 +178,14 @@ export function EditorToolbar({ editor, onInsertImage, onOpenCheatsheet }: Edito
         onClick={() => editor.chain().focus().toggleStrike().run()}
         disabled={!editor.can().toggleStrike()}
         isActive={editor.isActive('strike')}
-        title="Strikethrough"
+        title="Gạch ngang chữ"
       >
         <Strikethrough className="w-4 h-4" />
       </IconButton>
       <IconButton
         onClick={() => editor.chain().focus().toggleHighlight().run()}
         isActive={editor.isActive('highlight')}
-        title="Highlight"
+        title="Tô sáng"
       >
         <Highlighter className="w-4 h-4" />
       </IconButton>
@@ -193,14 +196,14 @@ export function EditorToolbar({ editor, onInsertImage, onOpenCheatsheet }: Edito
       <IconButton
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         isActive={editor.isActive('bulletList')}
-        title="Bullet List"
+        title="Danh sách gạch đầu dòng"
       >
         <List className="w-4 h-4" />
       </IconButton>
       <IconButton
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         isActive={editor.isActive('orderedList')}
-        title="Ordered List"
+        title="Danh sách đánh số"
       >
         <ListOrdered className="w-4 h-4" />
       </IconButton>
@@ -212,14 +215,14 @@ export function EditorToolbar({ editor, onInsertImage, onOpenCheatsheet }: Edito
         onClick={() => editor.chain().focus().toggleCode().run()}
         disabled={!editor.can().toggleCode()}
         isActive={editor.isActive('code')}
-        title="Inline Code (Mã nội dòng)"
+        title="Mã nội dòng"
       >
         <Code className="w-4 h-4" />
       </IconButton>
       <IconButton
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
         isActive={editor.isActive('codeBlock') && !editor.isActive('codeBlock', { language: 'mermaid' })}
-        title="Code Block (Khối mã nguồn)"
+        title="Khối mã nguồn"
       >
         <Code2 className="w-4 h-4" />
       </IconButton>
@@ -291,6 +294,7 @@ export function EditorToolbar({ editor, onInsertImage, onOpenCheatsheet }: Edito
             onClick={() => (editor.chain().focus() as any).deleteTable().run()}
             className="p-1 rounded hover:bg-rose-500/20 text-rose-600"
             title="Xóa bảng"
+            aria-label="Xóa bảng"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -300,14 +304,14 @@ export function EditorToolbar({ editor, onInsertImage, onOpenCheatsheet }: Edito
       <IconButton
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
         isActive={editor.isActive('blockquote')}
-        title="Blockquote"
+        title="Trích dẫn"
       >
         <Quote className="w-4 h-4" />
       </IconButton>
       <IconButton
         onClick={() => editor.chain().focus().setParagraph().run()}
         isActive={editor.isActive('paragraph')}
-        title="Paragraph"
+        title="Đoạn văn"
       >
         <AlignLeft className="w-4 h-4" />
       </IconButton>

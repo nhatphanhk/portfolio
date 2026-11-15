@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { sanitizeRichHtml } from '@/lib/sanitize-html';
 import { TRANSLATABLE_SITE_CONTENT_KEYS } from '@/lib/site-content-defaults';
 
 export interface TranslatedBlogData {
@@ -121,19 +122,37 @@ ${hasContent ? rawContent : '(No content)'}
         .replace(/\s*```$/i, '')
         .trim();
 
+      const finishReason = data.candidates?.[0]?.finishReason;
+      if (finishReason && finishReason !== 'STOP') {
+        // MAX_TOKENS / SAFETY / RECITATION → the JSON is cut off or missing; try the next model
+        lastErrorMessage = `Model ${model} stopped early (${finishReason})`;
+        console.warn(lastErrorMessage);
+        continue;
+      }
+
       let parsed: Partial<TranslatedBlogData> = {};
       try {
         parsed = JSON.parse(cleaned);
       } catch (_parseErr) {
-        // Resilient fallback regex extraction for large payloads with escaped characters
-        const titleMatch = cleaned.match(/"title"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/);
-        const excerptMatch = cleaned.match(/"excerpt"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/);
-        const contentMatch = cleaned.match(/"content"\s*:\s*"([\s\S]*?)"\s*}/);
-        parsed = {
-          title: titleMatch ? titleMatch[1] : undefined,
-          excerpt: excerptMatch ? excerptMatch[1] : undefined,
-          content: contentMatch ? contentMatch[1] : undefined,
+        // Fallback for output that is valid apart from trailing junk: pull the string fields out
+        // and JSON-decode them, so escapes (\n, \") are never written to the DB verbatim.
+        const field = (name: string): string | undefined => {
+          const m = cleaned.match(new RegExp(`"${name}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`));
+          if (!m) return undefined;
+          try {
+            return JSON.parse(`"${m[1]}"`) as string;
+          } catch {
+            return undefined;
+          }
         };
+        parsed = { title: field('title'), excerpt: field('excerpt'), content: field('content') };
+      }
+
+      if (hasContent && !parsed.content) {
+        // Never report the untranslated original as a successful translation
+        lastErrorMessage = `Model ${model} returned no translated content`;
+        console.warn(lastErrorMessage);
+        continue;
       }
 
       return {
@@ -141,7 +160,7 @@ ${hasContent ? rawContent : '(No content)'}
         data: {
           title: (parsed.title || title).trim(),
           excerpt: (parsed.excerpt ?? excerpt).trim(),
-          content: hasContent ? (parsed.content ?? rawContent) : rawContent,
+          content: hasContent ? (parsed.content as string) : rawContent,
         },
       };
     } catch (err: any) {
@@ -182,6 +201,7 @@ export async function saveBlogTranslationToDb(
   targetLocale: 'vi' | 'en' = 'vi'
 ): Promise<boolean> {
   try {
+    data = { ...data, content: sanitizeRichHtml(data.content) };
     await prisma.contentTranslation.upsert({
       where: {
         entityType_entityId_locale: {
@@ -226,51 +246,6 @@ export async function translateAndSaveBlogPost(
 
   await saveBlogTranslationToDb(blogId, result, targetLocale);
   return result;
-}
-
-/**
- * Retrieves cached translation from DB, or triggers AI translation on-demand and saves it.
- */
-export async function getOrTranslateBlog(
-  blogId: string,
-  sourceData: { title: string; excerpt?: string | null; content: string },
-  targetLocale: 'vi' | 'en'
-): Promise<TranslatedBlogData> {
-  // 1. Check database first (0 ms wait if pre-translated)
-  try {
-    const cached = await prisma.contentTranslation.findUnique({
-      where: {
-        entityType_entityId_locale: {
-          entityType: 'blog',
-          entityId: blogId,
-          locale: targetLocale,
-        },
-      },
-    });
-
-    if (cached?.content && cached?.title) {
-      return {
-        title: cached.title,
-        excerpt: cached.excerpt || sourceData.excerpt || '',
-        content: cached.content,
-      };
-    }
-  } catch (dbErr) {
-    console.warn('Could not query contentTranslation table:', dbErr);
-  }
-
-  // 2. If not found in DB, translate with AI and save to DB
-  const aiResult = await translateAndSaveBlogPost(blogId, sourceData, targetLocale);
-  if (aiResult) {
-    return aiResult;
-  }
-
-  // 3. Fallback to original
-  return {
-    title: sourceData.title,
-    excerpt: sourceData.excerpt || '',
-    content: sourceData.content,
-  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -324,6 +299,7 @@ export async function saveEntityTranslationToDb(
   locale: string = 'en'
 ): Promise<boolean> {
   try {
+    if (data.content) data = { ...data, content: sanitizeRichHtml(data.content) };
     await prisma.contentTranslation.upsert({
       where: {
         entityType_entityId_locale: {

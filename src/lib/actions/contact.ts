@@ -7,14 +7,6 @@ import { ensureAdmin } from '@/lib/auth-utils';
 
 const contactStatusSchema = z.enum(['UNREAD', 'READ', 'REPLIED']);
 
-const visitorSchema = z.object({
-  name: z.string().min(1).max(255),
-  email: z.string().email(),
-  reason: z.string().min(1).max(1000),
-});
-
-export type VisitorFormData = z.infer<typeof visitorSchema>;
-
 export async function updateContactStatus(
   id: string,
   status: 'UNREAD' | 'READ' | 'REPLIED'
@@ -39,34 +31,18 @@ export async function deleteContact(id: string) {
   return { ok: true };
 }
 
-export async function logVisitor(formData: VisitorFormData) {
-  const parsed = visitorSchema.safeParse(formData);
-  if (!parsed.success)
-    return { ok: false, error: parsed.error.flatten().fieldErrors };
-
-  await prisma.contact.create({
-    data: {
-      name: parsed.data.name,
-      email: parsed.data.email,
-      subject: 'Visitor Log',
-      message: parsed.data.reason,
-      status: 'UNREAD',
-    },
-  });
-
-  return { ok: true };
-}
-
 export async function getAllContactsFromDb() {
+  await ensureAdmin();
   return prisma.contact.findMany({
-    where: { NOT: { subject: 'Visitor Log' } },
+    where: { type: 'MESSAGE' },
     orderBy: { createdAt: 'desc' },
   });
 }
 
 export async function getVisitorLogsFromDb() {
+  await ensureAdmin();
   return prisma.contact.findMany({
-    where: { subject: 'Visitor Log' },
+    where: { type: 'VISITOR_LOG' },
     orderBy: { createdAt: 'desc' },
   });
 }

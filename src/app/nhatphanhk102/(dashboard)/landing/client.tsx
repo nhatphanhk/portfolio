@@ -13,6 +13,10 @@ import {
   Languages,
 } from 'lucide-react';
 import { saveSiteContentBundle, type SiteContentBundle } from '@/lib/actions/site-content';
+import { UnsavedChangesDialog } from '@/components/admin/UnsavedChangesDialog';
+import { useConfirmDialog } from '@/components/admin/DeleteDialog';
+import { AdminPageHeader, ADMIN_PAGE_CLASS } from '@/components/admin/AdminPageHeader';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes-guard';
 import {
   DEFAULT_SITE_CONTENT,
   DEFAULT_VI_SITE_CONTENT,
@@ -54,6 +58,12 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
     return map;
   });
 
+  // What the server currently holds; the page is dirty whenever the editors differ from it.
+  const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify({ en: itemsEn, vi: itemsVi }));
+  const isDirty = JSON.stringify({ en: itemsEn, vi: itemsVi }) !== savedSnapshot;
+  const leaveGuard = useUnsavedChangesGuard(isDirty);
+  const { confirm, confirmDialog } = useConfirmDialog();
+
   const isTranslatable = (key: string) => {
     return (TRANSLATABLE_SITE_CONTENT_KEYS as readonly string[]).includes(key);
   };
@@ -75,37 +85,52 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
     }
   };
 
-  const handleResetSection = (grp: string) => {
+  const handleResetSection = async (grp: string, title: string) => {
+    const ok = await confirm({
+      title: `Khôi phục mặc định cho "${title}"?`,
+      description: 'Các chỉnh sửa chưa lưu trong mục này sẽ bị thay bằng nội dung mặc định.',
+      confirmLabel: 'Khôi phục',
+    });
+    if (!ok) return;
     const defaults = DEFAULT_SITE_CONTENT.filter(d => d.grp === grp);
+    const shared = defaults.filter(d => !isTranslatable(d.key));
+    const applyShared = (prev: Record<string, string>) => {
+      const next = { ...prev };
+      for (const d of shared) next[d.key] = d.value;
+      return next;
+    };
     if (activeTab === 'en') {
       setItemsEn(prev => {
-        const next = { ...prev };
-        for (const d of defaults) {
-          next[d.key] = d.value;
-        }
+        const next = applyShared(prev);
+        for (const d of defaults) next[d.key] = d.value;
         return next;
       });
-      toast.info(`Reset ${grp} (English) to defaults`);
+      setItemsVi(applyShared); // URLs / numbers are shared between both languages
+      toast.info(`Đã khôi phục "${title}" (tiếng Anh) về mặc định.`);
     } else {
       setItemsVi(prev => {
-        const next = { ...prev };
-        for (const d of defaults) {
-          if (DEFAULT_VI_SITE_CONTENT[d.key]) {
-            next[d.key] = DEFAULT_VI_SITE_CONTENT[d.key];
-          } else {
-            next[d.key] = d.value;
-          }
-        }
+        const next = applyShared(prev);
+        for (const d of defaults) next[d.key] = DEFAULT_VI_SITE_CONTENT[d.key] ?? d.value;
         return next;
       });
-      toast.info(`Reset ${grp} (Tiếng Việt) to defaults`);
+      setItemsEn(applyShared);
+      toast.info(`Đã khôi phục "${title}" (tiếng Việt) về mặc định.`);
     }
   };
 
   // AI Translation with Google Gemini via /api/translate
   const handleAiTranslate = async () => {
     const targetLocale = activeTab === 'en' ? 'vi' : 'en';
-    const sourceData = activeTab === 'en' ? itemsEn : itemsVi;
+    // Only text fields go to the model; URLs and numbers are shared and must not be "translated"
+    const sourceData = Object.fromEntries(
+      Object.entries(activeTab === 'en' ? itemsEn : itemsVi).filter(([key]) => isTranslatable(key))
+    );
+    const ok = await confirm({
+      title: `Dịch sang ${targetLocale === 'vi' ? 'tiếng Việt' : 'tiếng Anh'} bằng AI?`,
+      description: `Bản dịch AI sẽ ghi đè các trường văn bản hiện có ở tab ${targetLocale === 'vi' ? 'Tiếng Việt' : 'Tiếng Anh'}.`,
+      confirmLabel: 'Dịch và ghi đè',
+    });
+    if (!ok) return;
 
     setIsTranslating(true);
     const toastId = toast.loading(
@@ -128,23 +153,27 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
       if (!res.ok || !json.ok || !json.data) {
         throw new Error(json.error || 'Dịch tự động thất bại');
       }
+      const translated = Object.fromEntries(
+        Object.entries(json.data as Record<string, string>).filter(([key]) => isTranslatable(key))
+      );
 
       if (targetLocale === 'vi') {
-        setItemsVi(prev => ({ ...prev, ...json.data }));
+        setItemsVi(prev => ({ ...prev, ...translated }));
         setActiveTab('vi');
-        toast.success('Đã chuyển ngữ thành công sang Tiếng Việt! Vui lòng xem lại và bấm Lưu.', {
+        toast.success('Đã dịch sang tiếng Việt. Hãy xem lại rồi bấm Lưu.', {
           id: toastId,
         });
       } else {
-        setItemsEn(prev => ({ ...prev, ...json.data }));
+        setItemsEn(prev => ({ ...prev, ...translated }));
         setActiveTab('en');
-        toast.success('Translated successfully to English! Please review and click Save.', {
+        toast.success('Đã dịch sang tiếng Anh. Hãy xem lại rồi bấm Lưu.', {
           id: toastId,
         });
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('AI translation error:', err);
-      toast.error(err.message || 'Lỗi khi dịch nội dung với AI', { id: toastId });
+      const message = err instanceof Error ? err.message : '';
+      toast.error(`Không thể dịch bằng AI: ${message || 'Vui lòng thử lại.'}`, { id: toastId });
     } finally {
       setIsTranslating(false);
     }
@@ -158,9 +187,10 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
       });
 
       if (result.ok) {
-        toast.success('Đã lưu nội dung và bản dịch Landing Page thành công!');
+        setSavedSnapshot(JSON.stringify({ en: itemsEn, vi: itemsVi }));
+        toast.success('Đã lưu nội dung trang chủ.');
       } else {
-        toast.error(result.error || 'Lỗi khi lưu dữ liệu. Vui lòng thử lại.');
+        toast.error(`Không thể lưu nội dung: ${result.error || 'Vui lòng thử lại.'}`);
       }
     });
   };
@@ -168,51 +198,41 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
   const sections = [
     {
       id: 'hero',
-      title: 'Hero Section',
-      desc: 'Top welcoming section of the portfolio',
+      title: 'Phần mở đầu (Hero)',
+      desc: 'Khu vực chào mừng ở đầu trang',
       icon: Sparkles,
       fields: DEFAULT_SITE_CONTENT.filter(d => d.grp === 'hero'),
     },
     {
       id: 'about',
-      title: 'About Section & Author Showcase',
-      desc: 'Introductory bio, author portrait & workspace photos, and philosophy quote',
+      title: 'Giới thiệu & tác giả',
+      desc: 'Tiểu sử, ảnh chân dung, ảnh không gian làm việc và câu trích dẫn',
       icon: LayoutTemplate,
       fields: DEFAULT_SITE_CONTENT.filter(d => d.grp === 'about'),
     },
     {
       id: 'stats',
-      title: 'Counter Statistics',
-      desc: 'Animated achievement statistics displayed in the About section',
+      title: 'Số liệu thống kê',
+      desc: 'Các con số thành tích chạy hiệu ứng trong phần Giới thiệu',
       icon: BarChart3,
       fields: DEFAULT_SITE_CONTENT.filter(d => d.grp === 'stats'),
     },
     {
       id: 'bpsc',
-      title: 'Highlights Section (BPSC)',
-      desc: 'Titles and badges for Projects, Blogs, and Certifications highlights',
+      title: 'Nổi bật (Dự án, Bài viết, Chứng chỉ)',
+      desc: 'Tiêu đề và nhãn cho các khối nổi bật',
       icon: Layers,
       fields: DEFAULT_SITE_CONTENT.filter(d => d.grp === 'bpsc'),
     },
   ];
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-5xl mx-auto">
-      {/* Header & Main Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2.5">
-            <span>Landing Page Content</span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-semibold border border-primary/20">
-              AI i18n
-            </span>
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Quản lý và chuyển ngữ toàn diện các tiêu đề, mô tả, ảnh tác giả và nhãn hiển thị trên trang chủ
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5 flex-wrap">
+    <main className={ADMIN_PAGE_CLASS}>
+      <AdminPageHeader
+        title="Nội dung trang chủ"
+        description="Quản lý và chuyển ngữ tiêu đề, mô tả, ảnh tác giả và nhãn hiển thị trên trang chủ"
+        actions={
+        <>
           {/* AI Translate Button */}
           <button
             id="ai-translate-landing-btn"
@@ -223,13 +243,13 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
             title={`Dịch tự động sang ${activeTab === 'en' ? 'Tiếng Việt' : 'Tiếng Anh'} bằng Gemini AI`}
           >
             {isTranslating ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
             ) : (
-              <Sparkles className="w-4 h-4 text-amber-300" />
+              <Sparkles className="w-4 h-4 text-amber-300" aria-hidden="true" />
             )}
             <span>
               {isTranslating
-                ? 'Đang dịch AI...'
+                ? 'Đang dịch AI…'
                 : activeTab === 'en'
                 ? 'Dịch sang Tiếng Việt (AI)'
                 : 'Dịch sang Tiếng Anh (AI)'}
@@ -244,17 +264,20 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
             disabled={isPending || isTranslating}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:opacity-90 active:scale-95 disabled:opacity-50 transition shadow-md shadow-primary/20 cursor-pointer"
           >
-            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            <span>{isPending ? 'Đang lưu...' : 'Lưu Tất Cả'}</span>
+            {isPending ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Save className="w-4 h-4" aria-hidden="true" />}
+            <span>{isPending ? 'Đang lưu…' : 'Lưu tất cả'}</span>
           </button>
-        </div>
-      </div>
+        </>
+        }
+      />
 
       {/* Language Tabs Switcher */}
       <div className="flex items-center justify-between p-1.5 rounded-2xl bg-muted/70 border border-border">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5" role="tablist" aria-label="Ngôn ngữ đang chỉnh sửa">
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'en'}
             onClick={() => setActiveTab('en')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               activeTab === 'en'
@@ -262,12 +285,14 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <span className="text-base">🇬🇧</span>
-            <span>English (Tiếng Anh)</span>
+            <span className="text-base" aria-hidden="true">🇬🇧</span>
+            <span>Tiếng Anh (bản gốc)</span>
           </button>
 
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'vi'}
             onClick={() => setActiveTab('vi')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               activeTab === 'vi'
@@ -275,14 +300,14 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <span className="text-base">🇻🇳</span>
-            <span>Tiếng Việt (Bản dịch)</span>
+            <span className="text-base" aria-hidden="true">🇻🇳</span>
+            <span>Tiếng Việt (bản dịch)</span>
           </button>
         </div>
 
         <div className="hidden sm:flex items-center gap-2 pr-3 text-xs text-muted-foreground">
-          <Languages className="w-3.5 h-3.5 text-primary" />
-          <span>Đang chỉnh sửa: <strong>{activeTab === 'en' ? 'Bản gốc Tiếng Anh' : 'Bản dịch Tiếng Việt'}</strong></span>
+          <Languages className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+          <span>Đang chỉnh sửa: <strong>{activeTab === 'en' ? 'Bản gốc tiếng Anh' : 'Bản dịch tiếng Việt'}</strong></span>
         </div>
       </div>
 
@@ -295,7 +320,7 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-border/60">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-5 h-5" aria-hidden="true" />
                   </div>
                   <div>
                     <h2 className="text-base font-semibold text-foreground">{section.title}</h2>
@@ -304,12 +329,12 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
                 </div>
                 <button
                   type="button"
-                  onClick={() => handleResetSection(section.id)}
+                  onClick={() => handleResetSection(section.id, section.title)}
                   className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition px-2.5 py-1 rounded-md hover:bg-muted cursor-pointer"
                   title="Đặt lại mục này về mặc định"
                 >
-                  <RefreshCw className="w-3 h-3" />
-                  <span>Defaults ({activeTab.toUpperCase()})</span>
+                  <RefreshCw className="w-3 h-3" aria-hidden="true" />
+                  <span>Mặc định ({activeTab.toUpperCase()})</span>
                 </button>
               </div>
 
@@ -325,7 +350,7 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
                   return (
                     <div key={field.key} className={isMultiline ? 'md:col-span-2' : ''}>
                       <div className="flex items-center justify-between mb-1.5">
-                        <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        <label htmlFor={`site-${field.key}`} className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                           {field.label}
                         </label>
                         {!translatable && (
@@ -337,6 +362,7 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
 
                       {isMultiline ? (
                         <textarea
+                          id={`site-${field.key}`}
                           rows={2}
                           value={currentItems[field.key] ?? ''}
                           onChange={e => handleChange(field.key, e.target.value)}
@@ -344,6 +370,7 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
                         />
                       ) : (
                         <input
+                          id={`site-${field.key}`}
                           type={field.type === 'number' ? 'number' : 'text'}
                           value={currentItems[field.key] ?? ''}
                           onChange={e => handleChange(field.key, e.target.value)}
@@ -355,7 +382,7 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
                       {/* Helpful reference context when editing Vietnamese tab */}
                       {activeTab === 'vi' && translatable && enRefValue && (
                         <p className="mt-1 text-[11px] text-muted-foreground truncate" title={enRefValue}>
-                          <span className="font-semibold text-slate-500">Bản tiếng Anh:</span> &ldquo;{enRefValue}&rdquo;
+                          <span className="font-semibold">Bản tiếng Anh:</span> &ldquo;{enRefValue}&rdquo;
                         </p>
                       )}
                     </div>
@@ -366,6 +393,15 @@ export function AdminLandingClient({ initialItems, initialBundle }: Props) {
           );
         })}
       </div>
+
+      <UnsavedChangesDialog
+        open={leaveGuard.isBlocking}
+        onOpenChange={open => {
+          if (!open) leaveGuard.cancel();
+        }}
+        onConfirmLeave={leaveGuard.confirmLeave}
+      />
+      {confirmDialog}
     </main>
   );
 }

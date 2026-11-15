@@ -2,8 +2,14 @@
 
 import DOMPurify from 'dompurify';
 import { useEffect, useState, useRef } from 'react';
-import { useTheme } from 'next-themes';
-import { slugifyHeading, sanitizeBasicServer, type Heading } from '@/lib/blog-utils';
+import {
+  slugifyHeading,
+  sanitizeBasicServer,
+  isAllowedIframeSrc,
+  RICH_CONTENT_ADD_ATTR,
+  RICH_CONTENT_ADD_TAGS,
+  type Heading,
+} from '@/lib/blog-utils';
 import { hydrateRichContent } from '@/lib/rich-content';
 
 import 'katex/dist/katex.min.css';
@@ -11,23 +17,21 @@ import 'katex/dist/katex.min.css';
 export type { Heading };
 export { sanitizeBasicServer };
 
+if (typeof window !== 'undefined') {
+  // Embeds are only allowed from known hosts (YouTube, Vimeo, CodeSandbox, …)
+  DOMPurify.addHook('uponSanitizeElement', (node, data) => {
+    if (data.tagName === 'iframe' && !isAllowedIframeSrc((node as Element).getAttribute('src') || '')) {
+      node.parentNode?.removeChild(node);
+    }
+  });
+}
+
 function processHtml(html: string): string {
   if (typeof window === 'undefined') return sanitizeBasicServer(html);
 
   const cleanHtml = DOMPurify.sanitize(html, {
-    ADD_TAGS: ['iframe', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
-    ADD_ATTR: [
-      'allow',
-      'allowfullscreen',
-      'frameborder',
-      'scrolling',
-      'data-callout',
-      'data-type',
-      'data-latex',
-      'data-math-hydrated',
-      'data-mermaid-hydrated',
-      'data-code-hydrated',
-    ],
+    ADD_TAGS: RICH_CONTENT_ADD_TAGS,
+    ADD_ATTR: RICH_CONTENT_ADD_ATTR,
   });
 
   const div = document.createElement('div');
@@ -47,6 +51,15 @@ function processHtml(html: string): string {
     element.classList.add('scroll-mt-28');
   });
 
+  // Ensure all tables are safely wrapped in a responsive horizontal scroll container
+  div.querySelectorAll('table').forEach(table => {
+    if (table.parentElement?.classList.contains('overflow-x-auto')) return;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'overflow-x-auto my-6 max-w-full rounded-xl border border-border';
+    table.parentNode?.insertBefore(wrapper, table);
+    wrapper.appendChild(table);
+  });
+
   return div.innerHTML;
 }
 
@@ -58,7 +71,6 @@ interface BlogContentProps {
 export function BlogContent({ html, className = '' }: BlogContentProps) {
   const [processedHtml, setProcessedHtml] = useState<string>('');
   const containerRef = useRef<HTMLDivElement>(null);
-  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     setProcessedHtml(processHtml(html));
@@ -66,15 +78,15 @@ export function BlogContent({ html, className = '' }: BlogContentProps) {
 
   useEffect(() => {
     if (containerRef.current && processedHtml) {
-      const isDark = resolvedTheme === 'dark';
-      hydrateRichContent(containerRef.current, isDark);
+      // The site is light-only (forcedTheme="light" in the root layout).
+      hydrateRichContent(containerRef.current, false);
     }
-  }, [processedHtml, resolvedTheme]);
+  }, [processedHtml]);
 
   return (
     <div
       ref={containerRef}
-      className={`prose prose-sm sm:prose-base dark:prose-invert max-w-none ${className}`}
+      className={`prose prose-sm sm:prose-base max-w-none min-w-0 w-full overflow-hidden ${className}`}
       dangerouslySetInnerHTML={{ __html: processedHtml || sanitizeBasicServer(html) }}
     />
   );

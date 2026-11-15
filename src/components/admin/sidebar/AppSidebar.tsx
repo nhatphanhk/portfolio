@@ -28,35 +28,35 @@ import {
 
 const navGroups: NavGroup[] = [
   {
-    label: 'Overview',
+    label: 'Tổng quan',
     items: [
       {
-        title: 'Dashboard',
+        title: 'Bảng điều khiển',
         url: '/nhatphanhk102',
         icon: LayoutDashboard,
       },
     ],
   },
   {
-    label: 'Content Management',
+    label: 'Quản lý nội dung',
     items: [
       {
-        title: 'Landing Page',
+        title: 'Trang chủ',
         url: '/nhatphanhk102/landing',
         icon: LayoutTemplate,
       },
       {
-        title: 'Resume / CV',
+        title: 'Hồ sơ / CV',
         url: '/nhatphanhk102/resume',
         icon: UserRound,
       },
       {
-        title: 'Blogs',
+        title: 'Bài viết',
         url: '/nhatphanhk102/blogs',
         icon: BookOpen,
         items: [
           {
-            title: 'All Posts',
+            title: 'Tất cả bài viết',
             url: '/nhatphanhk102/blogs',
           },
           {
@@ -64,58 +64,58 @@ const navGroups: NavGroup[] = [
             url: '/nhatphanhk102/blogs/series',
           },
           {
-            title: 'Analytics',
+            title: 'Thống kê',
             url: '/nhatphanhk102/blogs/dashboard',
           },
         ],
       },
       {
-        title: 'Projects',
+        title: 'Dự án',
         url: '/nhatphanhk102/projects',
         icon: Code,
         items: [
           {
-            title: 'All Projects',
+            title: 'Tất cả dự án',
             url: '/nhatphanhk102/projects',
           },
           {
-            title: 'Analytics',
+            title: 'Thống kê',
             url: '/nhatphanhk102/projects/dashboard',
           },
         ],
       },
       {
-        title: 'Media Library',
+        title: 'Thư viện ảnh',
         url: '/nhatphanhk102/media',
         icon: Images,
       },
     ],
   },
   {
-    label: 'Competencies',
+    label: 'Năng lực',
     items: [
       {
-        title: 'Skills',
+        title: 'Kỹ năng',
         url: '/nhatphanhk102/skills',
         icon: Layers,
       },
       {
-        title: 'Certifications',
+        title: 'Chứng chỉ',
         url: '/nhatphanhk102/certifications',
         icon: Award,
       },
     ],
   },
   {
-    label: 'Audience & Logs',
+    label: 'Người xem & liên hệ',
     items: [
       {
-        title: 'Contact Inbox',
+        title: 'Hộp thư liên hệ',
         url: '/nhatphanhk102/contacts',
         icon: Mail,
       },
       {
-        title: 'Visitor Logs',
+        title: 'Khách truy cập',
         url: '/nhatphanhk102/visitors',
         icon: Map,
       },
@@ -125,8 +125,9 @@ const navGroups: NavGroup[] = [
 
 export function AppSidebar({
   userEmail,
+  userName,
   ...props
-}: React.ComponentProps<typeof Sidebar> & { userEmail: string }) {
+}: React.ComponentProps<typeof Sidebar> & { userEmail: string; userName: string }) {
   return (
     <Sidebar
       collapsible="icon"
@@ -140,11 +141,11 @@ export function AppSidebar({
             className="flex items-center gap-2.5 font-bold text-sidebar-foreground hover:opacity-90 transition min-w-0"
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden border border-sidebar-border/80 shadow-xs bg-sidebar-accent">
-              <Image src="/icon.png" alt="nhatphanhk102" width={32} height={32} className="h-full w-full object-cover" />
+              <Image src="/icon.png" alt="" width={32} height={32} className="h-full w-full object-cover" />
             </div>
             <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden transition-all duration-200">
               <span className="text-sm font-extrabold tracking-tight text-sidebar-foreground truncate">nhatphanhk102</span>
-              <span className="text-[10px] text-sidebar-foreground/60 font-medium truncate">Admin CMS Hub</span>
+              <span className="text-[10px] text-sidebar-foreground/60 font-medium truncate">Trang quản trị</span>
             </div>
           </Link>
         </div>
@@ -155,7 +156,7 @@ export function AppSidebar({
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border/80 pt-2">
-        <NavUser user={{ name: 'Administrator', email: userEmail, avatar: '' }} />
+        <NavUser user={{ name: userName, email: userEmail }} />
       </SidebarFooter>
 
       <SidebarRail />

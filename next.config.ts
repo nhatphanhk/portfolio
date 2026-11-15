@@ -1,6 +1,11 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  images: {
+    // Uploads go to Vercel Blob in production (see src/app/api/upload/route.ts).
+    // Any other remote host must render with `unoptimized` (see isVercelBlobUrl in src/lib/utils.ts).
+    remotePatterns: [{ protocol: 'https', hostname: '**.public.blob.vercel-storage.com' }],
+  },
   experimental: {
     optimizePackageImports: ['lucide-react', 'gsap', 'three'],
   },

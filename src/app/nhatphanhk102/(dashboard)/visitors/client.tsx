@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Users, Trash2, Search, Calendar, Mail, MessageSquare, TrendingUp, Clock, Filter } from 'lucide-react';
 import { deleteVisitorLog } from '@/lib/actions/contact';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
+import { AdminPageHeader, ADMIN_PAGE_CLASS } from '@/components/admin/AdminPageHeader';
 import { PaginationControl } from '@/components/ui/PaginationControl';
+import { formatDate } from '@/lib/utils';
 
 type VisitorLog = {
   id: string;
@@ -36,9 +38,11 @@ function StatCard({
   onClick?: () => void;
 }) {
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
-      className={`p-5 rounded-xl border transition-all cursor-pointer ${
+      aria-pressed={isActive}
+      className={`p-5 rounded-xl border text-left transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
         isActive
           ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-xs'
           : 'border-border bg-card hover:border-primary/40 shadow-xs'
@@ -51,7 +55,7 @@ function StatCard({
         </div>
       </div>
       <p className="text-3xl font-bold text-foreground">{value}</p>
-    </div>
+    </button>
   );
 }
 
@@ -113,6 +117,10 @@ export function VisitorLogsClient({ logs }: Props) {
   }, [logs, timeFilter, search, now]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+  // Keep the page in range when rows are deleted or filters shrink the list
+  useEffect(() => {
+    setCurrentPage(p => Math.min(p, totalPages));
+  }, [totalPages]);
   const paginated = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filtered.slice(start, start + ITEMS_PER_PAGE);
@@ -124,40 +132,37 @@ export function VisitorLogsClient({ logs }: Props) {
   };
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Visitor Logs</h1>
-          <p className="text-sm text-muted-foreground">Track and manage visitors who registered via the visitor modal</p>
-        </div>
-      </div>
+    <main className={ADMIN_PAGE_CLASS}>
+      <AdminPageHeader
+        title="Khách truy cập"
+        description="Danh sách khách đã đăng ký qua cổng chào trên trang công khai"
+      />
 
       {/* Stats - clickable filters */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
-          title="Total Visitors"
+          title="Tổng số khách"
           value={logs.length}
           icon={Users}
           isActive={timeFilter === 'ALL'}
           onClick={() => handleTimeFilter('ALL')}
         />
         <StatCard
-          title="Today"
+          title="Hôm nay"
           value={todayCount}
           icon={Clock}
           isActive={timeFilter === 'TODAY'}
           onClick={() => handleTimeFilter('TODAY')}
         />
         <StatCard
-          title="This Week"
+          title="7 ngày qua"
           value={thisWeekCount}
           icon={TrendingUp}
           isActive={timeFilter === 'WEEK'}
           onClick={() => handleTimeFilter('WEEK')}
         />
         <StatCard
-          title="This Month"
+          title="Tháng này"
           value={thisMonthCount}
           icon={Calendar}
           isActive={timeFilter === 'MONTH'}
@@ -172,7 +177,8 @@ export function VisitorLogsClient({ logs }: Props) {
           <input
             id="visitor-search"
             type="text"
-            placeholder="Search by name, email, or reason..."
+            placeholder="Tìm theo tên, email hoặc lý do…"
+            aria-label="Tìm khách truy cập"
             value={search}
             onChange={e => {
               setSearch(e.target.value);
@@ -184,19 +190,20 @@ export function VisitorLogsClient({ logs }: Props) {
 
         <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-card shadow-xs text-xs text-muted-foreground w-full sm:w-auto transition-colors">
           <Filter className="h-3.5 w-3.5" />
-          <span className="font-medium">Filter Time:</span>
+          <span className="font-medium">Thời gian:</span>
           <select
             value={timeFilter}
+            aria-label="Lọc theo thời gian"
             onChange={e => {
-              setTimeFilter(e.target.value as any);
+              setTimeFilter(e.target.value as typeof timeFilter);
               setCurrentPage(1);
             }}
             className="bg-transparent text-foreground outline-none font-medium cursor-pointer"
           >
-            <option value="ALL">All Time</option>
-            <option value="TODAY">Today</option>
-            <option value="WEEK">This Week</option>
-            <option value="MONTH">This Month</option>
+            <option value="ALL">Mọi thời điểm</option>
+            <option value="TODAY">Hôm nay</option>
+            <option value="WEEK">7 ngày qua</option>
+            <option value="MONTH">Tháng này</option>
           </select>
         </div>
       </div>
@@ -206,30 +213,30 @@ export function VisitorLogsClient({ logs }: Props) {
         {paginated.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground bg-card">
             <Users className="h-10 w-10 mb-3 opacity-30" />
-            <p className="font-medium text-foreground">{logs.length === 0 ? 'No visitors logged yet' : 'No results match your filter'}</p>
+            <p className="font-medium text-foreground">{logs.length === 0 ? 'Chưa có khách nào' : 'Không có kết quả phù hợp'}</p>
             {logs.length === 0 ? (
-              <p className="text-sm opacity-60 mt-1">Visitors will appear here after they register via the visitor modal on your site</p>
+              <p className="text-xs text-muted-foreground mt-1">Khách sẽ xuất hiện ở đây sau khi đăng ký qua cổng chào trên trang</p>
             ) : (
-              <p className="text-xs text-muted-foreground mt-1">Try clearing your search query or selecting &quot;All Time&quot;</p>
+              <p className="text-xs text-muted-foreground mt-1">Thử xóa từ khóa hoặc chọn &quot;Mọi thời điểm&quot;</p>
             )}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-100/90 dark:bg-slate-800/90 border-b border-border text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300 font-semibold">
+              <thead className="bg-muted/60 border-b border-border text-xs uppercase tracking-wider text-foreground/80 font-semibold">
                 <tr>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">Visitor</th>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden md:table-cell">
+                  <th className="text-left px-4 py-3.5 font-semibold">Khách</th>
+                  <th className="text-left px-4 py-3.5 font-semibold hidden md:table-cell">
                     <span className="flex items-center gap-1.5">
-                      <MessageSquare className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" /> Reason
+                      <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" /> Lý do
                     </span>
                   </th>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden sm:table-cell">
+                  <th className="text-left px-4 py-3.5 font-semibold hidden sm:table-cell">
                     <span className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" /> Date
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" /> Ngày
                     </span>
                   </th>
-                  <th className="px-4 py-3.5 text-right font-semibold text-slate-700 dark:text-slate-300">Actions</th>
+                  <th className="px-4 py-3.5 text-right font-semibold">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-card">
@@ -239,7 +246,7 @@ export function VisitorLogsClient({ logs }: Props) {
                       <div>
                         <p className="font-medium text-foreground">{log.name}</p>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                          <Mail className="h-3 w-3" />
+                          <Mail className="h-3 w-3" aria-hidden="true" />
                           <span>{log.email}</span>
                         </div>
                       </div>
@@ -250,28 +257,26 @@ export function VisitorLogsClient({ logs }: Props) {
                     <td className="px-4 py-3.5 text-muted-foreground text-xs hidden sm:table-cell">
                       <div>
                         <p>
-                          {new Date(log.createdAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
+                          {formatDate(log.createdAt, 'vi')}
                         </p>
                         <p className="opacity-60">
-                          {new Date(log.createdAt).toLocaleTimeString('en-US', {
+                          {new Date(log.createdAt).toLocaleTimeString('vi-VN', {
                             hour: '2-digit',
                             minute: '2-digit',
-                          })}
+                            timeZone: 'UTC',
+                          })}{' '}
+                          (UTC)
                         </p>
                       </div>
                     </td>
                     <td className="px-4 py-3.5 text-right">
                       <button
                         type="button"
-                        aria-label={`Delete log from ${log.name}`}
+                        aria-label={`Xóa khách ${log.name}`}
                         onClick={() => setDeleteTarget(log)}
                         className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 cursor-pointer"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                       </button>
                     </td>
                   </tr>
@@ -284,6 +289,7 @@ export function VisitorLogsClient({ logs }: Props) {
         {filtered.length > 0 && (
           <div className="p-4 bg-card border-t border-border">
             <PaginationControl
+              locale="vi"
               currentPage={currentPage}
               totalPages={totalPages}
               totalItems={filtered.length}
@@ -299,8 +305,9 @@ export function VisitorLogsClient({ logs }: Props) {
         <DeleteDialog
           open={!!deleteTarget}
           onOpenChange={open => !open && setDeleteTarget(null)}
-          title={`Delete log from "${deleteTarget.name}"?`}
-          description="This will permanently remove this visitor log entry."
+          title={`Xóa khách "${deleteTarget.name}"?`}
+          description="Bản ghi khách truy cập này sẽ bị xóa vĩnh viễn."
+          successMessage="Đã xóa bản ghi khách."
           onConfirm={() => deleteVisitorLog(deleteTarget.id)}
         />
       )}

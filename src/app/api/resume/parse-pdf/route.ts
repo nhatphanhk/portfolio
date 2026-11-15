@@ -42,7 +42,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await ensureAdmin();
+    try {
+      await ensureAdmin();
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -77,7 +81,11 @@ export async function POST(request: NextRequest) {
       // Save file for persistence / resumeUrl attachment
       try {
         if (process.env.BLOB_READ_WRITE_TOKEN) {
-          const blob = await put(file.name, file, { access: 'public' });
+          const blob = await put(`document/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`, buffer, {
+            access: 'public',
+            contentType: 'application/pdf',
+            addRandomSuffix: true,
+          });
           fileUrl = blob.url;
         } else {
           const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
@@ -94,7 +102,12 @@ export async function POST(request: NextRequest) {
       const trimmedUrl = url.trim();
       fileUrl = trimmedUrl;
       if (trimmedUrl.startsWith('/uploads/')) {
-        const filePath = path.join(process.cwd(), 'public', trimmedUrl);
+        // Resolve inside public/uploads only (no ../ escapes)
+        const uploadsDir = path.resolve(process.cwd(), 'public', 'uploads');
+        const filePath = path.resolve(uploadsDir, path.basename(trimmedUrl));
+        if (!filePath.startsWith(uploadsDir + path.sep)) {
+          return NextResponse.json({ error: 'Đường dẫn file không hợp lệ' }, { status: 400 });
+        }
         buffer = await fs.readFile(filePath);
         fileName = path.basename(filePath);
         fileSize = buffer.length;
@@ -102,12 +115,15 @@ export async function POST(request: NextRequest) {
         if (!isSafePublicUrl(trimmedUrl)) {
           return NextResponse.json({ error: 'Đường dẫn URL không an toàn hoặc thuộc mạng nội bộ' }, { status: 400 });
         }
-        const fetchRes = await fetch(trimmedUrl);
-        if (!fetchRes.ok) {
+        const fetchRes = await fetch(trimmedUrl, { redirect: 'error', signal: AbortSignal.timeout(20_000) });
+        if (!fetchRes.ok || Number(fetchRes.headers.get('content-length') || 0) > 15 * 1024 * 1024) {
           return NextResponse.json({ error: 'Không thể tải file PDF từ URL này' }, { status: 400 });
         }
         const arrayBuffer = await fetchRes.arrayBuffer();
         buffer = Buffer.from(arrayBuffer);
+        if (buffer.length > 15 * 1024 * 1024 || buffer.subarray(0, 5).toString('ascii') !== '%PDF-') {
+          return NextResponse.json({ error: 'URL không trỏ tới một file PDF hợp lệ (tối đa 15MB)' }, { status: 400 });
+        }
         fileName = trimmedUrl.split('/').pop() || 'resume.pdf';
         fileSize = buffer.length;
       } else {
@@ -141,7 +157,7 @@ export async function POST(request: NextRequest) {
     let aiError: string | undefined;
 
     const hasGeminiKey = Boolean(apiKey || process.env.GEMINI_API_KEY);
-    if (useAi || hasGeminiKey) {
+    if (useAi && hasGeminiKey) {
       try {
         const { parseResumeWithGemini } = await import('@/lib/gemini-resume-parser');
         parsedData = await parseResumeWithGemini(rawText, apiKey);

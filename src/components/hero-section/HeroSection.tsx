@@ -36,6 +36,15 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const [webglFailed, setWebglFailed] = useState(false);
+  // The sun column is `hidden xl:flex`; don't download/boot its WebGL scene where it can't be seen
+  const [canShowSun, setCanShowSun] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 1280px)');
+    const update = () => setCanShowSun(mql.matches);
+    update();
+    mql.addEventListener('change', update);
+    return () => mql.removeEventListener('change', update);
+  }, []);
 
   const defaultTitle = isEn && profile.translations?.en?.title ? profile.translations.en.title : profile.title;
   const defaultTagline = (isEn && (profile as any).translations?.en?.tagline) || profile.tagline;
@@ -148,7 +157,29 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
           mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;
           mouse.y = -(e.clientY / window.innerHeight - 0.5) * 2;
         };
-        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mousemove', onMouseMove, { passive: true });
+
+        // Pause rendering when scrolled away or the tab is hidden (same approach as RealisticSun).
+        // Two independent flags so one signal can't override the other.
+        let inView = true;
+        let pageVisible = document.visibilityState === 'visible';
+        const observer = new IntersectionObserver(
+          entries => {
+            entries.forEach(entry => {
+              inView = entry.isIntersecting;
+            });
+          },
+          { threshold: 0.01 }
+        );
+        observer.observe(canvas);
+        const onVisibilityChange = () => {
+          pageVisible = document.visibilityState === 'visible';
+        };
+        document.addEventListener('visibilitychange', onVisibilityChange);
+
+        // Reduced motion: slow drift, no pointer parallax
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const timeScale = reducedMotion ? 0.25 : 1;
 
         const onResize = () => {
           camera.aspect = window.innerWidth / window.innerHeight;
@@ -160,7 +191,8 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
         const clock = new THREE.Clock();
         const animate = () => {
           frameId = requestAnimationFrame(animate);
-          const t = clock.getElapsedTime();
+          if (!inView || !pageVisible) return;
+          const t = clock.getElapsedTime() * timeScale;
 
           distantStars.points.rotation.y = t * 0.008;
           distantStars.points.rotation.x = t * 0.004;
@@ -171,8 +203,10 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
           brightStars.points.rotation.x = t * 0.015;
           brightStars.points.rotation.y = t * 0.006;
 
-          camera.position.x += (mouse.x * 1.5 - camera.position.x) * 0.02;
-          camera.position.y += (mouse.y * 1.5 - camera.position.y) * 0.02;
+          if (!reducedMotion) {
+            camera.position.x += (mouse.x * 1.5 - camera.position.x) * 0.02;
+            camera.position.y += (mouse.y * 1.5 - camera.position.y) * 0.02;
+          }
           renderer.render(scene, camera);
         };
         animate();
@@ -180,6 +214,8 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
         // Store cleanup references on the canvas element
         (canvas as unknown as Record<string, () => void>).__threeCleanup = () => {
           cancelAnimationFrame(frameId);
+          observer.disconnect();
+          document.removeEventListener('visibilitychange', onVisibilityChange);
           window.removeEventListener('mousemove', onMouseMove);
           window.removeEventListener('resize', onResize);
           starTexture.dispose();
@@ -240,7 +276,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
       {/* ── Three.js Soft Starfield ── */}
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full pointer-events-none"
+        className="absolute inset-0 w-full h-full max-w-full max-h-full pointer-events-none"
         style={{ zIndex: 2 }}
         aria-hidden="true"
       />
@@ -257,11 +293,11 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
 
       {/* ── Two-Column Layout (Content Left, Sun Right) ── */}
       <div
-        className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center"
+        className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-28 sm:pt-28 sm:pb-32 grid grid-cols-1 xl:grid-cols-2 gap-8 xl:gap-10 items-center"
         style={{ zIndex: 10 }}
       >
         {/* ══ LEFT — Text Content ══════════════════════════════════════════ */}
-        <div className="flex flex-col items-start text-left">
+        <div className="flex flex-col items-start text-left w-full min-w-0">
           {/* Status Badge (Optional / Dynamic) */}
           {heroBadge && (
             <div
@@ -282,10 +318,10 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
           {/* Greeting & Name */}
           <h1
             data-hero="name"
-            className="font-extrabold tracking-tight leading-[1.0] mb-5"
+            className="font-extrabold tracking-tight leading-[1.1] sm:leading-[1.05] mb-5 w-full min-w-0"
           >
             <span
-              className="block text-2xl sm:text-3xl font-semibold mb-2"
+              className="block text-lg sm:text-2xl font-semibold mb-2"
               style={{
                 color: 'oklch(0.82 0.08 255)',
                 letterSpacing: '0.04em',
@@ -294,14 +330,14 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
               {heroGreeting}
             </span>
             <span
-              className="block text-6xl sm:text-7xl xl:text-8xl text-gold-shimmer font-black"
+              className="block text-4xl sm:text-6xl lg:text-7xl xl:text-8xl text-gold-shimmer font-black break-words"
               style={{ letterSpacing: '-0.02em' }}
             >
               {heroNameHighlight}
             </span>
             {heroNameRest && (
               <span
-                className="block text-3xl sm:text-4xl xl:text-5xl font-bold mt-3"
+                className="block text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold mt-2 sm:mt-3 break-words"
                 style={{
                   color: 'oklch(0.97 0.02 85)',
                   letterSpacing: '-0.01em',
@@ -316,7 +352,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
           {/* Title */}
           <p
             data-hero="title"
-            className="text-xl sm:text-2xl xl:text-3xl font-bold mb-5 tracking-tight"
+            className="text-base sm:text-xl lg:text-2xl xl:text-3xl font-bold mb-4 sm:mb-5 tracking-tight break-words w-full"
             style={{
               color: 'oklch(0.72 0.18 255)',
               textShadow: '0 2px 20px rgba(0, 0, 0, 0.7)',
@@ -327,7 +363,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
 
           {/* Divider accent line */}
           <div
-            className="h-1 w-20 rounded-full mb-6"
+            className="h-1 w-20 rounded-full mb-5 sm:mb-6"
             style={{
               background: 'linear-gradient(90deg, #f59e0b 0%, #3b82f6 100%)',
               boxShadow: '0 0 12px rgba(245, 158, 11, 0.5)',
@@ -338,7 +374,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
           {heroTagline && (
             <p
               data-hero="tagline"
-              className="text-base sm:text-lg xl:text-xl max-w-md mb-10 leading-relaxed font-normal"
+              className="text-xs sm:text-base lg:text-lg xl:text-xl max-w-lg mb-8 sm:mb-10 leading-relaxed font-normal break-words"
               style={{
                 color: 'oklch(0.84 0.05 255)',
                 textShadow: '0 1px 12px rgba(0, 0, 0, 0.7)',
@@ -351,20 +387,20 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
           {/* CTA Buttons */}
           <div
             data-hero="ctas"
-            className="flex flex-wrap gap-3.5 mb-10"
+            className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 mb-8 sm:mb-10 w-full sm:w-auto"
           >
             <Link
               id="hero-view-projects"
               href={heroCtaProjectsUrl}
-              className="group inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all duration-200 hover:gap-3 hover:scale-105 active:scale-95"
+              className="group inline-flex items-center justify-center gap-2.5 px-6 sm:px-7 py-3 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm tracking-wide transition-all duration-300 hover:gap-3.5 hover:scale-[1.03] active:scale-[0.98] shadow-lg"
               style={{
                 background: 'linear-gradient(135deg, #fde047 0%, #f59e0b 60%, #d97706 100%)',
                 color: '#0f172a',
-                boxShadow: '0 4px 25px rgba(245, 158, 11, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.5)',
+                boxShadow: '0 4px 25px rgba(245, 158, 11, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.6)',
               }}
             >
               {heroCtaProjects}
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
 
             {heroCtaResumeUrl && (
@@ -372,7 +408,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
                 href={heroCtaResumeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all duration-200 hover:scale-105 active:scale-95"
+                className="inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm tracking-wide transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] hover:bg-white/15 hover:border-amber-400/40"
                 style={{
                   background: 'rgba(255, 255, 255, 0.08)',
                   color: '#ffffff',
@@ -388,7 +424,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
           </div>
 
           {/* Social Icons */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
             {socialLinks.map(link => {
               return (
                 <a
@@ -431,8 +467,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
         {/* ══ RIGHT — Realistic Celestial Sun Visual ══════════════════════════ */}
         <div
           data-hero="sun-container"
-          className="relative hidden lg:flex items-center justify-center"
-          style={{ minHeight: '580px' }}
+          className="relative hidden xl:flex items-center justify-center min-h-[420px] xl:min-h-[540px]"
         >
           {/* Ambient Warm Atmosphere Glow */}
           <div
@@ -448,7 +483,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
           />
 
           {!webglFailed ? (
-            <RealisticSun onFallback={() => setWebglFailed(true)} />
+            canShowSun && <RealisticSun onFallback={() => setWebglFailed(true)} />
           ) : (
             /* Fallback CSS Sun Orb */
             <div className="realistic-sun-orb" aria-hidden="true">
@@ -479,7 +514,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
       {/* ── Scroll Down Indicator ── */}
       <div
         data-hero="scroll"
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 pointer-events-none"
+        className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 hidden sm:flex flex-col items-center gap-1.5 pointer-events-none transition-opacity duration-300"
         style={{ zIndex: 10 }}
       >
         <span

@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { FileText, Plus, Pencil, Trash2, Search, Filter, Layers, ChevronDown, Eye } from 'lucide-react';
 import { DeleteDialog } from '@/components/admin/DeleteDialog';
+import { StatusBadge } from '@/components/admin/StatusBadge';
+import { AdminPageHeader, ADMIN_PAGE_CLASS } from '@/components/admin/AdminPageHeader';
 import { PaginationControl } from '@/components/ui/PaginationControl';
 import { deleteBlog } from '@/lib/actions/blog';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { formatDate } from '@/lib/utils';
 
 type Blog = {
   id: string;
@@ -81,27 +84,31 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
   }, [blogs, statusFilter, tagFilter, seriesFilter, search]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+  // Keep the page in range when rows are deleted or filters shrink the list
+  useEffect(() => {
+    setCurrentPage(p => Math.min(p, totalPages));
+  }, [totalPages]);
   const paginated = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filtered.slice(start, start + ITEMS_PER_PAGE);
   }, [filtered, currentPage]);
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-5xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Blog Posts</h1>
-          <p className="text-sm text-muted-foreground">{blogs.length} posts total</p>
-        </div>
-        <Link
-          id="create-blog-btn"
-          href="/nhatphanhk102/blogs/editor/new"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/90 transition-colors self-start sm:self-auto cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          New Post
-        </Link>
-      </div>
+    <main className={ADMIN_PAGE_CLASS}>
+      <AdminPageHeader
+        title="Bài viết"
+        description={`${blogs.length} bài viết`}
+        actions={
+          <Link
+            id="create-blog-btn"
+            href="/nhatphanhk102/blogs/editor/new"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/90 transition-colors cursor-pointer"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Viết bài mới
+          </Link>
+        }
+      />
 
       {/* Search & Filter Bar */}
       <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -110,7 +117,8 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <input
             type="text"
-            placeholder="Search blogs by title, excerpt, tag..."
+            placeholder="Tìm theo tiêu đề, tóm tắt, thẻ…"
+            aria-label="Tìm bài viết"
             value={search}
             onChange={e => {
               setSearch(e.target.value);
@@ -125,14 +133,15 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
           <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
           <select
             value={seriesFilter}
+            aria-label="Lọc theo series"
             onChange={e => {
               setSeriesFilter(e.target.value);
               setCurrentPage(1);
             }}
             className="w-full pl-8 pr-7 py-2 text-xs rounded-xl border border-border bg-card shadow-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 appearance-none cursor-pointer truncate transition-colors"
           >
-            <option value="ALL">All Series ({allSeries.length})</option>
-            <option value="NONE">No Series (Standalone)</option>
+            <option value="ALL">Tất cả series ({allSeries.length})</option>
+            <option value="NONE">Không thuộc series</option>
             {allSeries.map(s => (
               <option key={s.id} value={s.id}>
                 {s.title}
@@ -146,35 +155,37 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
           {/* Status filter */}
           <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-card shadow-xs text-xs text-muted-foreground transition-colors">
             <Filter className="h-3.5 w-3.5" />
-            <span className="font-medium">Status:</span>
+            <span className="font-medium">Trạng thái:</span>
             <select
               value={statusFilter}
+              aria-label="Lọc theo trạng thái"
               onChange={e => {
                 setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
               className="bg-transparent text-foreground outline-none font-medium cursor-pointer"
             >
-              <option value="ALL">All</option>
-              <option value="PUBLISHED">Published</option>
-              <option value="DRAFT">Draft</option>
-              <option value="ARCHIVED">Archived</option>
+              <option value="ALL">Tất cả</option>
+              <option value="PUBLISHED">Đã xuất bản</option>
+              <option value="DRAFT">Bản nháp</option>
+              <option value="ARCHIVED">Lưu trữ</option>
             </select>
           </div>
 
           {/* Tag filter */}
           {allTags.length > 0 && (
             <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-card shadow-xs text-xs text-muted-foreground transition-colors">
-              <span className="font-medium">Tag:</span>
+              <span className="font-medium">Thẻ:</span>
               <select
                 value={tagFilter}
+                aria-label="Lọc theo thẻ"
                 onChange={e => {
                   setTagFilter(e.target.value);
                   setCurrentPage(1);
                 }}
                 className="bg-transparent text-foreground outline-none font-medium cursor-pointer max-w-[120px] truncate"
               >
-                <option value="ALL">All Tags</option>
+                <option value="ALL">Tất cả thẻ</option>
                 {allTags.map(tag => (
                   <option key={tag} value={tag}>
                     {tag}
@@ -191,24 +202,24 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
         {paginated.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground bg-card">
             <FileText className="h-10 w-10 mb-3 opacity-30" />
-            <p className="font-medium text-foreground">No blog posts found</p>
+            <p className="font-medium text-foreground">Không có bài viết nào</p>
             <p className="text-xs text-muted-foreground mt-1">
               {search || seriesFilter !== 'ALL' || statusFilter !== 'ALL' || tagFilter !== 'ALL'
-                ? 'Try adjusting your search or filters'
-                : 'Click "New Post" to create your first article'}
+                ? 'Thử đổi từ khóa hoặc bộ lọc'
+                : 'Nhấn "Viết bài mới" để tạo bài đầu tiên'}
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-100/90 dark:bg-slate-800/90 border-b border-border text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
+              <thead className="bg-muted/60 border-b border-border text-foreground/80 font-semibold text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">Title & Series</th>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden md:table-cell">Tags</th>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden sm:table-cell">Published</th>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300 hidden lg:table-cell">Views</th>
-                  <th className="text-left px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">Status</th>
-                  <th className="px-4 py-3.5 text-right font-semibold text-slate-700 dark:text-slate-300">Actions</th>
+                  <th className="text-left px-4 py-3.5 font-semibold">Tiêu đề & series</th>
+                  <th className="text-left px-4 py-3.5 font-semibold hidden md:table-cell">Thẻ</th>
+                  <th className="text-left px-4 py-3.5 font-semibold hidden sm:table-cell">Ngày xuất bản</th>
+                  <th className="text-left px-4 py-3.5 font-semibold hidden lg:table-cell">Lượt xem</th>
+                  <th className="text-left px-4 py-3.5 font-semibold">Trạng thái</th>
+                  <th className="px-4 py-3.5 text-right font-semibold">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-card">
@@ -253,31 +264,17 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
                     </td>
                     <td className="px-4 py-3.5 text-muted-foreground hidden sm:table-cell">
                       {blog.publishedAt
-                        ? new Date(blog.publishedAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })
+                        ? formatDate(blog.publishedAt, 'vi')
                         : '—'}
                     </td>
                     <td className="px-4 py-3.5 text-muted-foreground hidden lg:table-cell">
                       <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-md bg-muted text-foreground">
                         <Eye className="w-3.5 h-3.5 text-primary" />
-                        {(blog.viewCount ?? 0).toLocaleString()}
+                        {(blog.viewCount ?? 0).toLocaleString('vi-VN')}
                       </span>
                     </td>
                     <td className="px-4 py-3.5">
-                      <span
-                        className={`px-2 py-0.5 text-xs rounded-full font-medium ${
-                          blog.status === 'PUBLISHED'
-                            ? 'bg-green-500/10 text-green-700 dark:text-green-400'
-                            : blog.status === 'DRAFT'
-                              ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                              : 'bg-muted text-muted-foreground'
-                        }`}
-                      >
-                        {blog.status}
-                      </span>
+                      <StatusBadge status={blog.status} />
                     </td>
                     <td className="px-4 py-3.5 text-right">
                       <div className="flex items-center gap-1 justify-end">
@@ -285,21 +282,21 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
                         <Link
                           href={`/nhatphanhk102/blogs/editor/${blog.id}`}
                           onClick={(e) => e.stopPropagation()}
-                          aria-label={`Edit ${blog.title}`}
+                          aria-label={`Sửa ${blog.title}`}
                           className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
                         >
-                          <Pencil className="h-3.5 w-3.5" />
+                          <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                         </Link>
                         <button
                           type="button"
-                          aria-label={`Delete ${blog.title}`}
+                          aria-label={`Xóa ${blog.title}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             setDeleteTarget(blog);
                           }}
                           className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10 cursor-pointer"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                         </button>
                       </div>
                     </td>
@@ -313,6 +310,7 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
         {filtered.length > 0 && (
           <div className="p-4 bg-card border-t border-border">
             <PaginationControl
+              locale="vi"
               currentPage={currentPage}
               totalPages={totalPages}
               totalItems={filtered.length}
@@ -328,8 +326,9 @@ export function AdminBlogsClient({ blogs }: AdminBlogsClientProps) {
         <DeleteDialog
           open={!!deleteTarget}
           onOpenChange={open => !open && setDeleteTarget(null)}
-          title={`Delete "${deleteTarget.title}"?`}
-          description="This will permanently delete the blog post and all associated data."
+          title={`Xóa "${deleteTarget.title}"?`}
+          description="Bài viết cùng các bản dịch và lượt xem sẽ bị xóa vĩnh viễn."
+          successMessage="Đã xóa bài viết."
           onConfirm={() => deleteBlog(deleteTarget.id)}
         />
       )}

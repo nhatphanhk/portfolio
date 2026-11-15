@@ -9,13 +9,13 @@ import { toast } from 'sonner';
 import { createCertification, updateCertification, type CertificationFormData } from '@/lib/actions/certification';
 
 const schema = z.object({
-  name: z.string().min(3).max(255),
-  issuer: z.string().min(1).max(255),
-  issueDate: z.string().min(1, 'Issue date required'),
+  name: z.string().min(3, 'Tên cần ít nhất 3 ký tự').max(255, 'Tên tối đa 255 ký tự'),
+  issuer: z.string().min(1, 'Vui lòng nhập đơn vị cấp').max(255, 'Tối đa 255 ký tự'),
+  issueDate: z.string().min(1, 'Vui lòng chọn ngày cấp'),
   expiryDate: z.string().optional(),
-  credentialId: z.string().max(255).optional(),
-  credentialUrl: z.string().url().optional().or(z.literal('')),
-  description: z.string().max(1000).optional(),
+  credentialId: z.string().max(255, 'Tối đa 255 ký tự').optional(),
+  credentialUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
+  description: z.string().max(1000, 'Mô tả tối đa 1000 ký tự').optional(),
   status: z.enum(['ACTIVE', 'EXPIRED']),
 });
 
@@ -53,11 +53,12 @@ export function CertificationDialog({ mode, open, onOpenChange, initialData }: C
         : await updateCertification(initialData!.id!, payload);
 
       if (result.ok) {
-        toast.success(mode === 'create' ? 'Certification added!' : 'Certification updated!');
+        toast.success(mode === 'create' ? 'Đã thêm chứng chỉ.' : 'Đã lưu chứng chỉ.');
         reset();
         onOpenChange(false);
       } else {
-        toast.error('Something went wrong.');
+        const err = (result as { error?: unknown }).error;
+        toast.error(`Không thể lưu chứng chỉ: ${typeof err === 'string' ? err : 'Vui lòng thử lại.'}`);
       }
     });
   };
@@ -66,65 +67,65 @@ export function CertificationDialog({ mode, open, onOpenChange, initialData }: C
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{mode === 'create' ? 'Add Certification' : 'Edit Certification'}</DialogTitle>
+          <DialogTitle>{mode === 'create' ? 'Thêm chứng chỉ' : 'Sửa chứng chỉ'}</DialogTitle>
         </DialogHeader>
 
         <form id="cert-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
           <div>
-            <label className="block text-sm font-medium mb-1">Certification Name *</label>
-            <input {...register('name')} placeholder="AWS Solutions Architect" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            <label htmlFor="cert-name" className="block text-sm font-medium mb-1">Tên chứng chỉ *</label>
+            <input id="cert-name" {...register('name')} placeholder="AWS Solutions Architect" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             {errors.name && <p className="text-xs text-destructive mt-1">{errors.name.message}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Issuer *</label>
-              <input {...register('issuer')} placeholder="Amazon Web Services" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <label htmlFor="cert-issuer" className="block text-sm font-medium mb-1">Đơn vị cấp *</label>
+              <input id="cert-issuer" {...register('issuer')} placeholder="Amazon Web Services" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               {errors.issuer && <p className="text-xs text-destructive mt-1">{errors.issuer.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Status</label>
-              <select {...register('status')} className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                <option value="ACTIVE">Active</option>
-                <option value="EXPIRED">Expired</option>
+              <label htmlFor="cert-status" className="block text-sm font-medium mb-1">Trạng thái</label>
+              <select id="cert-status" {...register('status')} className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                <option value="ACTIVE">Còn hiệu lực</option>
+                <option value="EXPIRED">Hết hạn</option>
               </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Issue Date *</label>
-              <input type="date" {...register('issueDate')} className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <label htmlFor="cert-issue-date" className="block text-sm font-medium mb-1">Ngày cấp *</label>
+              <input id="cert-issue-date" type="date" {...register('issueDate')} className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               {errors.issueDate && <p className="text-xs text-destructive mt-1">{errors.issueDate.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Expiry Date</label>
-              <input type="date" {...register('expiryDate')} className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <label htmlFor="cert-expiry-date" className="block text-sm font-medium mb-1">Ngày hết hạn</label>
+              <input id="cert-expiry-date" type="date" {...register('expiryDate')} className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Credential ID</label>
-              <input {...register('credentialId')} placeholder="ABC123" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <label htmlFor="cert-credential-id" className="block text-sm font-medium mb-1">Mã chứng chỉ</label>
+              <input id="cert-credential-id" {...register('credentialId')} placeholder="ABC123" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Verify URL</label>
-              <input {...register('credentialUrl')} placeholder="https://..." className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <label htmlFor="cert-credential-url" className="block text-sm font-medium mb-1">URL xác minh</label>
+              <input id="cert-credential-url" {...register('credentialUrl')} placeholder="https://..." className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
               {errors.credentialUrl && <p className="text-xs text-destructive mt-1">{errors.credentialUrl.message}</p>}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Description</label>
-            <textarea {...register('description')} rows={3} placeholder="Brief description of the certification..." className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+            <label htmlFor="cert-description" className="block text-sm font-medium mb-1">Mô tả</label>
+            <textarea id="cert-description" {...register('description')} rows={3} placeholder="Mô tả ngắn về chứng chỉ…" className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground shadow-xs text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
           </div>
         </form>
 
         <DialogFooter>
-          <button type="button" onClick={() => onOpenChange(false)} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">Cancel</button>
+          <button type="button" onClick={() => onOpenChange(false)} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">Hủy</button>
           <button type="submit" form="cert-form" disabled={isPending} className="px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:bg-foreground/90 disabled:opacity-60 transition-colors">
-            {isPending ? 'Saving…' : mode === 'create' ? 'Add Certification' : 'Save Changes'}
+            {isPending ? 'Đang lưu…' : mode === 'create' ? 'Thêm chứng chỉ' : 'Lưu thay đổi'}
           </button>
         </DialogFooter>
       </DialogContent>

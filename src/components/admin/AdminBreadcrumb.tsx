@@ -13,20 +13,25 @@ import {
 } from '@/components/ui/breadcrumb';
 
 const SEGMENT_NAMES: Record<string, string> = {
-  nhatphanhk102: 'Dashboard',
-  admin: 'Dashboard',
-  blogs: 'Blogs',
-  editor: 'Editor',
+  nhatphanhk102: 'Tổng quan',
+  admin: 'Tổng quan',
+  blogs: 'Bài viết',
+  editor: 'Trình soạn thảo',
+  new: 'Bài mới',
+  dashboard: 'Thống kê',
   series: 'Series',
-  projects: 'Projects',
-  contacts: 'Contacts',
-  visitors: 'Visitor Logs',
-  skills: 'Skills',
-  certifications: 'Certifications',
-  media: 'Media Library',
-  resume: 'Resume Editor',
-  landing: 'Landing Page',
+  projects: 'Dự án',
+  contacts: 'Liên hệ',
+  visitors: 'Khách truy cập',
+  skills: 'Kỹ năng',
+  certifications: 'Chứng chỉ',
+  media: 'Thư viện ảnh',
+  resume: 'Hồ sơ CV',
+  landing: 'Trang chủ',
 };
+
+/** Path segments that have no page of their own (rendered as plain text, not links). */
+const NON_ROUTABLE = new Set(['editor']);
 
 export function AdminBreadcrumb() {
   const pathname = usePathname();
@@ -39,7 +44,7 @@ export function AdminBreadcrumb() {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbPage>Dashboard</BreadcrumbPage>
+            <BreadcrumbPage>Tổng quan</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -47,19 +52,19 @@ export function AdminBreadcrumb() {
   }
 
   // Generate breadcrumb items
-  // segments[0] is 'admin' (Dashboard)
-  const items: { label: string; href: string; isCurrent: boolean }[] = [];
+  // segments[0] is the admin root (Tổng quan)
+  const items: { label: string; href: string; isCurrent: boolean; plain: boolean }[] = [];
   let accumulatedPath = '';
 
   segments.forEach((seg, idx) => {
     accumulatedPath += `/${seg}`;
     const isCurrent = idx === segments.length - 1;
 
-    // Skip showing uuid / ids as long hashes, show "Post" or "Item" instead if uuid
+    // Don't show raw ids; the only id segment in the admin is a blog post id
     let label = SEGMENT_NAMES[seg];
     if (!label) {
       if (seg.length > 20 || /^[0-9a-fA-F-]+$/.test(seg)) {
-        label = 'Edit Post';
+        label = 'Sửa bài viết';
       } else {
         label = seg.charAt(0).toUpperCase() + seg.slice(1);
       }
@@ -69,6 +74,7 @@ export function AdminBreadcrumb() {
       label,
       href: accumulatedPath,
       isCurrent,
+      plain: NON_ROUTABLE.has(seg),
     });
   });
 
@@ -82,7 +88,7 @@ export function AdminBreadcrumb() {
             <React.Fragment key={item.href}>
               {index > 0 && <BreadcrumbSeparator />}
               <BreadcrumbItem>
-                {isLast ? (
+                {isLast || item.plain ? (
                   <BreadcrumbPage>{item.label}</BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink asChild>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
-import { auth } from '@/auth';
+import { ensureAdmin } from '@/lib/auth-utils';
 import { AppSidebar } from '@/components/admin/sidebar/AppSidebar';
 import { AdminBreadcrumb } from '@/components/admin/AdminBreadcrumb';
 import { Separator } from '@/components/ui/separator';
@@ -15,17 +15,23 @@ export default async function AdminLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
-
-  if (!session?.user?.email) {
+  // Same check as every server action: signed in AND admin role / ADMIN_EMAIL
+  let user: Awaited<ReturnType<typeof ensureAdmin>> | null = null;
+  try {
+    user = await ensureAdmin();
+  } catch {
+    user = null;
+  }
+  if (!user?.email) {
     redirect('/nhatphanhk102/login');
   }
 
-  const userEmail = session.user.email;
+  const userEmail = user.email;
+  const userName = user.name?.trim() || 'Quản trị viên';
 
   return (
     <SidebarProvider className="h-svh max-h-svh overflow-hidden">
-      <AppSidebar userEmail={userEmail} />
+      <AppSidebar userEmail={userEmail} userName={userName} />
       <SidebarInset className="flex flex-col h-svh max-h-svh overflow-hidden bg-background">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-card/75 backdrop-blur-md z-20">
           <div className="flex items-center gap-2 px-4 w-full">

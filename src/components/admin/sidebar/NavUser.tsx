@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { ChangePasswordDialog } from '@/components/admin/ChangePasswordDialog';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,11 +33,13 @@ export function NavUser({
   user: {
     name: string;
     email: string;
-    avatar: string;
   };
 }) {
   const { isMobile } = useSidebar();
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  // First + last word initials ("Phan Hoang Nhat" -> "PN"); single word -> first two letters
+  const words = (user.name || user.email || 'A').trim().split(/\s+/);
+  const initials = (words.length > 1 ? words[0][0] + words[words.length - 1][0] : words[0].slice(0, 2)).toUpperCase();
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
@@ -56,15 +58,12 @@ export function NavUser({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg border border-sidebar-border">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg bg-sidebar-accent text-sidebar-foreground font-semibold">AD</AvatarFallback>
-              </Avatar>
+              <UserAvatar initials={initials} />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold text-sidebar-foreground">{user.name}</span>
                 <span className="truncate text-xs text-sidebar-foreground/60">{user.email}</span>
               </div>
-              <ChevronsUpDown className="ml-auto size-4 text-sidebar-foreground/60" />
+              <ChevronsUpDown className="ml-auto size-4 text-sidebar-foreground/60" aria-hidden="true" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -75,10 +74,7 @@ export function NavUser({
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-                </Avatar>
+                <UserAvatar initials={initials} />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
                   <span className="truncate text-xs">{user.email}</span>
@@ -87,20 +83,20 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/" target="_blank" className="cursor-pointer">
-                <ExternalLink className="mr-2 h-4 w-4" />
-                View Public Site
+              <Link href="/" target="_blank" rel="noopener noreferrer" className="cursor-pointer">
+                <ExternalLink className="mr-2 h-4 w-4" aria-hidden="true" />
+                Xem trang công khai
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setPasswordDialogOpen(true)} className="cursor-pointer">
-              <KeyRound className="mr-2 h-4 w-4" />
-              Change Password
+              <KeyRound className="mr-2 h-4 w-4" aria-hidden="true" />
+              Đổi mật khẩu
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive">
-              <LogOut className="mr-2" />
-              Log out
+              <LogOut className="mr-2" aria-hidden="true" />
+              Đăng xuất
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -108,5 +104,16 @@ export function NavUser({
     </SidebarMenu>
       <ChangePasswordDialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen} />
     </>
+  );
+}
+
+/** One avatar for both the trigger and the menu header. */
+function UserAvatar({ initials }: { initials: string }) {
+  return (
+    <Avatar className="h-8 w-8 rounded-lg border border-sidebar-border">
+      <AvatarFallback className="rounded-lg bg-sidebar-accent text-sidebar-foreground font-semibold">
+        {initials}
+      </AvatarFallback>
+    </Avatar>
   );
 }

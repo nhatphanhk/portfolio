@@ -50,20 +50,20 @@ export default function FooterClient({
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 min-w-0">
           {/* Brand */}
-          <div>
+          <div className="min-w-0 break-words">
             <Link
               href="/"
-              className="text-lg font-bold transition-colors"
-              style={{ color: 'oklch(0.82 0.2 82)' }}
+              className="text-lg font-black tracking-tight transition-colors hover:text-amber-300"
+              style={{ color: 'oklch(0.85 0.18 84)' }}
             >
               {profileName}
             </Link>
             {profileTagline && (
               <p
-                className="text-sm mt-2 leading-relaxed max-w-xs"
-                style={{ color: 'oklch(0.65 0.08 255)' }}
+                className="text-sm mt-2 leading-relaxed max-w-xs break-words"
+                style={{ color: 'oklch(0.68 0.08 255)' }}
               >
                 {profileTagline}
               </p>
@@ -71,17 +71,17 @@ export default function FooterClient({
           </div>
 
           {/* Navigation */}
-          <div>
-            <h4 className="text-sm font-semibold mb-4" style={{ color: 'oklch(0.72 0.18 78)' }}>
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold mb-4" style={{ color: 'oklch(0.72 0.18 78)' }}>
               {t('footer.navigation')}
-            </h4>
+            </h2>
             <ul className="space-y-2">
               {NAV_LINKS.map(link => (
                 <li key={link.name}>
                   <Link
                     href={link.href}
                     className="text-sm transition-colors hover:text-amber-300"
-                    style={{ color: 'oklch(0.60 0.07 255)' }}
+                    style={{ color: 'oklch(0.80 0.05 255)' }}
                   >
                     {getNavLabel(link.name)}
                   </Link>
@@ -91,10 +91,10 @@ export default function FooterClient({
           </div>
 
           {/* Social Links */}
-          <div>
-            <h4 className="text-sm font-semibold mb-4" style={{ color: 'oklch(0.55 0.22 255)' }}>
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold mb-4" style={{ color: 'oklch(0.74 0.14 255)' }}>
               {t('footer.connect')}
-            </h4>
+            </h2>
             <div className="flex flex-wrap items-center gap-2.5">
               {socialLinks.map(social => (
                 <a
@@ -104,7 +104,7 @@ export default function FooterClient({
                   rel="noopener noreferrer"
                   aria-label={social.platform}
                   title={social.platform}
-                  className="p-2.5 rounded-xl border border-white/10 bg-white/5 transition-all hover:bg-white/15 hover:scale-110 hover:border-amber-400/40 hover:text-amber-300"
+                  className="p-2.5 rounded-xl border border-white/10 bg-white/5 transition-all duration-200 hover:bg-white/15 hover:scale-110 hover:border-amber-400/40 hover:text-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-400"
                   style={{ color: 'oklch(0.75 0.12 255)' }}
                 >
                   <DynamicIcon name={social.iconName} className="h-4 w-4" />
@@ -115,10 +115,10 @@ export default function FooterClient({
         </div>
 
         <div
-          className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-sm"
+          className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-sm"
           style={{
             borderTop: '1px solid oklch(0.72 0.18 78 / 20%)',
-            color: 'oklch(0.50 0.06 255)',
+            color: 'oklch(0.70 0.05 255)',
           }}
         >
           <p>

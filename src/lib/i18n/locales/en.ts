@@ -9,6 +9,9 @@ export const en = {
     skills: 'Skills',
     certifications: 'Certifications',
     contact: 'Contact',
+    openMenu: 'Open navigation menu',
+    closeMenu: 'Close navigation menu',
+    language: 'Language',
   },
 
   // Common
@@ -56,9 +59,18 @@ export const en = {
     noHeadings: 'This article has no subheadings.',
     articleOverview: 'Article Overview',
     partOfSeries: 'in this article series',
-    aiTranslate: 'AI Translate (VI)',
+    aiTranslate: 'AI Translate (EN)',
     viewOriginal: 'View Original',
     translating: 'Translating with AI...',
+    translatedBadge: 'English translation (cached)',
+    translateSuccess: 'Translated and cached successfully.',
+    translateFailed: 'Failed to translate article.',
+    searchResults: 'Search Results',
+    recentArticles: 'Recent Articles',
+    noArticlesTitle: 'No articles found',
+    linkCopied: 'Link copied to clipboard.',
+    linkCopyFailed: 'Could not copy the link.',
+    estimatedReadingTime: 'Estimated reading time',
   },
 
   // Series page
@@ -75,6 +87,15 @@ export const en = {
     noSeriesFound: 'No series found matching your query.',
     exploreCurriculum: 'Explore curriculum',
     viewAll: 'View all series',
+    part: 'Part',
+    of: 'of',
+    article: 'article',
+    articles: 'articles',
+    curriculumHint: 'Follow the parts in order to get the most out of this series.',
+    curriculumPreview: 'Curriculum preview',
+    moreArticles: 'more articles',
+    empty: 'No published articles in this series yet. Check back soon!',
+    tryDifferent: 'Try searching for a different topic or keyword.',
   },
 
   // Projects
@@ -92,9 +113,13 @@ export const en = {
     noProjectsFound: 'No projects found',
     noProjectsDesc: "We couldn't find any projects matching your current search or filter criteria.",
     featured: 'Featured',
+    badge: 'Portfolio Showcase',
+    technologies: 'Tech Stack',
     demo: 'Live Demo',
     code: 'Source Code',
     viewDetails: 'View Project Details',
+    details: 'Details',
+    published: 'Published',
   },
 
   // Skills
@@ -104,6 +129,7 @@ export const en = {
     subtitle: 'A comprehensive directory of technologies, languages, frameworks, and developer tools I leverage to build robust, scalable web applications',
     tracked: 'skills tracked',
     categories: {
+      label: 'Categories',
       FRONTEND: 'Frontend',
       BACKEND: 'Backend',
       DEVOPS: 'DevOps & Cloud',
@@ -117,6 +143,7 @@ export const en = {
       VERSION_CONTROL: 'Version Control',
       OTHER: 'Other Technologies',
     },
+    empty: 'No skills to show yet.',
   },
 
   // Certifications
@@ -125,9 +152,11 @@ export const en = {
     subtitle: 'Professional credentials that validate my expertise across cloud platforms, frontend development, and software engineering.',
     active: 'Active',
     expired: 'Expired',
+    expires: 'Expires',
     issued: 'Issued',
     viewCredential: 'View Credential',
     credentialId: 'Credential ID',
+    empty: 'No certifications to show yet.',
   },
 
   // Contact
@@ -155,6 +184,10 @@ export const en = {
     valMessage: 'Message must be at least 10 characters',
     responseTimeTitle: 'Response Time',
     responseTimeDesc: 'I typically respond within 24–48 hours. For urgent inquiries, reach out directly via email.',
+    errRateLimit: 'Too many messages in a short time. Please wait a few minutes and try again.',
+    errValidation: 'Some fields are invalid. Please check the form and try again.',
+    errServer: 'The server could not save your message. Please try again later or email me directly.',
+    errNetwork: 'Could not reach the server. Check your connection and try again.',
   },
 
   // Resume
@@ -162,6 +195,11 @@ export const en = {
     title: 'Resume',
     subtitle: 'Professional profile, experience, and technical competencies',
     downloadPdf: 'Download PDF',
+    shareTitle: 'Share this resume',
+    shareVia: 'Share via app…',
+    copyLink: 'Copy link',
+    shareEmail: 'Send by email',
+    shareText: "{name}'s resume",
   },
 
   // Landing Page
@@ -192,6 +230,104 @@ export const en = {
     bpscCertsTitle: 'Verified Certifications',
     viewAllCerts: 'View all certs',
     verifyCredential: 'Verify Credential',
+    aboutOpenToWork: 'Open for new challenges & projects',
+    aboutAuthorRole: 'Lead Engineer',
+    aboutStoryBadge: 'Engineering Story',
+    aboutWorkspaceLabel: 'Workspace',
+    aboutWorkspaceCaption: 'Clean Setup',
+    aboutActionLabel: 'In Action',
+    aboutActionCaption: 'Architecture & AI',
+  },
+
+  pagination: {
+    label: 'Pagination',
+    showing: 'Showing',
+    of: 'of',
+    results: 'results',
+    page: 'Page',
+    first: 'First page',
+    previous: 'Previous page',
+    next: 'Next page',
+    last: 'Last page',
+  },
+
+  commandPalette: {
+    title: 'Quick navigation',
+    placeholder: 'Type a page name…',
+    empty: 'No results found.',
+    navigation: 'Navigation',
+  },
+
+  notFound: {
+    title: 'Page not found',
+    message: 'The page you\'re looking for doesn\'t exist or may have been moved.',
+    blogTitle: 'Article not found',
+    blogMessage: 'The article you\'re looking for doesn\'t exist or may have been moved.',
+    backHome: 'Back to home',
+    backToBlog: 'Browse articles',
+    viewProjects: 'View projects',
+  },
+
+  errorPage: {
+    title: 'Something went wrong',
+    message: 'An unexpected error occurred while loading this page. Please try again.',
+    retry: 'Try again',
+  },
+
+  resumeLabels: {
+    present: 'Present',
+    continued: 'Continued',
+    careerObjective: 'Career Objective',
+    technologies: 'Technologies',
+    coreCompetencies: 'Core Competencies',
+    languages: 'Languages',
+    profile: 'Profile',
+    experience: 'Experience',
+    education: 'Education',
+    technicalSkills: 'Technical Skills',
+    additionalSkills: 'Additional Skills',
+    softSkills: 'Soft Skills',
+    achievements: 'Achievements',
+    activities: 'Activities',
+    continuous: 'Continuous',
+    pageTabs: 'Page Tabs',
+    harvardFormat: 'Harvard Format',
+    sheet: 'Sheet',
+    primaryOverview: 'Primary Overview',
+    continuedCredentials: 'Continued Credentials',
+    experienceAndCredentials: 'Experience & Additional Credentials',
+  },
+
+  resumeSections: {
+    education: 'Education',
+    experience: 'Professional Experience',
+    skills: 'Technical Skills',
+    softSkills: 'Core Competencies & Leadership',
+    achievements: 'Honors & Awards',
+    activities: 'Activities & Leadership',
+    languages: 'Languages',
+    bio: 'Professional Summary',
+  },
+
+  visitor: {
+    titleBefore: 'Welcome to',
+    titleAfter: '\'s portfolio',
+    description: 'Before you look around, please tell me a little about yourself.',
+    nameLabel: 'Your name',
+    namePlaceholder: 'e.g. Alex Morgan',
+    emailLabel: 'Email address',
+    emailPlaceholder: 'alex@company.com',
+    reasonLabel: 'Reason for visiting',
+    reasonPlaceholder: 'e.g. hiring, reviewing projects, collaboration…',
+    submit: 'Continue to portfolio',
+    submitting: 'Sending…',
+    privacy: 'Only the site owner can see these details.',
+    valName: 'Please enter your name (at least 2 characters).',
+    valEmail: 'Please enter a valid email address.',
+    valReason: 'Please briefly share why you are visiting.',
+    welcome: 'Welcome',
+    submitError: 'Could not send your details. Please check them and try again.',
+    networkError: 'Network error. Please try again in a moment.',
   },
 
   // Footer

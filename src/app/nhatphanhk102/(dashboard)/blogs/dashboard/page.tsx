@@ -13,8 +13,11 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { formatDate } from '@/lib/utils';
+import { StatusBadge } from '@/components/admin/StatusBadge';
+import { AdminPageHeader, ADMIN_PAGE_CLASS } from '@/components/admin/AdminPageHeader';
 
-export const metadata: Metadata = { title: 'Blog Dashboard & Analytics — Admin' };
+export const metadata: Metadata = { title: 'Thống kê bài viết — Admin' };
 
 function StatCard({
   title,
@@ -91,7 +94,7 @@ export default async function BlogDashboardPage() {
   const now = new Date();
   const months = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
-    return { label: d.toLocaleString('en-US', { month: 'short' }), year: d.getFullYear(), month: d.getMonth() };
+    return { label: `T${d.getMonth() + 1}`, year: d.getFullYear(), month: d.getMonth() };
   });
   const postsByMonth = months.map(m => ({
     ...m,
@@ -105,19 +108,19 @@ export default async function BlogDashboardPage() {
   const recent = [...blogs].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 5);
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-6 w-full max-w-6xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Blog Dashboard & Analytics</h1>
-          <p className="text-sm text-muted-foreground">Tổng quan bài viết và thống kê lượt xem đã lọc Unique View</p>
-        </div>
-        <Link
-          href="/nhatphanhk102/blogs"
-          className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
-        >
-          <FileText className="h-4 w-4" /> Quản lý bài viết
-        </Link>
-      </div>
+    <main className={ADMIN_PAGE_CLASS}>
+      <AdminPageHeader
+        title="Thống kê bài viết"
+        description="Tổng quan bài viết và lượt xem (đã lọc trùng)"
+        actions={
+          <Link
+            href="/nhatphanhk102/blogs"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
+          >
+            <FileText className="h-4 w-4" aria-hidden="true" /> Quản lý bài viết
+          </Link>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -126,8 +129,8 @@ export default async function BlogDashboardPage() {
         <StatCard title="Bản nháp" value={draft} icon={BarChart3} color="yellow" sub="Đang biên tập" />
         <StatCard title="Lưu trữ" value={archived} icon={Archive} color="purple" sub="Tạm ẩn" />
         <StatCard
-          title="Tổng Lượt xem"
-          value={totalViews.toLocaleString()}
+          title="Tổng lượt xem"
+          value={totalViews.toLocaleString('vi-VN')}
           icon={Eye}
           color="blue"
           sub="Lọc 1 view/tài khoản"
@@ -140,7 +143,7 @@ export default async function BlogDashboardPage() {
           <div className="flex items-center gap-2">
             <Flame className="h-5 w-5 text-amber-500" />
             <div>
-              <h2 className="font-semibold text-foreground">Top Bài viết có Lượt xem cao nhất</h2>
+              <h2 className="font-semibold text-foreground">Bài viết có lượt xem cao nhất</h2>
               <p className="text-xs text-muted-foreground">Xếp hạng theo số lượt xem thực tế duy nhất</p>
             </div>
           </div>
@@ -187,7 +190,7 @@ export default async function BlogDashboardPage() {
                     <div className="flex items-center gap-3 shrink-0">
                       <span className="inline-flex items-center gap-1 text-xs font-bold text-foreground px-2 py-0.5 rounded-md bg-card border border-border">
                         <Eye className="w-3.5 h-3.5 text-primary" />
-                        {views.toLocaleString()} views
+                        {views.toLocaleString('vi-VN')} lượt xem
                       </span>
                       <span className="text-xs text-muted-foreground">({totalPct}%)</span>
                     </div>
@@ -238,10 +241,10 @@ export default async function BlogDashboardPage() {
         <div className="p-6 rounded-xl border border-border bg-card">
           <div className="flex items-center gap-2 mb-5">
             <Tag className="h-4 w-4 text-muted-foreground" />
-            <h2 className="font-semibold text-foreground">Thẻ Tags phổ biến</h2>
+            <h2 className="font-semibold text-foreground">Thẻ phổ biến</h2>
           </div>
           {topTags.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Chưa có tag nào</p>
+            <p className="text-sm text-muted-foreground">Chưa có thẻ nào.</p>
           ) : (
             <div className="space-y-3">
               {topTags.map(([name, count]) => (
@@ -256,7 +259,7 @@ export default async function BlogDashboardPage() {
       <div className="p-6 rounded-xl border border-border bg-card">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
-            <h2 className="font-semibold text-foreground">Thống kê Lượt xem chi tiết từng bài blog</h2>
+            <h2 className="font-semibold text-foreground">Lượt xem theo từng bài viết</h2>
             <p className="text-xs text-muted-foreground">
               Toàn bộ bài viết sắp xếp theo số lượt xem giảm dần
             </p>
@@ -306,32 +309,18 @@ export default async function BlogDashboardPage() {
                         <span className="font-mono text-[11px] text-muted-foreground block">/{blog.slug}</span>
                       </td>
                       <td className="px-3 py-3">
-                        <span
-                          className={`px-2 py-0.5 text-xs rounded-full font-medium ${
-                            blog.status === 'PUBLISHED'
-                              ? 'bg-green-500/10 text-green-700 dark:text-green-400'
-                              : blog.status === 'DRAFT'
-                                ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                                : 'bg-muted text-muted-foreground'
-                          }`}
-                        >
-                          {blog.status}
-                        </span>
+                        <StatusBadge status={blog.status} />
                       </td>
                       <td className="px-3 py-3 font-semibold">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted text-foreground">
                           <Eye className="w-3.5 h-3.5 text-primary" />
-                          {views.toLocaleString()}
+                          {views.toLocaleString('vi-VN')}
                         </span>
                       </td>
                       <td className="px-3 py-3 text-xs text-muted-foreground">{contribution}%</td>
                       <td className="px-3 py-3 text-xs text-muted-foreground hidden md:table-cell">
                         {blog.publishedAt
-                          ? new Date(blog.publishedAt).toLocaleDateString('vi-VN', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                            })
+                          ? formatDate(blog.publishedAt, 'vi', 'numeric')
                           : '—'}
                       </td>
                       <td className="px-3 py-3 text-right">
@@ -340,18 +329,21 @@ export default async function BlogDashboardPage() {
                             <Link
                               href={`/blog/${blog.slug}`}
                               target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={`Xem "${blog.title}" trên web`}
                               title="Xem bài viết trên web"
                               className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                             >
-                              <ExternalLink className="w-4 h-4" />
+                              <ExternalLink className="w-4 h-4" aria-hidden="true" />
                             </Link>
                           )}
                           <Link
                             href={`/nhatphanhk102/blogs/editor/${blog.id}`}
+                            aria-label={`Sửa "${blog.title}"`}
                             title="Chỉnh sửa bài viết"
                             className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                           >
-                            <Pencil className="w-4 h-4" />
+                            <Pencil className="w-4 h-4" aria-hidden="true" />
                           </Link>
                         </div>
                       </td>
@@ -367,14 +359,14 @@ export default async function BlogDashboardPage() {
       {/* Status breakdown & Recent posts */}
       <div className="grid md:grid-cols-2 gap-6">
         <div className="p-6 rounded-xl border border-border bg-card">
-          <h2 className="font-semibold text-foreground mb-4">Phân bố Trạng thái</h2>
+          <h2 className="font-semibold text-foreground mb-4">Phân bố trạng thái</h2>
           {total === 0 ? (
             <p className="text-sm text-muted-foreground">Chưa có bài viết.</p>
           ) : (
             <div className="space-y-3">
-              <MiniBar label="Công khai (Published)" value={published} max={total} color="bg-green-500" />
-              <MiniBar label="Bản nháp (Draft)" value={draft} max={total} color="bg-amber-500" />
-              <MiniBar label="Lưu trữ (Archived)" value={archived} max={total} color="bg-purple-500" />
+              <MiniBar label="Đã xuất bản" value={published} max={total} color="bg-green-500" />
+              <MiniBar label="Bản nháp" value={draft} max={total} color="bg-amber-500" />
+              <MiniBar label="Lưu trữ" value={archived} max={total} color="bg-purple-500" />
             </div>
           )}
         </div>
@@ -395,31 +387,17 @@ export default async function BlogDashboardPage() {
                       {blog.title}
                     </Link>
                     <p className="text-xs text-muted-foreground">
-                      {blog.createdAt.toLocaleDateString('vi-VN', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                      })}
+                      {formatDate(blog.createdAt, 'vi', 'numeric')}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {(blog.viewCount ?? 0) > 0 && (
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Eye className="h-3 w-3" />
+                        <Eye className="h-3 w-3" aria-label="Lượt xem" />
                         {blog.viewCount}
                       </span>
                     )}
-                    <span
-                      className={`px-2 py-0.5 text-xs rounded-full ${
-                        blog.status === 'PUBLISHED'
-                          ? 'bg-green-500/10 text-green-700 dark:text-green-400'
-                          : blog.status === 'DRAFT'
-                            ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                            : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {blog.status}
-                    </span>
+                    <StatusBadge status={blog.status} />
                   </div>
                 </div>
               ))}

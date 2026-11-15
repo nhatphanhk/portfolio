@@ -20,26 +20,35 @@ already been sent as `200` — it can no longer be changed to `404`. This only h
 `loading.tsx` exists **above** the segment that calls `notFound()`; a scoped `not-found.tsx`
 at the same level as the page is fine.
 
-**The fix already in place:**
+**Current state (what keeps public 404s correct today):**
 
-- `src/app/blog/[slug]/not-found.tsx` — a route-scoped 404 UI, not a `loading.tsx`.
-- `src/app/blog/[slug]/page.tsx` (and `project/[slug]/page.tsx`) export **both**
-  `generateStaticParams()` **and** `export const dynamic = 'force-dynamic'`. Both are
-  required — `force-dynamic` opts the route out of the streaming/prerender path that
-  causes the status-code bug, while `generateStaticParams` is kept so the route is still
-  known to the router/sitemap generation.
-- There is **no root `src/app/loading.tsx`**, and none should be added. If a global loading
-  UI is ever needed, scope it to a segment that never calls `notFound()`, or accept the
-  tradeoff explicitly and document it here.
+- There is **no root `src/app/loading.tsx`** and no `loading.tsx` above any public route.
+  The public detail routes (`blog/[slug]`, `project/[slug]`, `blog/series/[slug]`) call
+  `notFound()` right after their first data read, before any Suspense boundary, so the
+  status code can still be set to `404`.
+- They no longer export `dynamic = 'force-dynamic'` / `generateStaticParams` for this — the
+  root layout reads the locale cookie, which already makes every route dynamic (see #4).
+  Their `revalidate` exports are inert for the same reason.
+- `src/app/blog/[slug]/not-found.tsx` and `src/app/not-found.tsx` both render the shared
+  `NotFoundView` (a route-scoped 404 UI, not a `loading.tsx`).
+- Public list pages show loading state with `<Suspense fallback={<CardGridSkeleton />}>`
+  inside the page, not with a route `loading.tsx`.
+- **Accepted exception:** the admin area has route `loading.tsx` files —
+  `src/app/nhatphanhk102/(dashboard)/loading.tsx` plus one per admin route, built from the
+  primitives in `src/components/admin/AdminSkeletons.tsx`. The only
+  `notFound()` beneath them is the blog editor (`blogs/editor/[id]`); a missing id there
+  streams the 404 UI with HTTP `200` + `noindex`. That route is behind auth and never
+  crawled, so the status code doesn't matter.
 
-**Rule:** ❌ Don't add `src/app/loading.tsx` (or any `loading.tsx` in an ancestor of a route
-that calls `notFound()`) without re-checking this behavior first.
+**Rule:** ❌ Don't add `src/app/loading.tsx` (or any `loading.tsx` in an ancestor of a
+*public* route that calls `notFound()`). Use an in-page `<Suspense>` skeleton instead, or
+document the tradeoff here as was done for the admin.
 
 ---
 
 ## 2. Defining a component inside another component's function body causes a full remount on every keystroke
 
-**Symptom:** Hit in the large admin editor clients (e.g. `src/app/admin/(dashboard)/resume/client.tsx`,
+**Symptom:** Hit in the large admin editor clients (e.g. `src/app/nhatphanhk102/(dashboard)/resume/client.tsx`,
 which edits Profile/Experience/Education/etc. on one page). Typing into a text field inside
 one of these forms caused the entire form section to lose focus / remount after every
 character.
@@ -93,15 +102,42 @@ rendered as JSX — if so, either hoist it out or call it as `{InnerComponent()}
 
 **The mitigation in place:**
 - Memory auto-cleanup garbage collection (`cleanupExpiredRecords`) ensures no memory leakage.
-- Next.js ISR Edge Caching (`export const revalidate = 300`) absorbs 99%+ of read traffic at the CDN level, so public lambdas are rarely spawned.
-- All mutating API endpoints (`/api/contact`, `/api/visitor`, `/api/upload`, `/api/resume/parse-pdf`, `/api/admin/create`, `/api/swagger`) enforce strict rate limits per IP.
+- Read traffic is **not** absorbed by ISR: every page renders dynamically (see #4), so each
+  public request runs a function. Data reads are cached with `unstable_cache` / tags, which
+  keeps the DB load low, but the functions themselves still run.
+- Rate-limited endpoints (per IP): mutating `/api/contact`, `/api/visitor`, `/api/upload`,
+  `/api/resume/parse-pdf`, `/api/translate`, `/api/blogs/[id]/view`, `/api/admin/create`,
+  and the read-only (but expensive to abuse) `/api/swagger`. Credentials sign-in is
+  rate-limited in `src/auth.ts`.
+- Client IP resolution (`getClientIp` in `src/lib/rate-limit.ts`) prefers
+  `x-vercel-forwarded-for`, then the first `x-forwarded-for` hop, and only then
+  `cf-connecting-ip` — the site is not behind Cloudflare, so that header is client-forgeable.
 - Zero-cost (0đ): Perfectly suitable for normal personal portfolio traffic (< 1,000 req/day).
 
 **Rule:** ✅ If the portfolio ever transitions to a massive enterprise scale with thousands of requests per second, plug in Upstash Redis via distributed key-value store, or configure Cloudflare WAF at the DNS edge.
 
 ---
 
-## 4. Reporting a new issue here
+## 4. The root layout's cookie read makes every route dynamic
+
+**Symptom:** `export const revalidate = 3600` (and similar ISR settings) on public pages has
+no effect; `next build` lists every route as dynamic (ƒ) rather than static/ISR.
+
+**Cause:** `src/app/layout.tsx` calls `getServerLocale()`, which reads the `locale` cookie
+(and `Accept-Language`). Reading request data in the root layout opts the whole tree into
+dynamic rendering. The locale lives in a cookie rather than in the URL.
+
+**The fix in place:** none — accepted for now. Data reads are cached at the Server Action
+level (`unstable_cache` + `revalidateTag`), so the cost is function execution, not DB load.
+
+**Rule:** ✅ Don't "fix" this by removing the cookie read or adding `force-static`; the page
+would render in the wrong language. The real fix is `[locale]` URL segments (`/en/...`,
+`/vi/...`) with `generateStaticParams` + hreflang, which is an architectural change and
+out of scope until decided explicitly.
+
+---
+
+## 5. Reporting a new issue here
 
 If you hit another framework-level gotcha (not an ordinary bug in this codebase's own
 logic, but a Next.js/React/Prisma/NextAuth behavior that's non-obvious and could easily be

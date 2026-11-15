@@ -61,26 +61,35 @@ export default function ContactSection({ profile, socialLinks, hideHeader = fals
       });
 
       if (!response.ok) {
+        // Map the API's error codes to localized copy instead of surfacing its English message
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData?.error?.message ?? t('contact.error'));
+        const code: string | undefined = errorData?.error?.code;
+        const description =
+          code === 'RATE_LIMIT_EXCEEDED'
+            ? t('contact.errRateLimit')
+            : code === 'VALIDATION_ERROR'
+              ? t('contact.errValidation')
+              : t('contact.errServer');
+        toast.error(t('contact.error'), { description });
+        return;
       }
 
       toast.success(t('contact.success'), {
         description: t('contact.successDesc'),
       });
       reset();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('contact.error');
-      toast.error(t('contact.error'), { description: message });
+    } catch {
+      // fetch() itself failed: offline or the server is unreachable
+      toast.error(t('contact.error'), { description: t('contact.errNetwork') });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const formAndInfo = (
-    <div className="grid lg:grid-cols-5 gap-12">
+    <div className="grid lg:grid-cols-5 gap-8 lg:gap-10 min-w-0 w-full">
       {/* Form — 3 columns */}
-      <div className="lg:col-span-3">
+      <div className="lg:col-span-3 min-w-0">
             <form
               id="contact-form"
               onSubmit={handleSubmit(onSubmit)}
@@ -178,7 +187,7 @@ export default function ContactSection({ profile, socialLinks, hideHeader = fals
           </div>
 
           {/* Info — 2 columns */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-8 min-w-0">
             <div>
               <h3 className="font-semibold text-foreground mb-4">{t('contact.directContact')}</h3>
               <div className="space-y-3">

@@ -77,6 +77,7 @@ export function InlineEditable({
           onBlur={handleCommit}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
+          aria-label={placeholder}
           className={`w-full bg-blue-50/50 text-gray-900 border-2 border-blue-500 rounded p-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400/30 resize-none font-inherit leading-inherit transition ${className}`}
         />
       );
@@ -91,6 +92,7 @@ export function InlineEditable({
         onBlur={handleCommit}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
+        aria-label={placeholder}
         className={`w-full bg-blue-50/50 text-gray-900 border-2 border-blue-500 rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-400/30 font-inherit leading-inherit transition ${className}`}
       />
     );
@@ -100,8 +102,16 @@ export function InlineEditable({
 
   return (
     <Component
+      role="button"
+      tabIndex={0}
       onClick={() => setIsEditing(true)}
-      className={`group/inline relative cursor-text transition-all rounded px-1 -mx-1 ${
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setIsEditing(true);
+        }
+      }}
+      className={`group/inline relative cursor-text transition-all rounded px-1 -mx-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
         isEmpty
           ? 'italic text-gray-400 border border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50/40'
           : 'hover:bg-blue-50/50 hover:ring-1 hover:ring-blue-300'
@@ -109,7 +119,10 @@ export function InlineEditable({
       title="Nhấp để chỉnh sửa trực tiếp"
     >
       {isEmpty ? placeholder : value}
-      <span className="opacity-0 group-hover/inline:opacity-100 transition-opacity ml-1.5 inline-flex items-center text-blue-500 align-middle">
+      <span
+        aria-hidden="true"
+        className="opacity-0 group-hover/inline:opacity-100 group-focus-visible/inline:opacity-100 transition-opacity ml-1.5 inline-flex items-center text-blue-500 align-middle"
+      >
         <Pencil className="w-3 h-3" />
       </span>
     </Component>

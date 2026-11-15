@@ -57,3 +57,25 @@ export const prisma = new Proxy({} as PrismaClient, {
     return typeof value === 'function' ? (value as Function).bind(client) : value;
   },
 });
+
+/**
+ * Maps the Prisma errors that admin forms can realistically trigger to a short message that is
+ * safe to show in a toast. Anything else gets the caller's fallback.
+ */
+export function prismaErrorMessage(err: unknown, fallback = 'Đã xảy ra lỗi khi lưu dữ liệu.'): string {
+  const code = (err as { code?: string } | null)?.code;
+  const target = (err as { meta?: { target?: string[] | string } } | null)?.meta?.target;
+  const field = Array.isArray(target) ? target.join(', ') : target;
+  switch (code) {
+    case 'P2002':
+      return field?.includes('slug')
+        ? 'Slug đã tồn tại, vui lòng chọn slug khác.'
+        : `Giá trị đã tồn tại (${field ?? 'trùng lặp'}).`;
+    case 'P2025':
+      return 'Không tìm thấy bản ghi (có thể đã bị xóa).';
+    case 'P2003':
+      return 'Dữ liệu liên kết không hợp lệ (bản ghi tham chiếu không tồn tại).';
+    default:
+      return fallback;
+  }
+}

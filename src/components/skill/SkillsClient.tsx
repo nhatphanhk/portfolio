@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useLanguage } from '@/lib/i18n/context';
-import { SKILL_CATEGORY_LABELS } from '@/data/skills';
+import { PublicPageHeader } from '@/components/ui/PublicPageHeader';
 import {
   Code2,
   Server,
@@ -55,42 +55,41 @@ export default function SkillsClient({ skillsByCategory }: SkillsClientProps) {
     if (translated && !translated.startsWith('skills.categories.')) {
       return translated;
     }
-    return SKILL_CATEGORY_LABELS[cat as keyof typeof SKILL_CATEGORY_LABELS] ?? cat;
+    return cat;
   };
 
   return (
     <>
-      {/* Header */}
-      <div className="mb-10">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-3 bg-primary/10 text-primary border border-primary/20">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>{t('skills.badge')}</span>
+      <PublicPageHeader
+        badge={{ label: t('skills.badge'), icon: Sparkles }}
+        title={t('skills.title')}
+        subtitle={t('skills.subtitle')}
+        actions={
+          totalSkills > 0 && (
+            <>
+              <div className="text-center">
+                <p className="text-2xl font-black text-primary">{totalSkills}</p>
+                <p className="text-xs font-semibold text-muted-foreground">{t('skills.tracked')}</p>
+              </div>
+              <div className="w-px h-8 bg-border" aria-hidden="true" />
+              <div className="text-center">
+                <p className="text-2xl font-black text-foreground">{categories.length}</p>
+                <p className="text-xs font-semibold text-muted-foreground">{t('skills.categories.label')}</p>
+              </div>
+            </>
+          )
+        }
+      />
+
+      {totalSkills === 0 && (
+        <div className="py-20 text-center rounded-2xl border border-dashed border-border/70">
+          <Layers className="w-10 h-10 mx-auto mb-3 text-muted-foreground/40" aria-hidden="true" />
+          <p className="text-muted-foreground">{t('skills.empty')}</p>
         </div>
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-foreground tracking-tight mb-2">
-              {t('skills.title')}
-            </h1>
-            <p className="text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed">
-              {t('skills.subtitle')}
-            </p>
-          </div>
-          <div className="flex items-center gap-4 shrink-0">
-            <div className="text-center">
-              <p className="text-2xl font-black text-primary">{totalSkills}</p>
-              <p className="text-xs font-semibold text-muted-foreground">{t('skills.tracked')}</p>
-            </div>
-            <div className="w-px h-8 bg-border" />
-            <div className="text-center">
-              <p className="text-2xl font-black text-foreground">{categories.length}</p>
-              <p className="text-xs font-semibold text-muted-foreground">{t('skills.categories.label') || 'Categories'}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Categories Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 min-w-0">
         {categories.map(cat => {
           const skills = skillsByCategory[cat] ?? [];
           if (skills.length === 0) return null;
@@ -102,12 +101,12 @@ export default function SkillsClient({ skillsByCategory }: SkillsClientProps) {
             <section
               key={cat as string}
               aria-labelledby={`${cat}-heading`}
-              className="p-5 rounded-2xl bg-card border border-border/70 shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/30 flex flex-col gap-4"
+              className="p-6 rounded-2xl bg-card border border-border/70 shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/30 flex flex-col gap-4"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/15 flex items-center justify-center">
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-4 h-4" aria-hidden="true" />
                   </div>
                   <div>
                     <h2 id={`${cat}-heading`} className="text-sm font-bold text-foreground leading-tight">
@@ -131,12 +130,12 @@ export default function SkillsClient({ skillsByCategory }: SkillsClientProps) {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={skill.iconUrl}
-                        alt={skill.name}
+                        alt=""
                         className="w-4 h-4 object-contain shrink-0 transition-transform group-hover:scale-110"
                       />
                     ) : (
                       <div className="w-4 h-4 rounded-md bg-muted flex items-center justify-center shrink-0">
-                        <Layers className="w-2.5 h-2.5 text-muted-foreground" />
+                        <Layers className="w-2.5 h-2.5 text-muted-foreground" aria-hidden="true" />
                       </div>
                     )}
                     <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">

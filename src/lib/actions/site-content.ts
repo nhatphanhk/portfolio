@@ -116,6 +116,7 @@ export const getSiteContentRecord = cache(async (locale?: string): Promise<Local
  * Get all site content items for the admin editor
  */
 export async function getAllSiteContent(): Promise<SiteContentItem[]> {
+  await ensureAdmin();
   try {
     const items = await prisma.siteContent.findMany({
       orderBy: [{ grp: 'asc' }, { key: 'asc' }],
@@ -176,38 +177,6 @@ export async function getAllSiteContent(): Promise<SiteContentItem[]> {
       label: d.label,
       grp: d.grp,
     }));
-  }
-}
-
-/**
- * Update multiple site content items at once
- */
-export async function updateSiteContentBatch(updates: Array<{ key: string; value: string }>) {
-  await ensureAdmin();
-
-  try {
-    for (const { key, value } of updates) {
-      const def = DEFAULT_SITE_CONTENT.find(d => d.key === key);
-      await prisma.siteContent.upsert({
-        where: { key },
-        update: { value },
-        create: {
-          key,
-          value,
-          type: def?.type ?? 'text',
-          label: def?.label ?? key,
-          grp: def?.grp ?? 'general',
-        },
-      });
-    }
-
-    revalidateTag('site-content', 'max');
-    revalidatePath('/');
-    revalidatePath('/nhatphanhk102/landing');
-    return { ok: true };
-  } catch (error) {
-    console.error('Error updating site content batch:', error);
-    return { ok: false, error: 'Failed to update site content' };
   }
 }
 

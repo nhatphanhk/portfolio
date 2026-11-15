@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-A **Next.js 16** (App Router, Turbopack) personal portfolio with a full **database-backed admin CMS**. Public pages (home, blog, projects, skills, certifications, resume, contact) read content via Server Actions that query **Prisma + PostgreSQL**; the admin dashboard at `/admin` provides full CRUD for all content, protected by **NextAuth v5** (credentials login).
+A **Next.js 16** (App Router, Turbopack) personal portfolio with a full **database-backed admin CMS**. Public pages (home, blog, projects, skills, certifications, resume, contact) read content via Server Actions that query **Prisma + PostgreSQL**; the admin dashboard at `/nhatphanhk102` provides full CRUD for all content, protected by **NextAuth v5** (credentials login).
 
 This is a real, deployed system — not a mock/MVP. Content editors (profile, experience, skills, blog, projects, certifications, social links, contact messages) all live in the database. Static fallback data in `src/data/*.ts` exists only as a seed/fallback when a table is empty (see "DB-with-fallback pattern" below) — do not treat it as the source of truth.
 
@@ -52,15 +52,15 @@ Page (Server Component, async)
 
 ### Auth
 
-- `src/auth.config.ts` — NextAuth config: JWT session (24h), redirects unauthenticated `/admin/*` requests to `/admin/login`.
+- `src/auth.config.ts` — NextAuth config: JWT session (24h), redirects unauthenticated `/nhatphanhk102/*` requests to `/nhatphanhk102/login`.
 - `src/auth.ts` — Credentials provider: looks up `User` in Postgres via Prisma + bcrypt; if the DB is unreachable or the user doesn't exist, falls back to a single env-defined admin (`ADMIN_EMAIL` / `ADMIN_PASSWORD_HASH`). Keep this fallback — it's the recovery path if the DB is down.
-- `src/proxy.ts` is the Next.js 16 middleware (renamed from `middleware.ts`; **don't recreate `middleware.ts`**, Next.js 16 conflicts if both exist). Matcher is `/admin/:path*` only — it does not touch public routes.
+- `src/proxy.ts` is the Next.js 16 middleware (renamed from `middleware.ts`; **don't recreate `middleware.ts`**, Next.js 16 conflicts if both exist). Matcher is `/nhatphanhk102/:path*` only — it does not touch public routes.
 - Server actions that mutate data call `ensureAdmin()` (`src/lib/auth-utils.ts`) themselves — the proxy matcher is a UX-layer redirect, not the only guard.
 
 ### Layout System
 
 - **Public pages**: wrap content in `<MainLayout>` (`src/components/MainLayout.tsx`) — includes `Header`, `Footer` (both fetch profile/social links themselves), and `VisitorModal`. `MainLayout` is applied per-page (in each `page.tsx`), not in the root layout — the root `src/app/layout.tsx` only provides `ThemeProvider`, `Toaster`, `CommandPalette`, and analytics.
-- **Admin pages**: `src/app/admin/(dashboard)/layout.tsx` — sidebar (`AppSidebar`) + `SidebarInset`, auth-gated by the proxy matcher. `src/app/admin/login/page.tsx` is outside the `(dashboard)` group (no sidebar).
+- **Admin pages**: `src/app/nhatphanhk102/(dashboard)/layout.tsx` — sidebar (`AppSidebar`) + `SidebarInset`, auth-gated by the proxy matcher. `src/app/nhatphanhk102/login/page.tsx` is outside the `(dashboard)` group (no sidebar).
 - Root `src/app/template.tsx` adds a fade/slide transition on every navigation (framer-motion) — this runs for every route including admin.
 
 ### Component Organization
@@ -114,7 +114,7 @@ Don't go back to a hand-maintained `{ Github, Linkedin, Twitter }` map — it si
 Each admin resource's `client.tsx` renders its list with plain `<table>` markup (styled via
 Tailwind, not the shadcn `ui/table.tsx` primitive or a generic table component) and opens
 its `*Dialog.tsx` for create/edit. Follow the existing pattern in e.g.
-`src/app/admin/(dashboard)/certifications/client.tsx` for a new resource rather than adding
+`src/app/nhatphanhk102/(dashboard)/certifications/client.tsx` for a new resource rather than adding
 a TanStack Table dependency.
 
 ### Avoid re-defining components inside a render function and using them as JSX

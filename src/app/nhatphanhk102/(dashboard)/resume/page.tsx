@@ -1,7 +1,7 @@
 ﻿import {
-  getProfile,
-  getExperiences,
-  getSocialLinks,
+  getProfileForAdmin,
+  getExperiencesForAdmin,
+  getSocialLinksForAdmin,
   getEducation,
   getAchievements,
   getSpokenLanguages,
@@ -16,9 +16,9 @@ export const metadata: Metadata = { title: 'Resume — Admin' };
 export default async function AdminAboutPage() {
   const [profile, experiences, socialLinks, education, achievements, spokenLanguages, activities, skillsByCategory] =
     await Promise.all([
-      getProfile(),
-      getExperiences(),
-      getSocialLinks(),
+      getProfileForAdmin(),
+      getExperiencesForAdmin(),
+      getSocialLinksForAdmin(),
       getEducation(),
       getAchievements(),
       getSpokenLanguages(),

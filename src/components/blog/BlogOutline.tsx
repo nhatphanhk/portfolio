@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import type { Heading } from '@/lib/blog-utils';
 import { AlignLeft, ArrowUp, ChevronDown, ChevronUp, Share2, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLanguage } from '@/lib/i18n/context';
 
 interface BlogOutlineProps {
   headings: Heading[];
@@ -16,6 +17,7 @@ export function BlogOutline({ headings, readTime, className = '' }: BlogOutlineP
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [copied, setCopied] = useState(false);
+  const { t } = useLanguage();
 
   // Track reading scroll progress
   useEffect(() => {
@@ -50,14 +52,27 @@ export function BlogOutline({ headings, readTime, className = '' }: BlogOutlineP
       }
     );
 
-    headings.forEach(heading => {
-      const element = document.getElementById(heading.id);
-      if (element) {
-        observer.observe(element);
+    // Heading ids are added by BlogContent after its own effect runs, so retry briefly until
+    // the elements exist instead of observing nothing on first load.
+    let cancelled = false;
+    let attempts = 0;
+    const attach = () => {
+      if (cancelled) return;
+      const elements = headings
+        .map(heading => document.getElementById(heading.id))
+        .filter((el): el is HTMLElement => el !== null);
+      if (elements.length < headings.length && attempts++ < 20) {
+        setTimeout(attach, 100);
+        return;
       }
-    });
+      elements.forEach(el => observer.observe(el));
+    };
+    attach();
 
-    return () => observer.disconnect();
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
   }, [headings]);
 
   const scrollToHeading = (e: React.MouseEvent, id: string) => {
@@ -76,10 +91,14 @@ export function BlogOutline({ headings, readTime, className = '' }: BlogOutlineP
 
   const handleShare = () => {
     if (typeof window !== 'undefined') {
-      navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      toast.success('Link copied to clipboard!');
-      setTimeout(() => setCopied(false), 2000);
+      navigator.clipboard.writeText(window.location.href).then(
+        () => {
+          setCopied(true);
+          toast.success(t('blog.linkCopied'));
+          setTimeout(() => setCopied(false), 2000);
+        },
+        () => toast.error(t('blog.linkCopyFailed'))
+      );
     }
   };
 
@@ -90,22 +109,24 @@ export function BlogOutline({ headings, readTime, className = '' }: BlogOutlineP
         <button
           type="button"
           onClick={() => setIsMobileOpen(!isMobileOpen)}
+          aria-expanded={isMobileOpen}
+          aria-controls="blog-outline-mobile"
           className="w-full flex items-center justify-between p-4 rounded-xl border border-border bg-card shadow-xs text-sm font-semibold text-foreground hover:border-primary/40 transition-colors"
         >
           <span className="flex items-center gap-2">
-            <AlignLeft className="w-4 h-4 text-primary" />
-            Table of Contents
+            <AlignLeft className="w-4 h-4 text-primary" aria-hidden="true" />
+            {t('blog.tableOfContents')}
             {headings.length > 0 && (
               <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
                 {headings.length}
               </span>
             )}
           </span>
-          {isMobileOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {isMobileOpen ? <ChevronUp className="w-4 h-4" aria-hidden="true" /> : <ChevronDown className="w-4 h-4" aria-hidden="true" />}
         </button>
 
         {isMobileOpen && (
-          <div className="mt-2 p-4 rounded-xl border border-border bg-card shadow-md space-y-2 max-h-80 overflow-y-auto">
+          <div id="blog-outline-mobile" className="mt-2 p-4 rounded-xl border border-border bg-card shadow-md space-y-2 max-h-80 overflow-y-auto">
             {headings.length > 0 ? (
               <ul className="space-y-1.5 text-xs">
                 {headings.map(h => (
@@ -126,7 +147,7 @@ export function BlogOutline({ headings, readTime, className = '' }: BlogOutlineP
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-muted-foreground py-2">No headings in this article.</p>
+              <p className="text-xs text-muted-foreground py-2">{t('blog.noHeadings')}</p>
             )}
           </div>
         )}
@@ -145,18 +166,18 @@ export function BlogOutline({ headings, readTime, className = '' }: BlogOutlineP
         <div className="p-5">
           <div className="flex items-center justify-between mb-4 pb-3 border-b border-border/60">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <AlignLeft className="w-3.5 h-3.5 text-primary" />
-              <span>Table of Contents</span>
+              <AlignLeft className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+              <span>{t('blog.tableOfContents')}</span>
             </h3>
             {headings.length > 0 && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                {headings.length} sections
+                {headings.length} {t('blog.sections')}
               </span>
             )}
           </div>
 
           {headings.length > 0 ? (
-            <nav className="max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
+            <nav aria-label={t('blog.tableOfContents')} className="max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
               <ul className="space-y-1 text-xs">
                 {headings.map(heading => {
                   const isActive = activeId === heading.id;
@@ -175,6 +196,7 @@ export function BlogOutline({ headings, readTime, className = '' }: BlogOutlineP
                         href={`#${heading.id}`}
                         onClick={e => scrollToHeading(e, heading.id)}
                         title={heading.text}
+                        aria-current={isActive ? 'location' : undefined}
                         className={`group flex items-center py-1.5 pr-2 rounded-lg transition-all duration-150 text-left ${indent} ${
                           isActive
                             ? 'bg-primary/10 text-primary font-bold border-l-2 border-primary shadow-2xs'
@@ -190,12 +212,10 @@ export function BlogOutline({ headings, readTime, className = '' }: BlogOutlineP
             </nav>
           ) : (
             <div className="py-4 text-center">
-              <p className="text-xs text-muted-foreground mb-3">
-                This article has no subheadings.
-              </p>
+              <p className="text-xs text-muted-foreground mb-3">{t('blog.noHeadings')}</p>
               {readTime && (
                 <p className="text-[11px] text-primary font-semibold">
-                  Estimated reading time: {readTime}
+                  {t('blog.estimatedReadingTime')}: {readTime}
                 </p>
               )}
             </div>
@@ -208,8 +228,8 @@ export function BlogOutline({ headings, readTime, className = '' }: BlogOutlineP
               onClick={scrollToTop}
               className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
             >
-              <ArrowUp className="w-3.5 h-3.5" />
-              <span>Back to top</span>
+              <ArrowUp className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>{t('common.backToTop')}</span>
             </button>
 
             <button
@@ -217,8 +237,8 @@ export function BlogOutline({ headings, readTime, className = '' }: BlogOutlineP
               onClick={handleShare}
               className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Share2 className="w-3.5 h-3.5" />}
-              <span>{copied ? 'Copied' : 'Share'}</span>
+              {copied ? <Check className="w-3.5 h-3.5 text-green-600" aria-hidden="true" /> : <Share2 className="w-3.5 h-3.5" aria-hidden="true" />}
+              <span>{copied ? t('common.copied') : t('common.share')}</span>
             </button>
           </div>
         </div>

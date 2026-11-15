@@ -50,16 +50,23 @@ export interface NavGroup {
 
 export function NavMain({ groups }: { groups: NavGroup[] }) {
   const pathname = usePathname();
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const isCollapsed = state === 'collapsed';
+  // On phones the sidebar is a sheet; close it once a destination is chosen
+  const closeMobile = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
-  const isSubItemActive = (url: string) => {
-    return pathname === url;
+  // Nested routes (e.g. /blogs/editor/[id]) highlight the closest sub item, not nothing
+  const isSubItemActive = (url: string, siblings: string[] = []) => {
+    if (pathname === url) return true;
+    if (!pathname.startsWith(url + '/')) return false;
+    return !siblings.some(s => s !== url && s.length > url.length && (pathname === s || pathname.startsWith(s + '/')));
   };
 
   const isItemActive = (item: NavItem) => {
     if (item.items && item.items.length > 0) {
-      return item.items.some(sub => pathname === sub.url);
+      return item.items.some(sub => pathname === sub.url || pathname.startsWith(sub.url + '/'));
     }
     if (item.url === '/nhatphanhk102' || item.url === '/admin') return pathname === item.url;
     return pathname === item.url || pathname.startsWith(item.url + '/');
@@ -115,11 +122,12 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                           </DropdownMenuLabel>
                           <DropdownMenuSeparator className="bg-sidebar-border" />
                           {item.items!.map(subItem => {
-                            const subActive = isSubItemActive(subItem.url);
+                            const subActive = isSubItemActive(subItem.url, item.items!.map(i => i.url));
                             return (
                               <DropdownMenuItem key={subItem.title} asChild>
                                 <Link
                                   href={subItem.url}
+                                  onClick={closeMobile}
                                   className={`flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg cursor-pointer transition-colors ${
                                     subActive
                                       ? 'bg-sidebar-primary/20 text-sidebar-primary font-bold shadow-xs'
@@ -154,6 +162,7 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                   <SidebarMenuButton asChild tooltip={item.title}>
                     <Link
                       href={item.url}
+                      onClick={closeMobile}
                       className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-all duration-150 ${
                         active
                           ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-xs shadow-sidebar-primary/25 hover:bg-sidebar-primary hover:text-sidebar-primary-foreground'
@@ -198,9 +207,13 @@ function NavCollapsibleItem({
 }: {
   item: NavItem;
   active: boolean;
-  isSubItemActive: (url: string) => boolean;
+  isSubItemActive: (url: string, siblings?: string[]) => boolean;
 }) {
   const [isOpen, setIsOpen] = useState(active);
+  const { isMobile, setOpenMobile } = useSidebar();
+  const closeMobile = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
   // Auto-expand when active route is inside this group
   useEffect(() => {
@@ -249,12 +262,13 @@ function NavCollapsibleItem({
         <CollapsibleContent>
           <SidebarMenuSub className="my-1 ml-4 pl-3 border-l-2 border-sidebar-border space-y-0.5">
             {item.items!.map(subItem => {
-              const subActive = isSubItemActive(subItem.url);
+              const subActive = isSubItemActive(subItem.url, item.items!.map(i => i.url));
               return (
                 <SidebarMenuSubItem key={subItem.title}>
                   <SidebarMenuSubButton asChild>
                     <Link
                       href={subItem.url}
+                      onClick={closeMobile}
                       className={`block rounded-lg px-2.5 py-1.5 text-xs transition-all ${
                         subActive
                           ? 'bg-sidebar-primary/20 text-sidebar-primary font-bold shadow-xs'

@@ -21,7 +21,7 @@ const skillSchema = z.object({
     'MONITORING',
     'VERSION_CONTROL',
   ]),
-  level: z.number().int(),
+  level: z.number().int().min(1).max(5),
   iconUrl: z.string().url().optional().or(z.literal('')),
   order: z.number().int(),
 });
@@ -35,7 +35,7 @@ export async function createSkill(formData: SkillFormData) {
     return { ok: false, error: parsed.error.flatten().fieldErrors };
 
   const { iconUrl, ...rest } = parsed.data;
-  await prisma.skill.create({
+  const created = await prisma.skill.create({
     data: { ...rest, iconUrl: iconUrl || undefined },
   });
 
@@ -43,7 +43,7 @@ export async function createSkill(formData: SkillFormData) {
   revalidatePath('/nhatphanhk102/skills');
   revalidatePath('/skills');
   revalidatePath('/');
-  return { ok: true };
+  return { ok: true, id: created.id };
 }
 
 export async function updateSkill(id: string, formData: SkillFormData) {
@@ -55,7 +55,7 @@ export async function updateSkill(id: string, formData: SkillFormData) {
   const { iconUrl, ...rest } = parsed.data;
   await prisma.skill.update({
     where: { id },
-    data: { ...rest, iconUrl: iconUrl || undefined },
+    data: { ...rest, iconUrl: iconUrl || null },
   });
 
   revalidateTag('skills', 'max');
@@ -76,6 +76,7 @@ export async function deleteSkill(id: string) {
 }
 
 export async function getAllSkillsFromDb() {
+  await ensureAdmin();
   return prisma.skill.findMany({
     orderBy: [{ category: 'asc' }, { order: 'asc' }],
   });

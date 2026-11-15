@@ -2,11 +2,13 @@
 
 
 import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
-import { prisma } from '@/lib/db';
+import { prisma, prismaErrorMessage } from '@/lib/db';
 import { z } from 'zod';
 import { ensureAdmin } from '@/lib/auth-utils';
-import { smartReorderSeriesBlogs, compactSeriesOrders } from '@/lib/actions/series';
+import { smartReorderSeriesBlogs, compactSeriesOrders } from '@/lib/series-order';
 import { slugify } from '@/lib/utils';
+import { estimateReadMinutes } from '@/lib/blog-utils';
+import { sanitizeRichHtml } from '@/lib/sanitize-html';
 
 const blogSchema = z.object({
   title: z.string().min(3).max(255),
@@ -76,48 +78,55 @@ export async function createBlog(formData: BlogFormData) {
     return { ok: false, error: parsed.error.flatten().fieldErrors };
   }
 
-  const { tags, thumbnailUrl, seriesId, seriesOrder, ...rest } = parsed.data;
-  const authorId = await ensureAdminUser();
-  const tagNames = tags
-    ? tags
-        .split(',')
-        .map(t => t.trim())
-        .filter(Boolean)
-    : [];
-  const tagIds = await syncTags(tagNames);
+  try {
+    const { tags, thumbnailUrl, seriesId, seriesOrder, ...rest } = parsed.data;
+    rest.content = sanitizeRichHtml(rest.content);
+    const authorId = await ensureAdminUser();
+    const tagNames = tags
+      ? tags
+          .split(',')
+          .map(t => t.trim())
+          .filter(Boolean)
+      : [];
+    const tagIds = await syncTags(tagNames);
 
-  const parsedSeriesOrder =
-    seriesOrder != null && Number(seriesOrder) > 0 ? Number(seriesOrder) : null;
-  const targetSeriesId = seriesId || null;
+    const parsedSeriesOrder =
+      seriesOrder != null && Number(seriesOrder) > 0 ? Number(seriesOrder) : null;
+    const targetSeriesId = seriesId || null;
 
-  const newBlog = await prisma.blog.create({
-    data: {
-      ...rest,
-      seriesId: targetSeriesId,
-      seriesOrder: parsedSeriesOrder,
-      thumbnailUrl: thumbnailUrl || undefined,
-      authorId,
-      publishedAt: rest.status === 'PUBLISHED' ? new Date() : undefined,
-      tags: {
-        create: tagIds.map(tagId => ({ tagId })),
+    const newBlog = await prisma.blog.create({
+      data: {
+        ...rest,
+        seriesId: targetSeriesId,
+        seriesOrder: parsedSeriesOrder,
+        thumbnailUrl: thumbnailUrl || undefined,
+        authorId,
+        publishedAt: rest.status === 'PUBLISHED' ? new Date() : undefined,
+        tags: {
+          create: tagIds.map(tagId => ({ tagId })),
+        },
       },
-    },
-  });
-
-  if (targetSeriesId) {
-    await smartReorderSeriesBlogs({
-      seriesId: targetSeriesId,
-      targetBlogId: newBlog.id,
-      desiredOrder: parsedSeriesOrder,
     });
-  }
 
-  revalidateTag('blogs', 'max');
-  revalidatePath('/nhatphanhk102/blogs');
-  revalidatePath('/blog');
-  revalidatePath('/blog/series');
-  revalidatePath('/');
-  return { ok: true, id: newBlog.id };
+    if (targetSeriesId) {
+      await smartReorderSeriesBlogs({
+        seriesId: targetSeriesId,
+        targetBlogId: newBlog.id,
+        desiredOrder: parsedSeriesOrder,
+      });
+    }
+
+    revalidateTag('blogs', 'max');
+    revalidateTag('series', 'max');
+    revalidatePath('/nhatphanhk102/blogs');
+    revalidatePath('/blog');
+    revalidatePath('/blog/series');
+    revalidatePath('/');
+    return { ok: true, id: newBlog.id };
+  } catch (err) {
+    console.error('Error creating blog:', err);
+    return { ok: false, error: prismaErrorMessage(err, 'Không thể tạo bài viết.') };
+  }
 }
 
 export async function updateBlog(id: string, formData: BlogFormData) {
@@ -127,64 +136,66 @@ export async function updateBlog(id: string, formData: BlogFormData) {
     return { ok: false, error: parsed.error.flatten().fieldErrors };
   }
 
-  const { tags, thumbnailUrl, seriesId, seriesOrder, ...rest } = parsed.data;
-  const tagNames = tags
-    ? tags
-        .split(',')
-        .map(t => t.trim())
-        .filter(Boolean)
-    : [];
-  const tagIds = await syncTags(tagNames);
+  try {
+    const { tags, thumbnailUrl, seriesId, seriesOrder, ...rest } = parsed.data;
+    rest.content = sanitizeRichHtml(rest.content);
+    const tagNames = tags
+      ? tags
+          .split(',')
+          .map(t => t.trim())
+          .filter(Boolean)
+      : [];
+    const tagIds = await syncTags(tagNames);
 
-  const oldBlog = await prisma.blog.findUnique({
-    where: { id },
-    select: { seriesId: true, seriesOrder: true, slug: true },
-  });
-
-  const parsedSeriesOrder =
-    seriesOrder != null && Number(seriesOrder) > 0 ? Number(seriesOrder) : null;
-  const targetSeriesId = seriesId || null;
-
-  await prisma.blog.update({
-    where: { id },
-    data: {
-      ...rest,
-      seriesId: targetSeriesId,
-      seriesOrder: parsedSeriesOrder,
-      thumbnailUrl: thumbnailUrl || undefined,
-      publishedAt:
-        rest.status === 'PUBLISHED'
-          ? ((
-              await prisma.blog.findUnique({
-                where: { id },
-                select: { publishedAt: true },
-              })
-            )?.publishedAt ?? new Date())
-          : null,
-      tags: {
-        deleteMany: {},
-        create: tagIds.map(tagId => ({ tagId })),
-      },
-    },
-  });
-
-  // Smart series insertion & reordering
-  if (targetSeriesId || oldBlog?.seriesId) {
-    await smartReorderSeriesBlogs({
-      seriesId: targetSeriesId,
-      targetBlogId: id,
-      desiredOrder: parsedSeriesOrder,
-      previousSeriesId: oldBlog?.seriesId,
+    const oldBlog = await prisma.blog.findUnique({
+      where: { id },
+      select: { seriesId: true, seriesOrder: true, slug: true, publishedAt: true },
     });
-  }
 
-  revalidateTag('blogs', 'max');
-  revalidatePath('/nhatphanhk102/blogs');
-  revalidatePath('/blog');
-  revalidatePath('/blog/series');
-  revalidatePath(`/blog/${rest.slug}`);
-  revalidatePath('/');
-  return { ok: true };
+    const parsedSeriesOrder =
+      seriesOrder != null && Number(seriesOrder) > 0 ? Number(seriesOrder) : null;
+    const targetSeriesId = seriesId || null;
+
+    await prisma.blog.update({
+      where: { id },
+      data: {
+        ...rest,
+        seriesId: targetSeriesId,
+        seriesOrder: parsedSeriesOrder,
+        thumbnailUrl: thumbnailUrl || null,
+        // First publish stamps the date; unpublish/republish keeps it so ordering and the
+        // sitemap do not jump around.
+        publishedAt: rest.status === 'PUBLISHED' ? (oldBlog?.publishedAt ?? new Date()) : undefined,
+        tags: {
+          deleteMany: {},
+          create: tagIds.map(tagId => ({ tagId })),
+        },
+      },
+    });
+
+    // Smart series insertion & reordering
+    if (targetSeriesId || oldBlog?.seriesId) {
+      await smartReorderSeriesBlogs({
+        seriesId: targetSeriesId,
+        targetBlogId: id,
+        desiredOrder: parsedSeriesOrder,
+        previousSeriesId: oldBlog?.seriesId,
+      });
+    }
+
+    revalidateTag('blogs', 'max');
+    revalidateTag('series', 'max');
+    revalidatePath('/nhatphanhk102/blogs');
+    revalidatePath('/blog');
+    revalidatePath('/blog/series');
+    revalidatePath(`/blog/${rest.slug}`);
+    if (oldBlog?.slug && oldBlog.slug !== rest.slug) revalidatePath(`/blog/${oldBlog.slug}`);
+    revalidatePath('/');
+    return { ok: true };
+  } catch (err) {
+    console.error('Error updating blog:', err);
+    return { ok: false, error: prismaErrorMessage(err, 'Không thể lưu bài viết.') };
+  }
 }
 
 export async function deleteBlog(id: string) {
@@ -196,6 +207,7 @@ export async function deleteBlog(id: string) {
     });
     if (!blog) {
       revalidateTag('blogs', 'max');
+    revalidateTag('series', 'max');
       revalidatePath('/nhatphanhk102/blogs');
       revalidatePath('/blog');
       revalidatePath('/blog/series');
@@ -208,6 +220,7 @@ export async function deleteBlog(id: string) {
 
     await prisma.blog.delete({ where: { id } });
     revalidateTag('blogs', 'max');
+    revalidateTag('series', 'max');
     revalidatePath('/nhatphanhk102/blogs');
     revalidatePath('/blog');
     revalidatePath('/blog/series');
@@ -221,6 +234,7 @@ export async function deleteBlog(id: string) {
 }
 
 export async function getAllBlogsFromDb() {
+  await ensureAdmin();
   try {
     return await prisma.blog.findMany({
       orderBy: { createdAt: 'desc' },
@@ -236,7 +250,7 @@ export async function getAllBlogsFromDb() {
   }
 }
 
-export async function getPublicBlogs(locale: 'vi' | 'en' = 'vi') {
+export async function getPublicBlogs(locale: 'vi' | 'en' = 'en') {
   return unstable_cache(
     async () => {
       try {
@@ -267,9 +281,9 @@ export async function getPublicBlogs(locale: 'vi' | 'en' = 'vi') {
             title: isEn && trans?.title ? trans.title : b.title,
             slug: b.slug,
             excerpt: isEn && trans?.excerpt !== undefined ? trans.excerpt : (b.excerpt || ''),
-            content: isEn && trans?.content ? trans.content : b.content,
             publishedAt: (b.publishedAt || b.createdAt).toISOString(),
-            readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
+            updatedAt: b.updatedAt.toISOString(),
+            readTime: estimateReadMinutes(b.content),
             tags: b.tags.map(t => t.tag.name),
             thumbnailUrl: b.thumbnailUrl || undefined,
             status: b.status,
@@ -288,7 +302,7 @@ export async function getPublicBlogs(locale: 'vi' | 'en' = 'vi') {
   )();
 }
 
-export const getPublicBlogBySlug = async (slug: string) => {
+export const getPublicBlogBySlug = async (slug: string, locale: 'vi' | 'en' = 'en') => {
   return unstable_cache(
     async () => {
       try {
@@ -300,14 +314,24 @@ export const getPublicBlogBySlug = async (slug: string) => {
           },
         });
         if (!b || b.status !== 'PUBLISHED') return null;
+
+        // Posts are authored in Vietnamese; apply the stored English translation when asked.
+        const isEn = locale === 'en';
+        let trans: { title?: string | null; excerpt?: string | null; content?: string | null } | undefined;
+        if (isEn) {
+          const { getBatchEntityTranslationsFromDb } = await import('@/lib/gemini-translate');
+          trans = (await getBatchEntityTranslationsFromDb('blog', [b.id], 'en')).get(b.id);
+        }
+
         return {
           id: b.id,
-          title: b.title,
+          title: isEn && trans?.title ? trans.title : b.title,
           slug: b.slug,
-          excerpt: b.excerpt || '',
-          content: b.content,
+          excerpt: isEn && trans?.excerpt ? trans.excerpt : (b.excerpt || ''),
+          content: isEn && trans?.content ? trans.content : b.content,
           publishedAt: (b.publishedAt || b.createdAt).toISOString(),
-          readTime: Math.max(1, Math.ceil(b.content.split(/\s+/).length / 200)) + ' min read',
+          updatedAt: b.updatedAt.toISOString(),
+          readTime: estimateReadMinutes(b.content),
           tags: b.tags.map(t => t.tag.name),
           thumbnailUrl: b.thumbnailUrl || undefined,
           status: b.status,
@@ -320,38 +344,10 @@ export const getPublicBlogBySlug = async (slug: string) => {
         return null;
       }
     },
-    ['public-blog-slug', slug],
+    ['public-blog-slug', slug, locale],
     { revalidate: 3600, tags: ['blogs', `blog-${slug}`] }
   )();
 };
-
-/** Create an empty draft and return its id so the editor can redirect immediately */
-export async function createBlogDraft(): Promise<{ ok: boolean; id?: string; error?: string }> {
-  await ensureAdmin();
-
-  const authorId = await ensureAdminUser();
-
-  // Generate a temporary unique slug
-  const tempSlug = `draft-${Date.now()}`;
-
-  try {
-    const blog = await prisma.blog.create({
-      data: {
-        title: 'Untitled Post',
-        slug: tempSlug,
-        content: '',
-        status: 'DRAFT',
-        authorId,
-      },
-    });
-
-    revalidatePath('/nhatphanhk102/blogs');
-    return { ok: true, id: blog.id };
-  } catch (err) {
-    console.error('createBlogDraft error:', err);
-    return { ok: false, error: 'Failed to create draft' };
-  }
-}
 
 /** Load a single blog by id for the full-page editor (admin only) */
 export async function getBlogById(id: string) {
@@ -414,51 +410,17 @@ export async function saveBlogTranslationAction(
       return { ok: false, error: 'Failed to save translation to database' };
     }
 
+    const saved = await prisma.blog.findUnique({ where: { id: blogId }, select: { slug: true } });
+    revalidateTag('blogs', 'max');
+    revalidateTag('series', 'max');
     revalidatePath('/blog');
+    revalidatePath('/');
+    if (saved?.slug) revalidatePath(`/blog/${saved.slug}`);
     revalidatePath(`/nhatphanhk102/blogs/editor/${blogId}`);
     return { ok: true };
   } catch (error) {
     console.error('saveBlogTranslationAction error:', error);
     return { ok: false, error: 'Failed to save translation' };
-  }
-}
-
-/** Action to translate a blog post using Gemini AI and save to PostgreSQL DB */
-export async function translateBlogAction(
-  blogId: string,
-  targetLocale: 'vi' | 'en' = 'vi',
-  customApiKey?: string,
-  currentContent?: { title: string; excerpt?: string | null; content: string }
-): Promise<{ ok: boolean; data?: { title: string; excerpt: string; content: string }; error?: string }> {
-  await ensureAdmin();
-  try {
-    let sourceData = currentContent;
-    if (!sourceData || !sourceData.title) {
-      const blog = await prisma.blog.findUnique({
-        where: { id: blogId },
-        select: { title: true, excerpt: true, content: true },
-      });
-      if (!blog) {
-        return { ok: false, error: 'Blog not found' };
-      }
-      sourceData = blog;
-    }
-
-    const { generateBlogTranslationWithDetails, saveBlogTranslationToDb } = await import('@/lib/gemini-translate');
-    const result = await generateBlogTranslationWithDetails(sourceData, targetLocale, customApiKey);
-
-    if (!result.ok || !result.data) {
-      return { ok: false, error: result.error || 'AI translation failed' };
-    }
-
-    await saveBlogTranslationToDb(blogId, result.data, targetLocale);
-
-    revalidatePath('/blog');
-    revalidatePath(`/nhatphanhk102/blogs/editor/${blogId}`);
-    return { ok: true, data: result.data };
-  } catch (error: any) {
-    console.error('translateBlogAction error:', error);
-    return { ok: false, error: error?.message || 'Error during translation' };
   }
 }
 

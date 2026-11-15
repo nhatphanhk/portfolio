@@ -3,6 +3,9 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/lib/i18n/context';
+import { en } from '@/lib/i18n/locales/en';
+import { vi } from '@/lib/i18n/locales/vi';
 
 interface PaginationControlProps {
   currentPage: number;
@@ -11,6 +14,8 @@ interface PaginationControlProps {
   totalItems?: number;
   pageSize?: number;
   className?: string;
+  /** Force a language (the admin is always Vietnamese); defaults to the visitor's locale. */
+  locale?: 'en' | 'vi';
 }
 
 export function PaginationControl({
@@ -20,7 +25,11 @@ export function PaginationControl({
   totalItems,
   pageSize,
   className,
+  locale,
 }: PaginationControlProps) {
+  const { locale: siteLocale } = useLanguage();
+  const l = ((locale ?? siteLocale) === 'vi' ? vi : en).pagination;
+
   if (totalPages <= 1) return null;
 
   // Generate page numbers with ellipsis
@@ -60,7 +69,8 @@ export function PaginationControl({
     totalItems && pageSize ? Math.min(currentPage * pageSize, totalItems) : null;
 
   return (
-    <div
+    <nav
+      aria-label={l.label}
       className={cn(
         'flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border/80 text-sm',
         className
@@ -70,29 +80,29 @@ export function PaginationControl({
       <div className="text-xs text-muted-foreground">
         {totalItems !== undefined && startItem !== null && endItem !== null ? (
           <span>
-            Showing <span className="font-semibold text-foreground">{startItem}</span> to{' '}
-            <span className="font-semibold text-foreground">{endItem}</span> of{' '}
-            <span className="font-semibold text-foreground">{totalItems}</span> results
+            {l.showing} <span className="font-semibold text-foreground">{startItem}</span>–
+            <span className="font-semibold text-foreground">{endItem}</span> {l.of}{' '}
+            <span className="font-semibold text-foreground">{totalItems}</span> {l.results}
           </span>
         ) : (
           <span>
-            Page <span className="font-semibold text-foreground">{currentPage}</span> of{' '}
+            {l.page} <span className="font-semibold text-foreground">{currentPage}</span> {l.of}{' '}
             <span className="font-semibold text-foreground">{totalPages}</span>
           </span>
         )}
       </div>
 
       {/* Pagination buttons */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 flex-wrap justify-center">
         {/* First page button */}
         <button
           type="button"
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
-          aria-label="First page"
-          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          aria-label={l.first}
+          className="hidden sm:inline-flex p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none transition-colors"
         >
-          <ChevronsLeft className="h-4 w-4" />
+          <ChevronsLeft className="h-4 w-4" aria-hidden="true" />
         </button>
 
         {/* Previous button */}
@@ -100,19 +110,20 @@ export function PaginationControl({
           type="button"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          aria-label="Previous page"
+          aria-label={l.previous}
           className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none transition-colors"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
         </button>
 
         {/* Page numbers */}
-        <div className="flex items-center gap-1 mx-1">
+        <div className="flex items-center gap-1 mx-0.5 sm:mx-1 flex-wrap justify-center">
           {pages.map((p, idx) => {
             if (p === 'ellipsis') {
               return (
                 <span
                   key={`ellipsis-${idx}`}
+                  aria-hidden="true"
                   className="px-2 py-1 text-xs text-muted-foreground"
                 >
                   …
@@ -127,6 +138,7 @@ export function PaginationControl({
                 type="button"
                 onClick={() => onPageChange(p)}
                 aria-current={isActive ? 'page' : undefined}
+                aria-label={`${l.page} ${p}`}
                 className={cn(
                   'min-w-[32px] h-8 px-2.5 rounded-lg text-xs font-medium transition-all',
                   isActive
@@ -145,10 +157,10 @@ export function PaginationControl({
           type="button"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          aria-label="Next page"
+          aria-label={l.next}
           className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none transition-colors"
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-4 w-4" aria-hidden="true" />
         </button>
 
         {/* Last page button */}
@@ -156,12 +168,12 @@ export function PaginationControl({
           type="button"
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
-          aria-label="Last page"
-          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          aria-label={l.last}
+          className="hidden sm:inline-flex p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none transition-colors"
         >
-          <ChevronsRight className="h-4 w-4" />
+          <ChevronsRight className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
-    </div>
+    </nav>
   );
 }

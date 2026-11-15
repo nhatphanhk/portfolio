@@ -2,75 +2,64 @@
 
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
-import { auth } from '@/auth';
+import { ensureAdmin } from '@/lib/auth-utils';
 import bcrypt from 'bcryptjs';
 
 const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z.string().min(6, 'New password must be at least 6 characters'),
+  currentPassword: z.string().min(1, 'Vui lòng nhập mật khẩu hiện tại'),
+  newPassword: z.string().min(8, 'Mật khẩu mới phải có ít nhất 8 ký tự').max(128),
 });
 
-export async function changePassword(prevState: any, formData: FormData) {
+/**
+ * Changes the password of the signed-in admin (any admin, not only ADMIN_EMAIL).
+ * The ENV-hash fallback account (see src/auth.ts) is materialised as a DB user on first change.
+ */
+export async function changePassword(prevState: unknown, formData: FormData) {
   try {
-    const session = await auth();
-    if (!session?.user?.email) {
-      return { error: 'Not authenticated' };
+    let email: string | null | undefined;
+    try {
+      email = (await ensureAdmin()).email;
+    } catch {
+      return { error: 'Bạn không có quyền thực hiện thao tác này' };
     }
-
-    const adminEmail = process.env.ADMIN_EMAIL;
-    if (session.user.email !== adminEmail) {
-      return { error: 'Unauthorized email' };
-    }
-
-    const currentPassword = formData.get('currentPassword') as string;
-    const newPassword = formData.get('newPassword') as string;
+    if (!email) return { error: 'Không xác định được tài khoản' };
 
     const parsed = changePasswordSchema.safeParse({
-      currentPassword,
-      newPassword,
+      currentPassword: formData.get('currentPassword'),
+      newPassword: formData.get('newPassword'),
     });
     if (!parsed.success) {
-      return { error: parsed.error.issues[0]?.message || 'Validation failed' };
+      return { error: parsed.error.issues[0]?.message || 'Dữ liệu không hợp lệ' };
+    }
+    const { currentPassword, newPassword } = parsed.data;
+    if (currentPassword === newPassword) {
+      return { error: 'Mật khẩu mới phải khác mật khẩu hiện tại' };
     }
 
-    // Determine current valid hash
-    const dbUser = await prisma.user.findUnique({ where: { email: adminEmail } });
-    const currentHash = dbUser?.password || process.env.ADMIN_PASSWORD_HASH;
-
+    // The current hash is the user's own row, or the ENV hash for the fallback admin account
+    const dbUser = await prisma.user.findUnique({ where: { email } });
+    const isEnvAdmin = !dbUser && email === process.env.ADMIN_EMAIL;
+    const currentHash = dbUser?.password || (isEnvAdmin ? process.env.ADMIN_PASSWORD_HASH : undefined);
     if (!currentHash) {
-      return { error: 'Server configuration error: No password hash found' };
+      return { error: 'Không tìm thấy mật khẩu hiện tại cho tài khoản này' };
     }
 
-    // Verify current password
-    const isValid = await bcrypt.compare(currentPassword, currentHash);
-    if (!isValid) {
-      return { error: 'Incorrect current password' };
+    if (!(await bcrypt.compare(currentPassword, currentHash))) {
+      return { error: 'Mật khẩu hiện tại không đúng' };
     }
 
-    // Hash the new password
     const newHash = await bcrypt.hash(newPassword, 12);
-
-    // Save to database
     if (dbUser) {
-      await prisma.user.update({
-        where: { email: adminEmail },
-        data: { password: newHash },
-      });
+      await prisma.user.update({ where: { id: dbUser.id }, data: { password: newHash } });
     } else {
-      // First time overriding ENV, create the user in DB
       await prisma.user.create({
-        data: {
-          email: adminEmail,
-          password: newHash,
-          name: 'Administrator',
-          role: 'ADMIN',
-        },
+        data: { email, password: newHash, name: 'Administrator', role: 'ADMIN' },
       });
     }
 
     return { success: true };
   } catch (error) {
     console.error('Failed to change password:', error);
-    return { error: 'Internal server error' };
+    return { error: 'Đã xảy ra lỗi, vui lòng thử lại' };
   }
 }

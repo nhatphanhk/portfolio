@@ -79,6 +79,17 @@ const Header = () => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
+  // Close mobile menu on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const isItemActive = (href: string) => {
     if (href === '/blog') {
       return (
@@ -93,27 +104,36 @@ const Header = () => {
   };
 
   const headerContent = (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
-        isDarkHero
-          ? 'bg-transparent'
-          : 'backdrop-blur-md border-b border-border/80 shadow-sm'
-      }`}
-      style={
-        isDarkHero
-          ? {}
-          : {
-              background: 'oklch(0.98 0.01 85 / 93%)',
-              borderColor: 'oklch(0.88 0.03 80 / 80%)',
-            }
-      }
-    >
+    <>
+      {/* Mobile Drawer Backdrop Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm xl:hidden transition-opacity duration-300"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
+          isDarkHero
+            ? 'bg-transparent'
+            : 'backdrop-blur-md border-b border-border/80 shadow-sm'
+        }`}
+        style={
+          isDarkHero
+            ? {}
+            : {
+                background: 'oklch(0.98 0.01 85 / 93%)',
+                borderColor: 'oklch(0.88 0.03 80 / 80%)',
+              }
+        }
+      >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-16 min-w-0">
           {/* ── Brand Logo & Eye-Catching Name ── */}
           <Link
             href="/"
-            className="group flex items-center gap-3 transition-all duration-300 hover:scale-105"
+            className="group flex items-center gap-3 transition-all duration-300 hover:scale-105 shrink-0"
             aria-label="nhatphanhk102 — Home"
           >
             {/* Glowing Luxury Logo Badge */}
@@ -168,7 +188,7 @@ const Header = () => {
           </Link>
 
           {/* ── Navigation Links (Open & Seamless) ── */}
-          <div className="hidden lg:flex items-center gap-1 lg:gap-1.5">
+          <div className="hidden xl:flex items-center gap-1 xl:gap-1.5 min-w-0">
             {NAV_LINKS.map(item => {
               const isActive = isItemActive(item.href);
               const Icon = NAV_ICONS[item.name] || Sparkles;
@@ -177,13 +197,13 @@ const Header = () => {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group relative flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold tracking-wide rounded-full transition-all duration-200 whitespace-nowrap ${isActive
+                  className={`group relative flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 text-xs font-bold tracking-wide rounded-full transition-all duration-200 whitespace-nowrap ${isActive
                     ? isDarkHero
-                      ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 shadow-[0_4px_16px_rgba(245,158,11,0.4)] scale-105'
+                      ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 shadow-[0_4px_16px_rgba(245,158,11,0.45)] scale-105'
                       : 'bg-primary text-primary-foreground shadow-sm scale-105'
                     : isDarkHero
-                      ? 'text-white/80 hover:text-white hover:bg-white/10 hover:scale-105'
-                      : 'text-slate-600 hover:text-slate-950 hover:bg-black/5 hover:scale-105'
+                      ? 'text-white/80 hover:text-white hover:bg-white/10 hover:scale-105 border border-transparent hover:border-amber-400/20'
+                      : 'text-slate-600 hover:text-slate-950 hover:bg-black/5 hover:scale-105 border border-transparent hover:border-amber-500/20'
                     }`}
                 >
                   <Icon
@@ -206,7 +226,7 @@ const Header = () => {
           </div>
 
           {/* ── Mobile Actions (Language Toggle & Menu Button) ── */}
-          <div className="flex lg:hidden items-center gap-2">
+          <div className="flex xl:hidden items-center gap-2">
             <LanguageToggle isDarkHero={isDarkHero} />
             <button
               id="mobile-menu-toggle"
@@ -216,13 +236,14 @@ const Header = () => {
                 ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
                 : 'bg-black/5 border-black/10 text-gray-900 hover:bg-black/10'
                 }`}
-              aria-label="Toggle navigation menu"
+              aria-label={isMobileMenuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
               aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-nav-drawer"
             >
               {isMobileMenuOpen ? (
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5" aria-hidden="true" />
               ) : (
-                <Menu className="h-5 w-5" />
+                <Menu className="h-5 w-5" aria-hidden="true" />
               )}
             </button>
           </div>
@@ -230,9 +251,10 @@ const Header = () => {
 
         {/* ── Mobile Navigation Drawer ── */}
         <div
-          className={`lg:hidden transition-all duration-300 ease-in-out overflow-hidden ${isMobileMenuOpen
-            ? 'max-h-[32rem] opacity-100 pb-4'
-            : 'max-h-0 opacity-0 pointer-events-none'
+          id="mobile-nav-drawer"
+          className={`xl:hidden transition-all duration-300 ease-in-out overflow-hidden ${isMobileMenuOpen
+            ? 'max-h-[calc(100dvh-5rem)] opacity-100 pb-4 overflow-y-auto'
+            : 'max-h-0 opacity-0 pointer-events-none invisible'
             }`}
         >
           <div
@@ -249,13 +271,14 @@ const Header = () => {
                 <Link
                   key={item.name}
                   href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center justify-between px-4 py-2.5 text-xs font-bold rounded-xl transition-all ${isActive
                     ? isDarkHero
-                      ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 shadow-md'
-                      : 'bg-primary text-primary-foreground shadow-sm'
+                      ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 shadow-md font-extrabold'
+                      : 'bg-primary text-primary-foreground shadow-sm font-extrabold'
                     : isDarkHero
-                      ? 'text-white/80 hover:text-white hover:bg-white/10'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-black/5'
+                      ? 'text-white/85 hover:text-white hover:bg-white/10 active:bg-white/15'
+                      : 'text-gray-700 hover:text-gray-950 hover:bg-black/5 active:bg-black/10'
                     }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -284,6 +307,7 @@ const Header = () => {
         </div>
       </nav>
     </header>
+  </>
   );
 
   if (mounted && typeof document !== 'undefined') {

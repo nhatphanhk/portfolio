@@ -3,7 +3,7 @@ import { HeroSection } from '@/components/hero-section/HeroSection';
 import { AboutSection } from '@/components/hero-section/AboutSection';
 import { BPSCSection } from '@/components/hero-section/BPSCSection';
 import type { Metadata } from 'next';
-import { SITE_DESCRIPTION } from '@/lib/constants';
+import { buildOpenGraph } from '@/lib/constants';
 import { getProfile, getSocialLinks } from '@/lib/actions/about';
 import { getPublicProjects } from '@/lib/actions/project';
 import { getPublicBlogs } from '@/lib/actions/blog';
@@ -18,19 +18,14 @@ export async function generateMetadata(): Promise<Metadata> {
   const title = isEn ? 'nhatphanhk102 | Software Engineer & Tech Portfolio' : 'nhatphanhk102 | Kỹ Sư Phần Mềm & Portfolio';
   const description = isEn
     ? 'Full-stack software engineering portfolio, featured projects, technical blog series, and professional resume.'
-    : SITE_DESCRIPTION || 'Portfolio cá nhân, các dự án tiêu biểu, chuỗi bài viết kỹ thuật và hồ sơ năng lực chuyên môn.';
+    : 'Portfolio cá nhân, các dự án tiêu biểu, chuỗi bài viết kỹ thuật và hồ sơ năng lực chuyên môn.';
 
   return {
     title: {
       absolute: title,
     },
     description,
-    openGraph: {
-      title,
-      description,
-      locale: isEn ? 'en_US' : 'vi_VN',
-      type: 'website',
-    },
+    openGraph: buildOpenGraph({ title, description, path: '/', locale }),
   };
 }
 

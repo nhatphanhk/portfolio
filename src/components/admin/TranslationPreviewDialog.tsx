@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import DOMPurify from 'dompurify';
+import { RICH_CONTENT_ADD_ATTR, RICH_CONTENT_ADD_TAGS } from '@/lib/blog-utils';
 import {
   Dialog,
   DialogContent,
@@ -24,7 +26,6 @@ import {
   Copy,
   Link2,
   Unlink,
-  Search,
   BookOpen,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -45,10 +46,17 @@ interface TranslationPreviewDialogProps {
   };
   translated: TranslatedData | null;
   targetLocale?: 'vi' | 'en';
-  onApplyToEditor: (data: TranslatedData) => void;
+  /** Resolves false when the user backs out, which keeps the preview open. */
+  onApplyToEditor: (data: TranslatedData) => boolean | Promise<boolean>;
   onSaveToDb: (data: TranslatedData) => Promise<void>;
   onApplyAndSave: (data: TranslatedData) => Promise<void>;
 }
+
+/** AI output and the pasted original are untrusted HTML; sanitize before injecting. */
+const safeHtml = (html: string | null | undefined): string =>
+  typeof window === 'undefined'
+    ? ''
+    : DOMPurify.sanitize(html || '', { ADD_TAGS: RICH_CONTENT_ADD_TAGS, ADD_ATTR: RICH_CONTENT_ADD_ATTR });
 
 export function TranslationPreviewDialog({
   open,
@@ -70,7 +78,6 @@ export function TranslationPreviewDialog({
   const [isMaximized, setIsMaximized] = useState(false);
   const [syncScroll, setSyncScroll] = useState(true);
   const [copiedHtml, setCopiedHtml] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const [isSavingDb, setIsSavingDb] = useState(false);
   const [isApplyingAndSaving, setIsApplyingAndSaving] = useState(false);
@@ -166,11 +173,14 @@ export function TranslationPreviewDialog({
     }
   };
 
+  // Only close when the save succeeded; the caller has already shown the error toast otherwise
   const handleSaveDb = async () => {
     setIsSavingDb(true);
     try {
       await onSaveToDb(editedData);
       onOpenChange(false);
+    } catch {
+      // keep the dialog open so the edited translation is not lost
     } finally {
       setIsSavingDb(false);
     }
@@ -181,14 +191,15 @@ export function TranslationPreviewDialog({
     try {
       await onApplyAndSave(editedData);
       onOpenChange(false);
+    } catch {
+      // keep the dialog open so the edited translation is not lost
     } finally {
       setIsApplyingAndSaving(false);
     }
   };
 
-  const handleApplyOnly = () => {
-    onApplyToEditor(editedData);
-    onOpenChange(false);
+  const handleApplyOnly = async () => {
+    if (await onApplyToEditor(editedData)) onOpenChange(false);
   };
 
   // Content height class dynamically adapting to window size and maximize mode
@@ -246,9 +257,10 @@ export function TranslationPreviewDialog({
                 onClick={() => setIsMaximized(prev => !prev)}
                 className="p-1.5 rounded-lg border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shadow-2xs cursor-pointer"
                 title={isMaximized ? 'Thu nhỏ cửa sổ' : 'Phóng to toàn màn hình'}
-                aria-label="Toggle Fullscreen"
+                aria-label={isMaximized ? 'Thu nhỏ cửa sổ' : 'Phóng to toàn màn hình'}
+                aria-pressed={isMaximized}
               >
-                {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                {isMaximized ? <Minimize2 className="w-4 h-4" aria-hidden="true" /> : <Maximize2 className="w-4 h-4" aria-hidden="true" />}
               </button>
             </div>
           </div>
@@ -372,27 +384,6 @@ export function TranslationPreviewDialog({
                     {copiedHtml ? 'Đã chép' : 'Sao chép HTML'}
                   </button>
                 )}
-
-                {/* Quick in-modal Search */}
-                <div className="relative hidden sm:block">
-                  <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Tìm từ khóa..."
-                    className="w-36 lg:w-44 pl-7 pr-2 py-1 text-xs rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs transition-colors"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground hover:text-foreground"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
               </div>
             </div>
 
@@ -404,7 +395,7 @@ export function TranslationPreviewDialog({
                   <div className="max-w-3xl mx-auto">
                     <div
                       className="prose prose-slate dark:prose-invert max-w-none text-foreground prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary prose-pre:bg-muted prose-pre:border prose-pre:border-border leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: editedData.content }}
+                      dangerouslySetInnerHTML={{ __html: safeHtml(editedData.content) }}
                     />
                   </div>
                 </div>
@@ -426,7 +417,7 @@ export function TranslationPreviewDialog({
                     </div>
                     <div
                       className="prose prose-sm prose-slate dark:prose-invert max-w-none text-muted-foreground/90 leading-relaxed pt-2"
-                      dangerouslySetInnerHTML={{ __html: original.content }}
+                      dangerouslySetInnerHTML={{ __html: safeHtml(original.content) }}
                     />
                   </div>
 
@@ -443,7 +434,7 @@ export function TranslationPreviewDialog({
                     </div>
                     <div
                       className="prose prose-sm prose-slate dark:prose-invert max-w-none text-foreground leading-relaxed pt-2"
-                      dangerouslySetInnerHTML={{ __html: editedData.content }}
+                      dangerouslySetInnerHTML={{ __html: safeHtml(editedData.content) }}
                     />
                   </div>
                 </div>

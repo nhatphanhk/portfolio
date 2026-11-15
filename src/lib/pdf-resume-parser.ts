@@ -475,7 +475,7 @@ function parseSkills(skillsSectionText: string, fullText: string): ParsedSkill[]
         foundSkills.set(kw.toLowerCase(), {
           name: kw,
           category,
-          level: 80,
+          level: 4,
         });
       }
     }
@@ -493,7 +493,7 @@ function parseSkills(skillsSectionText: string, fullText: string): ParsedSkill[]
         foundSkills.set(token.toLowerCase(), {
           name: token,
           category: 'OTHER',
-          level: 75,
+          level: 3,
         });
       }
     }

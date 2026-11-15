@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback, useTransition, useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState, useCallback, useTransition, useMemo } from 'react';
+import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { TipTapEditor } from '@/components/admin/editor/TipTapEditor';
@@ -13,8 +13,9 @@ import {
 } from '@/lib/actions/blog';
 import { TranslationPreviewDialog, TranslatedData } from '@/components/admin/TranslationPreviewDialog';
 import { UnsavedChangesDialog } from '@/components/admin/UnsavedChangesDialog';
+import { useConfirmDialog } from '@/components/admin/DeleteDialog';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes-guard';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   Save,
@@ -46,7 +47,7 @@ const schema = z.object({
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']),
   tags: z.string().optional(),
   seriesId: z.string().optional().nullable(),
-  seriesOrder: z.number().optional().nullable(),
+  seriesOrder: z.number().int().min(1, 'Vị trí phải từ 1').max(99, 'Vị trí tối đa 99').optional().nullable(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -127,17 +128,17 @@ const inputCls =
 const selectCls = `${inputCls} editor-select appearance-none pr-9 cursor-pointer`;
 
 export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
-  const router = useRouter();
   const [currentBlogId, setCurrentBlogId] = useState<string>(blog.id);
   const isNew = !currentBlogId;
 
   const [isPending, startTransition] = useTransition();
   const [isTranslating, setIsTranslating] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [translatedResult, setTranslatedResult] = useState<TranslatedData | null>(null);
   const [targetLocale, setTargetLocale] = useState<'vi' | 'en'>('vi');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  // Once the admin edits the slug by hand, title changes must not overwrite it
+  const [slugTouched, setSlugTouched] = useState(false);
 
   // Accordion state management so validation errors can expand the missing section
   const [docOpen, setDocOpen] = useState(true);
@@ -188,26 +189,10 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
     return activeSeries?.blogs || [];
   }, [activeSeries]);
 
-  // Protect against accidental browser tab close or reload when changes exist
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isDirty) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty]);
-
-  // Handle navigation back to blog list with confirmation modal if dirty
-  const handleBackClick = () => {
-    if (isDirty) {
-      setShowLeaveDialog(true);
-    } else {
-      router.push('/nhatphanhk102/blogs');
-    }
-  };
+  // Guards unsaved work against tab close/reload, every in-app link (sidebar, breadcrumb) and the back button
+  const leaveGuard = useUnsavedChangesGuard(isDirty);
+  const { confirm, confirmDialog } = useConfirmDialog();
+  const handleBackClick = () => leaveGuard.requestNavigation('/nhatphanhk102/blogs');
 
   // Auto-generate slug from title (if slug is empty, temporary draft slug, or new post)
   const onTitleBlur = useCallback(
@@ -215,12 +200,12 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
       const val = e.target.value.trim();
       if (!val) return;
       const currentSlug = getValues('slug') || '';
-      if (!currentSlug || currentSlug.startsWith('draft-') || isNew) {
+      if (!slugTouched && (!currentSlug || currentSlug.startsWith('draft-') || isNew)) {
         const slug = slugify(val);
         if (slug) setValue('slug', slug, { shouldValidate: true, shouldDirty: true });
       }
     },
-    [isNew, getValues, setValue]
+    [isNew, slugTouched, getValues, setValue]
   );
 
   // Validate all strict requirements before publishing
@@ -274,6 +259,16 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
     };
   }, []);
 
+  // Records what the server now holds without clobbering anything typed while the save was in
+  // flight: the saved payload becomes the clean baseline, current input values are kept.
+  const markSaved = useCallback(
+    (saved: FormData) => {
+      setValue('status', saved.status);
+      reset(saved, { keepValues: true });
+    },
+    [reset, setValue]
+  );
+
   const doSave = useCallback(
     (data: FormData) => {
       if (data.content && (data.content.includes('src="data:image/') || data.content.includes('src="blob:'))) {
@@ -300,7 +295,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
             setCurrentBlogId(newId);
             window.history.replaceState(null, '', `/nhatphanhk102/blogs/editor/${newId}`);
             setLastSaved(new Date());
-            reset(payload);
+            markSaved(payload);
             toast.success(payload.status === 'PUBLISHED' ? 'Đã xuất bản bài viết thành công ✓' : 'Đã lưu bản nháp thành công ✓');
           } else {
             const err = typeof (result as any).error === 'string' ? (result as any).error : 'Lưu bài viết thất bại';
@@ -311,16 +306,26 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
           const result = await updateBlog(currentBlogId, payload as any);
           if (result.ok) {
             setLastSaved(new Date());
-            reset(payload);
+            markSaved(payload);
             toast.success(payload.status === 'PUBLISHED' ? 'Đã xuất bản bài viết thành công ✓' : 'Đã lưu thay đổi thành công ✓');
           } else {
-            toast.error('Lưu bài viết thất bại');
+            const err = typeof (result as any).error === 'string' ? (result as any).error : 'Lưu bài viết thất bại';
+            toast.error(err);
           }
         }
       });
     },
-    [currentBlogId, reset, orderMode]
+    [currentBlogId, markSaved, orderMode]
   );
+
+  // A Zod rejection used to do nothing visible when the offending field sat in a collapsed section
+  const onInvalid = (errs: FieldErrors<FormData>) => {
+    if (errs.title || errs.slug || errs.excerpt) setDocOpen(true);
+    if (errs.tags) setTagsOpen(true);
+    if (errs.thumbnailUrl) setThumbOpen(true);
+    if (errs.seriesId || errs.seriesOrder) setSettingsOpen(true);
+    toast.error('Vui lòng kiểm tra lại các trường được đánh dấu đỏ.');
+  };
 
   const handleManualSave = handleSubmit((data: FormData) => {
     // If currently PUBLISHED, validate all fields before saving
@@ -347,7 +352,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
       }
     }
     doSave(data);
-  });
+  }, onInvalid);
 
   const handlePublish = () => {
     const currentValues = getValues();
@@ -375,14 +380,11 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
     }
 
     clearErrors();
-    setValue('status', 'PUBLISHED', { shouldDirty: true });
     doSave(payloadToPublish);
   };
 
   const handleUnpublish = () => {
-    setValue('status', 'DRAFT', { shouldDirty: true });
-    const currentValues = getValues();
-    doSave({ ...currentValues, status: 'DRAFT' });
+    doSave({ ...getValues(), status: 'DRAFT' });
   };
 
   const handleAiTranslate = async (localeToUse: 'vi' | 'en' = targetLocale) => {
@@ -446,17 +448,25 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
     }
   };
 
-  const handleApplyToEditor = (data: TranslatedData) => {
+  const handleApplyToEditor = async (data: TranslatedData) => {
+    const ok = await confirm({
+      title: 'Áp dụng bản dịch vào trình soạn thảo?',
+      description: 'Tiêu đề, tóm tắt và nội dung đang soạn (ngôn ngữ gốc) sẽ bị thay bằng bản dịch.',
+      confirmLabel: 'Thay thế',
+    });
+    if (!ok) return false;
     setValue('title', data.title, { shouldDirty: true });
     setValue('excerpt', data.excerpt, { shouldDirty: true });
     setValue('content', data.content, { shouldDirty: true });
-    toast.success('Đã áp dụng bản dịch vào trình soạn thảo!');
+    toast.success('Đã áp dụng bản dịch vào trình soạn thảo.');
+    return true;
   };
 
+  // Throws on failure so the preview dialog stays open with the edited translation intact
   const handleSaveToDb = async (data: TranslatedData) => {
     if (!currentBlogId) {
-      toast.warning('Vui lòng bấm Save để lưu bài viết trước khi lưu bản dịch vào CSDL!');
-      return;
+      toast.warning('Hãy lưu bài viết trước khi lưu bản dịch.');
+      throw new Error('Bài viết chưa được lưu');
     }
 
     try {
@@ -476,15 +486,15 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
         return;
       }
     } catch {
-      // fallback
+      // fall back to the server action below
     }
 
     const res = await saveBlogTranslationAction(currentBlogId, data, targetLocale);
-    if (res.ok) {
-      toast.success(`Đã lưu bản dịch (${targetLocale.toUpperCase()}) vào CSDL song ngữ thành công!`);
-    } else {
+    if (!res.ok) {
       toast.error(res.error || 'Lỗi khi lưu bản dịch vào CSDL');
+      throw new Error(res.error || 'Lưu bản dịch thất bại');
     }
+    toast.success(`Đã lưu bản dịch (${targetLocale.toUpperCase()}) vào CSDL song ngữ thành công!`);
   };
 
   const handleApplyAndSave = async (data: TranslatedData) => {
@@ -499,9 +509,9 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
   };
 
   return (
-    <div className="flex h-full overflow-hidden bg-background">
+    <div className="flex flex-col lg:flex-row h-full overflow-hidden bg-background">
       {/* ── LEFT SIDEBAR: Meta ───────────────────────────────────── */}
-      <aside className="w-80 shrink-0 border-r border-border flex flex-col overflow-y-auto bg-card shadow-xs">
+      <aside className="w-full lg:w-80 shrink-0 max-h-[45vh] lg:max-h-none border-b lg:border-b-0 lg:border-r border-border flex flex-col overflow-y-auto bg-card shadow-xs">
         {/* Top bar */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <button
@@ -529,12 +539,16 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
               <input
                 {...register('title')}
                 onBlur={onTitleBlur}
-                placeholder="My awesome post"
+                placeholder="Tiêu đề bài viết"
                 className={inputCls}
               />
             </Field>
             <Field label="Slug" error={errors.slug?.message} required>
-              <input {...register('slug')} placeholder="my-awesome-post" className={inputCls} />
+              <input
+                {...register('slug', { onChange: () => setSlugTouched(true) })}
+                placeholder="my-awesome-post"
+                className={inputCls}
+              />
             </Field>
             <Field label="Excerpt (Tóm tắt)" error={errors.excerpt?.message} required>
               <textarea
@@ -569,6 +583,7 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
             {watch('thumbnailUrl') && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
+                key={watch('thumbnailUrl')}
                 src={watch('thumbnailUrl')}
                 alt="thumbnail preview"
                 className="w-full rounded-lg border border-border object-cover aspect-video mt-2"
@@ -657,10 +672,16 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
                         type="number"
                         min={1}
                         max={99}
-                        {...register('seriesOrder', { valueAsNumber: true })}
+                        {...register('seriesOrder', {
+                          // An emptied number input must mean "no custom order", not NaN
+                          setValueAs: v => (v === '' || v == null ? null : Number(v)),
+                        })}
                         className="editor-input w-20 px-2 py-1.5 rounded-lg border border-border bg-card text-foreground font-bold text-center text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-2xs transition-colors"
                       />
                     </div>
+                    {errors.seriesOrder && (
+                      <p className="text-xs text-destructive">{errors.seriesOrder.message}</p>
+                    )}
                     <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 text-[11px] text-foreground leading-relaxed">
                       ⚡ <strong>Smart Insertion:</strong> Bài viết này sẽ được đặt ở vị trí #{watchedSeriesOrder || 1}. Các bài viết khác từ vị trí này trở đi sẽ tự động lùi lại (+1).
                     </div>
@@ -866,10 +887,13 @@ export function BlogEditorClient({ blog, seriesList }: BlogEditorClientProps) {
       />
 
       {/* Unsaved changes confirmation dialog */}
+      {confirmDialog}
       <UnsavedChangesDialog
-        open={showLeaveDialog}
-        onOpenChange={setShowLeaveDialog}
-        onConfirmLeave={() => router.push('/nhatphanhk102/blogs')}
+        open={leaveGuard.isBlocking}
+        onOpenChange={open => {
+          if (!open) leaveGuard.cancel();
+        }}
+        onConfirmLeave={leaveGuard.confirmLeave}
       />
     </div>
   );
