@@ -1,5 +1,8 @@
+'use client';
+
 import Link from 'next/link';
 import { Layers, ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/context';
 
 export interface SeriesPostItem {
   id: string;
@@ -24,6 +27,7 @@ interface SeriesNavProps {
 }
 
 export function SeriesNav({ seriesData, currentBlogId }: SeriesNavProps) {
+  const { t } = useLanguage();
   if (!seriesData || seriesData.totalParts <= 1) return null;
 
   const { seriesTitle, seriesSlug, currentIndex, totalParts, posts } = seriesData;
@@ -31,11 +35,11 @@ export function SeriesNav({ seriesData, currentBlogId }: SeriesNavProps) {
   const nextPost = currentIndex < totalParts - 1 ? posts[currentIndex + 1] : null;
 
   return (
-    <div className="my-10 rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
+    <nav aria-label={t('blog.series')} className="my-10 rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
       {/* Series Header */}
       <div className="flex items-center gap-2 text-primary text-xs font-bold uppercase tracking-wider mb-2">
-        <Layers className="w-4 h-4" />
-        <span>Series</span>
+        <Layers className="w-4 h-4" aria-hidden="true" />
+        <span>{t('blog.series')}</span>
       </div>
 
       <h3 className="text-lg font-bold text-foreground mb-1">
@@ -44,7 +48,7 @@ export function SeriesNav({ seriesData, currentBlogId }: SeriesNavProps) {
         </Link>
       </h3>
       <p className="text-xs text-muted-foreground mb-4">
-        Part {currentIndex + 1} of {totalParts} in this article series
+        {t('seriesPage.part')} {currentIndex + 1} {t('seriesPage.of')} {totalParts} {t('blog.partOfSeries')}
       </p>
 
       {/* Series list */}
@@ -52,7 +56,7 @@ export function SeriesNav({ seriesData, currentBlogId }: SeriesNavProps) {
         {posts.map((post, idx) => {
           const isCurrent = post.id === currentBlogId;
           return (
-            <li key={post.id} className="flex items-center gap-2.5">
+            <li key={post.id} className="flex items-center gap-2.5" aria-current={isCurrent ? 'page' : undefined}>
               <span
                 className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
                   isCurrent
@@ -65,7 +69,7 @@ export function SeriesNav({ seriesData, currentBlogId }: SeriesNavProps) {
               {isCurrent ? (
                 <span className="font-semibold text-foreground flex items-center gap-1.5 line-clamp-1">
                   {post.title}
-                  <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0 inline" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0 inline" aria-hidden="true" />
                 </span>
               ) : (
                 <Link
@@ -87,8 +91,10 @@ export function SeriesNav({ seriesData, currentBlogId }: SeriesNavProps) {
             href={`/blog/${prevPost.slug}`}
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary transition-colors max-w-[48%]"
           >
-            <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">Prev: {prevPost.title}</span>
+            <ArrowLeft className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+            <span className="truncate">
+              {t('common.prev')}: {prevPost.title}
+            </span>
           </Link>
         ) : (
           <span />
@@ -99,11 +105,13 @@ export function SeriesNav({ seriesData, currentBlogId }: SeriesNavProps) {
             href={`/blog/${nextPost.slug}`}
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary transition-colors max-w-[48%] ml-auto text-right"
           >
-            <span className="truncate">Next: {nextPost.title}</span>
-            <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">
+              {t('common.next')}: {nextPost.title}
+            </span>
+            <ArrowRight className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
           </Link>
         )}
       </div>
-    </div>
+    </nav>
   );
 }

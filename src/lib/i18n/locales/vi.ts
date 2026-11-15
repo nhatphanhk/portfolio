@@ -11,6 +11,9 @@ export const vi: TranslationDict = {
     skills: 'Kỹ năng',
     certifications: 'Chứng chỉ',
     contact: 'Liên hệ',
+    openMenu: 'Mở menu điều hướng',
+    closeMenu: 'Đóng menu điều hướng',
+    language: 'Ngôn ngữ',
   },
 
   // Common
@@ -64,6 +67,12 @@ export const vi: TranslationDict = {
     translatedBadge: 'Bản dịch tiếng Anh (đã lưu)',
     translateSuccess: 'Đã dịch và lưu bản dịch thành công.',
     translateFailed: 'Không thể dịch bài viết.',
+    searchResults: 'Kết quả tìm kiếm',
+    recentArticles: 'Bài viết mới nhất',
+    noArticlesTitle: 'Không tìm thấy bài viết',
+    linkCopied: 'Đã sao chép liên kết.',
+    linkCopyFailed: 'Không thể sao chép liên kết.',
+    estimatedReadingTime: 'Thời gian đọc ước tính',
   },
 
   // Series page
@@ -80,6 +89,15 @@ export const vi: TranslationDict = {
     noSeriesFound: 'Không tìm thấy chuỗi bài viết nào phù hợp.',
     exploreCurriculum: 'Xem lộ trình học',
     viewAll: 'Xem tất cả chuỗi bài',
+    part: 'Phần',
+    of: '/',
+    article: 'bài viết',
+    articles: 'bài viết',
+    curriculumHint: 'Đọc lần lượt các phần theo thứ tự để nắm trọn nội dung series.',
+    curriculumPreview: 'Xem trước lộ trình',
+    moreArticles: 'bài viết khác',
+    empty: 'Series này chưa có bài viết nào được xuất bản. Hãy quay lại sau nhé!',
+    tryDifferent: 'Thử tìm với chủ đề hoặc từ khóa khác.',
   },
 
   // Projects
@@ -102,6 +120,8 @@ export const vi: TranslationDict = {
     demo: 'Bản Demo',
     code: 'Mã nguồn',
     viewDetails: 'Xem chi tiết dự án',
+    details: 'Thông tin',
+    published: 'Ngày xuất bản',
   },
 
   // Skills
@@ -125,6 +145,7 @@ export const vi: TranslationDict = {
       VERSION_CONTROL: 'Quản lý phiên bản mã nguồn',
       OTHER: 'Công nghệ khác',
     },
+    empty: 'Chưa có kỹ năng nào để hiển thị.',
   },
 
   // Certifications
@@ -137,6 +158,7 @@ export const vi: TranslationDict = {
     issued: 'Ngày cấp',
     viewCredential: 'Xem chứng chỉ gốc',
     credentialId: 'Mã định danh',
+    empty: 'Chưa có chứng chỉ nào để hiển thị.',
   },
 
   // Contact
@@ -164,6 +186,10 @@ export const vi: TranslationDict = {
     valMessage: 'Nội dung tin nhắn phải có ít nhất 10 ký tự',
     responseTimeTitle: 'Thời gian phản hồi',
     responseTimeDesc: 'Tôi thường phản hồi trong vòng 24–48 giờ. Đối với các vấn đề khẩn cấp, bạn có thể gửi email trực tiếp.',
+    errRateLimit: 'Bạn đã gửi quá nhiều tin nhắn trong thời gian ngắn. Vui lòng đợi vài phút rồi thử lại.',
+    errValidation: 'Một số trường chưa hợp lệ. Vui lòng kiểm tra lại biểu mẫu.',
+    errServer: 'Máy chủ không lưu được tin nhắn. Vui lòng thử lại sau hoặc gửi email trực tiếp.',
+    errNetwork: 'Không kết nối được tới máy chủ. Kiểm tra kết nối mạng và thử lại.',
   },
 
   // Resume
@@ -201,6 +227,104 @@ export const vi: TranslationDict = {
     bpscCertsTitle: 'Chứng Chỉ Đã Xác Thực',
     viewAllCerts: 'Xem tất cả chứng chỉ',
     verifyCredential: 'Xác thực chứng chỉ',
+    aboutOpenToWork: 'Sẵn sàng cho dự án & thử thách mới',
+    aboutAuthorRole: 'Kỹ sư phần mềm',
+    aboutStoryBadge: 'Câu chuyện nghề nghiệp',
+    aboutWorkspaceLabel: 'Góc làm việc',
+    aboutWorkspaceCaption: 'Tối giản',
+    aboutActionLabel: 'Thực chiến',
+    aboutActionCaption: 'Kiến trúc & AI',
+  },
+
+  pagination: {
+    label: 'Phân trang',
+    showing: 'Hiển thị',
+    of: 'trên',
+    results: 'kết quả',
+    page: 'Trang',
+    first: 'Trang đầu',
+    previous: 'Trang trước',
+    next: 'Trang sau',
+    last: 'Trang cuối',
+  },
+
+  commandPalette: {
+    title: 'Điều hướng nhanh',
+    placeholder: 'Nhập tên trang…',
+    empty: 'Không tìm thấy kết quả.',
+    navigation: 'Điều hướng',
+  },
+
+  notFound: {
+    title: 'Không tìm thấy trang',
+    message: 'Trang bạn tìm không tồn tại hoặc đã được chuyển đi.',
+    blogTitle: 'Không tìm thấy bài viết',
+    blogMessage: 'Bài viết bạn tìm không tồn tại hoặc đã được chuyển đi.',
+    backHome: 'Về trang chủ',
+    backToBlog: 'Xem các bài viết',
+    viewProjects: 'Xem dự án',
+  },
+
+  errorPage: {
+    title: 'Đã xảy ra lỗi',
+    message: 'Đã có lỗi không mong muốn khi tải trang. Vui lòng thử lại.',
+    retry: 'Thử lại',
+  },
+
+  resumeLabels: {
+    present: 'Hiện tại',
+    continued: 'Tiếp theo',
+    careerObjective: 'Mục tiêu nghề nghiệp',
+    technologies: 'Công nghệ',
+    coreCompetencies: 'Năng lực cốt lõi',
+    languages: 'Ngoại ngữ',
+    profile: 'Giới thiệu',
+    experience: 'Kinh nghiệm',
+    education: 'Học vấn',
+    technicalSkills: 'Kỹ năng chuyên môn',
+    additionalSkills: 'Kỹ năng khác',
+    softSkills: 'Kỹ năng mềm',
+    achievements: 'Thành tích',
+    activities: 'Hoạt động',
+    continuous: 'Liền mạch',
+    pageTabs: 'Theo trang',
+    harvardFormat: 'Định dạng Harvard',
+    sheet: 'Trang',
+    primaryOverview: 'Tổng quan chính',
+    continuedCredentials: 'Thông tin bổ sung',
+    experienceAndCredentials: 'Kinh nghiệm & thông tin bổ sung',
+  },
+
+  resumeSections: {
+    education: 'Học vấn',
+    experience: 'Kinh nghiệm làm việc',
+    skills: 'Kỹ năng chuyên môn',
+    softSkills: 'Năng lực cốt lõi & lãnh đạo',
+    achievements: 'Giải thưởng & thành tích',
+    activities: 'Hoạt động & lãnh đạo',
+    languages: 'Ngoại ngữ',
+    bio: 'Tóm tắt nghề nghiệp',
+  },
+
+  visitor: {
+    titleBefore: 'Chào mừng đến với',
+    titleAfter: '',
+    description: 'Trước khi xem portfolio, bạn vui lòng giới thiệu đôi chút về mình nhé.',
+    nameLabel: 'Tên của bạn',
+    namePlaceholder: 'VD: Nguyễn Văn An',
+    emailLabel: 'Email',
+    emailPlaceholder: 'an@congty.com',
+    reasonLabel: 'Lý do ghé thăm',
+    reasonPlaceholder: 'VD: tuyển dụng, xem dự án, hợp tác…',
+    submit: 'Vào xem portfolio',
+    submitting: 'Đang gửi…',
+    privacy: 'Chỉ chủ trang mới xem được các thông tin này.',
+    valName: 'Vui lòng nhập tên (tối thiểu 2 ký tự).',
+    valEmail: 'Vui lòng nhập email hợp lệ.',
+    valReason: 'Vui lòng cho biết ngắn gọn lý do ghé thăm.',
+    welcome: 'Chào mừng',
+    submitError: 'Không gửi được thông tin. Vui lòng kiểm tra lại và thử lần nữa.',
+    networkError: 'Lỗi kết nối mạng. Vui lòng thử lại sau giây lát.',
   },
 
   // Footer

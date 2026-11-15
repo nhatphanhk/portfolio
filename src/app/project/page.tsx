@@ -4,6 +4,7 @@ import { getPublicProjects } from '@/lib/actions/project';
 import { ProjectListClient } from '@/components/project/ProjectListClient';
 import { ProjectHeaderClient } from '@/components/project/ProjectHeaderClient';
 import { UserBreadcrumb } from '@/components/UserBreadcrumb';
+import { CardGridSkeleton } from '@/components/ui/CardGridSkeleton';
 import type { Metadata } from 'next';
 import { buildOpenGraph } from '@/lib/constants';
 
@@ -39,7 +40,7 @@ export default async function ProjectPage() {
         <ProjectHeaderClient />
 
         {/* Interactive List with Search, Filter & Pagination */}
-        <Suspense fallback={null}>
+        <Suspense fallback={<CardGridSkeleton />}>
           <ProjectListClient projects={projects} />
         </Suspense>
       </div>

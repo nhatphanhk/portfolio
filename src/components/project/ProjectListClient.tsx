@@ -120,9 +120,10 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
       <div className="p-4 rounded-2xl border border-border/70 bg-card shadow-sm space-y-3 min-w-0">
         {/* Search input */}
         <div className="relative w-full">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
           <input
-            type="text"
+            type="search"
+            aria-label={t('common.search')}
             placeholder={t('project.searchPlaceholder')}
             value={search}
             onChange={e => handleSearchChange(e.target.value)}
@@ -133,9 +134,10 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
         {/* Technology Tag Pills */}
         {allTechnologies.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-border/50">
-            <span className="text-xs font-semibold text-muted-foreground mr-0.5">{t('project.filterByTech')}:</span>
+            <span className="text-xs font-semibold text-muted-foreground mr-0.5">{t('project.filterByTech')}</span>
             <button
               type="button"
+              aria-pressed={selectedTag === 'ALL'}
               onClick={() => handleTagClick('ALL')}
               className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${
                 selectedTag === 'ALL'
@@ -151,6 +153,7 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
                 <button
                   key={tech}
                   type="button"
+                  aria-pressed={selectedTag === tech}
                   onClick={() => handleTagClick(tech)}
                   className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${
                     selectedTag === tech
@@ -169,7 +172,7 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
       {/* Filter status / Reset hint */}
       {isFiltering && (
         <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-          <p>
+          <p aria-live="polite">
             {t('project.foundProjects')} <span className="font-semibold text-foreground">{filteredProjects.length}</span>{' '}
             {filteredProjects.length === 1 ? t('project.matchingProject') : t('project.matchingProjects')}
             {selectedTag !== 'ALL' && (
@@ -191,7 +194,7 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
       {/* Projects Grid */}
       {paginatedProjects.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl border border-border bg-card p-8">
-          <FolderCode className="h-10 w-10 mb-3 text-muted-foreground/40" />
+          <FolderCode className="h-10 w-10 mb-3 text-muted-foreground/40" aria-hidden="true" />
           <h3 className="text-base font-semibold text-foreground mb-1">{t('project.noProjectsFound')}</h3>
           <p className="text-sm text-muted-foreground max-w-sm mb-4">
             {t('project.noProjectsDesc')}
@@ -217,9 +220,10 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
                 : project.description;
 
             return (
+              // The title link is stretched over the whole card; links and chips sit above it (z-10)
               <article
                 key={project.id}
-                className={`group flex flex-col justify-between p-6 rounded-2xl border bg-card hover:shadow-md transition-all duration-200 ${
+                className={`group relative flex flex-col justify-between p-6 rounded-2xl border bg-card hover:shadow-md transition-all duration-200 focus-within:ring-2 focus-within:ring-ring ${
                   project.featured
                     ? 'border-primary/30 hover:border-primary/50'
                     : 'border-border/70 hover:border-border'
@@ -228,12 +232,14 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
                 <div>
                   <div className="flex items-start justify-between gap-2.5 mb-2.5">
                     <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
-                      <Link
-                        href={`/project/${project.slug}`}
-                        className="text-base sm:text-lg font-bold text-foreground hover:text-primary transition-colors line-clamp-1 break-words"
-                      >
-                        {projectTitle}
-                      </Link>
+                      <h2 className="text-base sm:text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1 break-words">
+                        <Link
+                          href={`/project/${project.slug}`}
+                          className="after:absolute after:inset-0 after:rounded-2xl focus:outline-none"
+                        >
+                          {projectTitle}
+                        </Link>
+                      </h2>
                       {project.featured && (
                         <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
                           ★ {t('project.featured')}
@@ -242,7 +248,7 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
                     </div>
 
                     {/* External links */}
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="relative z-10 flex items-center gap-1 shrink-0">
                       {project.repoUrl && (
                         <a
                           href={project.repoUrl}
@@ -252,7 +258,7 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
                           title={t('project.code')}
                           className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
                         >
-                          <Github className="h-4 w-4" />
+                          <Github className="h-4 w-4" aria-hidden="true" />
                         </a>
                       )}
                       {project.demoUrl && (
@@ -264,7 +270,7 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
                           title={t('project.demo')}
                           className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
                         >
-                          <ExternalLink className="h-4 w-4" />
+                          <ExternalLink className="h-4 w-4" aria-hidden="true" />
                         </a>
                       )}
                     </div>
@@ -279,11 +285,14 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
 
                 <div>
                   {/* Tech tags */}
-                  <div className="flex flex-wrap gap-1.5 mb-4">
+                  <div className="relative z-10 flex flex-wrap gap-1.5 mb-4">
                     {project.technologies.map(tech => (
-                      <span
+                      <button
+                        type="button"
                         key={tech}
                         onClick={() => handleTagClick(tech)}
+                        aria-pressed={selectedTag === tech}
+                        aria-label={`${t('project.withTech')} ${tech}`}
                         className={`px-2 py-0.5 text-xs rounded-md cursor-pointer transition-colors font-medium ${
                           selectedTag === tech
                             ? 'bg-primary text-primary-foreground'
@@ -291,18 +300,18 @@ export function ProjectListClient({ projects }: ProjectListClientProps) {
                         }`}
                       >
                         {tech}
-                      </span>
+                      </button>
                     ))}
                   </div>
 
                   {/* Footer link */}
                   <div className="pt-3.5 border-t border-border/50 flex items-center justify-end">
-                    <Link
-                      href={`/project/${project.slug}`}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-primary hover:gap-2.5 transition-all duration-200"
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground group-hover:text-primary group-hover:gap-2.5 transition-all duration-200"
                     >
                       {t('project.viewDetails')} <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
+                    </span>
                   </div>
                 </div>
               </article>

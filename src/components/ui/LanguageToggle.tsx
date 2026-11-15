@@ -9,7 +9,7 @@ interface LanguageToggleProps {
 }
 
 export function LanguageToggle({ className = '', isDarkHero = false }: LanguageToggleProps) {
-  const { locale, setLocale } = useLanguage();
+  const { locale, setLocale, t } = useLanguage();
 
   return (
     <div
@@ -19,7 +19,7 @@ export function LanguageToggle({ className = '', isDarkHero = false }: LanguageT
           : 'bg-muted/80 border-border/80 text-foreground shadow-2xs'
       } ${className}`}
       role="group"
-      aria-label="Language selection"
+      aria-label={t('nav.language')}
     >
       <button
         type="button"
@@ -34,8 +34,10 @@ export function LanguageToggle({ className = '', isDarkHero = false }: LanguageT
             : 'text-muted-foreground hover:text-foreground'
         }`}
         aria-pressed={locale === 'vi'}
+        aria-label="Tiếng Việt"
+        lang="vi"
       >
-        <span className="text-xs">🇻🇳</span>
+        <span className="text-xs" aria-hidden="true">🇻🇳</span>
         <span>VI</span>
       </button>
 
@@ -52,8 +54,10 @@ export function LanguageToggle({ className = '', isDarkHero = false }: LanguageT
             : 'text-muted-foreground hover:text-foreground'
         }`}
         aria-pressed={locale === 'en'}
+        aria-label="English"
+        lang="en"
       >
-        <span className="text-xs">🇬🇧</span>
+        <span className="text-xs" aria-hidden="true">🇬🇧</span>
         <span>EN</span>
       </button>
     </div>

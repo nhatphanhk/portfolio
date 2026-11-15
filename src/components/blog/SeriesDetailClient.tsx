@@ -104,7 +104,7 @@ export function SeriesDetailClient({ series }: SeriesDetailClientProps) {
             </span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground tracking-tight mb-4 leading-tight">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground tracking-tight mb-4 leading-tight">
             {title}
           </h1>
 
@@ -143,14 +143,12 @@ export function SeriesDetailClient({ series }: SeriesDetailClientProps) {
           <div>
             <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
-              <span>Curriculum Roadmap</span>
+              <span>{t('seriesPage.curriculum')}</span>
             </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              Follow the ordered roadmap below to get the most out of this series.
-            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('seriesPage.curriculumHint')}</p>
           </div>
-          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-muted text-foreground">
-            {series.blogs.length} articles
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-muted text-foreground shrink-0">
+            {series.blogs.length} {series.blogs.length === 1 ? t('seriesPage.article') : t('seriesPage.articles')}
           </span>
         </div>
 
@@ -163,7 +161,7 @@ export function SeriesDetailClient({ series }: SeriesDetailClientProps) {
               return (
                 <div key={blog.id} className="relative group">
                   {/* Step Marker */}
-                  <div className="absolute -left-6 sm:-left-10 top-5 -translate-x-1/2 flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-card border-2 border-primary text-primary font-bold text-xs shadow-xs group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200">
+                  <div aria-hidden="true" className="absolute -left-6 sm:-left-10 top-5 -translate-x-1/2 flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-card border-2 border-primary text-primary font-bold text-xs shadow-xs group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200">
                     {formattedPart}
                   </div>
 
@@ -172,7 +170,7 @@ export function SeriesDetailClient({ series }: SeriesDetailClientProps) {
                     <article className="p-6 sm:p-7 rounded-2xl border border-border/80 bg-card hover:border-primary/50 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200">
                       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                         <span className="text-xs font-extrabold uppercase tracking-wider text-primary">
-                          Part {partNumber}
+                          {t('seriesPage.part')} {partNumber}
                         </span>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
@@ -223,9 +221,7 @@ export function SeriesDetailClient({ series }: SeriesDetailClientProps) {
         ) : (
           <div className="text-center py-16 rounded-2xl border border-border bg-card p-8 shadow-xs">
             <BookOpen className="w-10 h-10 mx-auto mb-3 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">
-              No published articles in this series yet. Check back soon!
-            </p>
+            <p className="text-sm text-muted-foreground">{t('seriesPage.empty')}</p>
           </div>
         )}
       </div>

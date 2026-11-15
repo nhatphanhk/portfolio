@@ -72,16 +72,16 @@ export default function FooterClient({
 
           {/* Navigation */}
           <div className="min-w-0">
-            <h4 className="text-sm font-semibold mb-4" style={{ color: 'oklch(0.72 0.18 78)' }}>
+            <h2 className="text-sm font-semibold mb-4" style={{ color: 'oklch(0.72 0.18 78)' }}>
               {t('footer.navigation')}
-            </h4>
+            </h2>
             <ul className="space-y-2">
               {NAV_LINKS.map(link => (
                 <li key={link.name}>
                   <Link
                     href={link.href}
                     className="text-sm transition-colors hover:text-amber-300"
-                    style={{ color: 'oklch(0.60 0.07 255)' }}
+                    style={{ color: 'oklch(0.80 0.05 255)' }}
                   >
                     {getNavLabel(link.name)}
                   </Link>
@@ -92,9 +92,9 @@ export default function FooterClient({
 
           {/* Social Links */}
           <div className="min-w-0">
-            <h4 className="text-sm font-semibold mb-4" style={{ color: 'oklch(0.55 0.22 255)' }}>
+            <h2 className="text-sm font-semibold mb-4" style={{ color: 'oklch(0.74 0.14 255)' }}>
               {t('footer.connect')}
-            </h4>
+            </h2>
             <div className="flex flex-wrap items-center gap-2.5">
               {socialLinks.map(social => (
                 <a
@@ -118,7 +118,7 @@ export default function FooterClient({
           className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-sm"
           style={{
             borderTop: '1px solid oklch(0.72 0.18 78 / 20%)',
-            color: 'oklch(0.50 0.06 255)',
+            color: 'oklch(0.70 0.05 255)',
           }}
         >
           <p>

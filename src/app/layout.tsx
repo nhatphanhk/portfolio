@@ -36,11 +36,8 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   metadataBase: new URL(SITE_URL),
   icons: {
-    icon: [
-      { url: '/icon.png', sizes: '32x32', type: 'image/png' },
-      { url: '/icon.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icon.png', sizes: '512x512', type: 'image/png' },
-    ],
+    // One real asset: declaring fake 32/192/512 sizes for the same file misleads browsers
+    icon: [{ url: '/icon.png', sizes: '512x592', type: 'image/png' }],
     shortcut: '/favicon.ico',
     apple: '/apple-icon.png',
   },

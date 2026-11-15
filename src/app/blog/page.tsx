@@ -3,7 +3,9 @@ import { MainLayout } from '@/components';
 import { getPublicBlogs } from '@/lib/actions/blog';
 import { getPublicSeries } from '@/lib/actions/series';
 import { BlogListClient } from '@/components/blog/BlogListClient';
+import { BlogHeaderClient } from '@/components/blog/BlogHeaderClient';
 import { UserBreadcrumb } from '@/components/UserBreadcrumb';
+import { CardGridSkeleton } from '@/components/ui/CardGridSkeleton';
 import type { Metadata } from 'next';
 import { buildOpenGraph } from '@/lib/constants';
 import { getServerLocale } from '@/lib/i18n/server';
@@ -29,17 +31,10 @@ export default async function BlogPage() {
         {/* Breadcrumb aligned with Header */}
         <UserBreadcrumb items={[{ label: 'Blogs' }]} className="mb-6" />
 
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 tracking-tight">Blogs</h1>
-          <p className="text-lg text-muted-foreground max-w-3xl">
-            Thoughts on web development, engineering practices, and lessons learned from building
-            real-world applications.
-          </p>
-        </div>
+        <BlogHeaderClient />
 
         {/* Interactive Blog List with Search, Series & Tag Filter & Pagination */}
-        <Suspense fallback={<div className="py-12 text-center text-muted-foreground">Loading blogs...</div>}>
+        <Suspense fallback={<CardGridSkeleton />}>
           <BlogListClient posts={posts} seriesList={seriesList} />
         </Suspense>
       </div>

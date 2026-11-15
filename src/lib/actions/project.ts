@@ -211,7 +211,8 @@ export async function getPublicProjects(locale: 'vi' | 'en' = 'en') {
             status: p.status === 'PUBLISHED' ? 'active' : 'archived',
             featured: p.featured,
             technologies: p.tags.map(t => t.tag.name),
-            publishedAt: p.createdAt.toISOString(),
+            publishedAt: (p.publishedAt ?? p.createdAt).toISOString(),
+            updatedAt: p.updatedAt.toISOString(),
             translations: trans ? {
               en: {
                 title: trans.title || undefined,
@@ -257,7 +258,8 @@ export const getPublicProjectBySlug = async (slug: string, locale: 'vi' | 'en' =
           status: p.status === 'PUBLISHED' ? 'active' : 'archived',
           featured: p.featured,
           technologies: p.tags.map(t => t.tag.name),
-          publishedAt: p.createdAt.toISOString(),
+          publishedAt: (p.publishedAt ?? p.createdAt).toISOString(),
+          updatedAt: p.updatedAt.toISOString(),
           translations: trans ? {
             en: {
               title: trans.title || undefined,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,63 +11,31 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import {
-  User,
-  Mail,
-  MessageSquare,
-  Sparkles,
-  ArrowRight,
-  Lock,
-  Loader2,
-} from 'lucide-react';
+import { User, Mail, MessageSquare, Sparkles, ArrowRight, Lock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SITE_NAME } from '@/lib/constants';
+import { useLanguage } from '@/lib/i18n/context';
 
-const schema = z.object({
-  name: z.string().min(2, 'Please enter your name'),
-  email: z.string().email('Please enter a valid email address'),
-  reason: z.string().min(3, 'Please briefly share why you are visiting'),
-});
-
-type FormData = z.infer<typeof schema>;
-
-function saveVisitorSession(visitorName?: string) {
+function saveVisitorSession() {
   if (typeof window === 'undefined') return;
-  // 1. Persistent LocalStorage (never expires unless cleared)
   localStorage.setItem('visitor_logged', 'true');
-  if (visitorName) {
-    localStorage.setItem('visitor_name', visitorName);
-  }
-  // 2. SessionStorage
   sessionStorage.setItem('visitor_logged', 'true');
-  // 3. Persistent Cookie (valid for 1 full year)
+  // Cookie (1 year) so the flag survives a cleared localStorage
   document.cookie = 'visitor_logged=true; path=/; max-age=31536000; SameSite=Lax';
 }
 
+/**
+ * Mandatory visitor greeting (product decision: no skip button).
+ * Admins are recognised by the `is_admin` flag set on the login page; the NextAuth session
+ * cookie is httpOnly, so it cannot be read here.
+ */
 export function VisitorModal() {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (localStorage.getItem('is_admin') === 'true') return;
 
-    // ── Layer 1: Check Admin LocalStorage Flag (Set upon logging in via /nhatphanhk102/login) ──
-    const isAdmin = localStorage.getItem('is_admin') === 'true';
-    if (isAdmin) {
-      return;
-    }
-
-    // ── Layer 2: Check NextAuth Admin Session Cookie ──
-    const hasAuthCookie =
-      document.cookie.includes('authjs.session-token') ||
-      document.cookie.includes('next-auth.session-token') ||
-      document.cookie.includes('__Secure-authjs.session-token');
-
-    if (hasAuthCookie) {
-      localStorage.setItem('is_admin', 'true');
-      return;
-    }
-
-    // ── Layer 4: Check if Visitor Already Logged (localStorage, cookie, sessionStorage) ──
     const hasVisited =
       localStorage.getItem('visitor_logged') === 'true' ||
       sessionStorage.getItem('visitor_logged') === 'true' ||
@@ -79,19 +47,22 @@ export function VisitorModal() {
     }
   }, []);
 
+  const schema = useMemo(
+    () =>
+      z.object({
+        name: z.string().trim().min(2, t('visitor.valName')),
+        email: z.string().trim().email(t('visitor.valEmail')),
+        reason: z.string().trim().min(3, t('visitor.valReason')),
+      }),
+    [t]
+  );
+  type FormData = z.infer<typeof schema>;
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-  });
-
-  const markVisitorAsLogged = (visitorName?: string) => {
-    saveVisitorSession(visitorName);
-    setOpen(false);
-  };
-
+  } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -102,176 +73,186 @@ export function VisitorModal() {
       });
 
       if (res.ok) {
-        toast.success(`Welcome, ${data.name}! Enjoy exploring the portfolio.`);
-        markVisitorAsLogged(data.name);
+        toast.success(`${t('visitor.welcome')}, ${data.name}!`);
+        saveVisitorSession();
+        setOpen(false);
       } else {
-        toast.error('Could not submit details. Please check your information and try again.');
+        toast.error(t('visitor.submitError'));
       }
-    } catch (_e) {
-      toast.error('Network error. Please try again in a moment.');
+    } catch {
+      toast.error(t('visitor.networkError'));
     }
   };
+
+  const inputClass = (hasError: boolean) =>
+    `w-full pl-9 pr-3.5 py-2 sm:py-2.5 rounded-xl border bg-muted/50 text-foreground text-xs sm:text-sm font-medium placeholder:text-muted-foreground focus:bg-card focus:outline-none transition-all ${
+      hasError
+        ? 'border-destructive focus:ring-2 focus:ring-destructive/20'
+        : 'border-input hover:border-foreground/30 focus:border-amber-400 focus:ring-3 focus:ring-amber-400/15'
+    }`;
+
+  const required = (
+    <span className="text-amber-600" aria-hidden="true">
+      *
+    </span>
+  );
 
   return (
     <Dialog
       open={open}
-      onOpenChange={(val) => {
-        if (!val) return;
-        setOpen(val);
+      onOpenChange={val => {
+        // Mandatory: Esc / outside click never close it; only a successful submit does
+        if (val) setOpen(val);
       }}
     >
       <DialogContent
         hideCloseButton
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-        className="w-[calc(100%-2rem)] max-w-[420px] p-0 gap-0 overflow-hidden border border-amber-500/25 bg-white/98 backdrop-blur-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] rounded-2xl sm:rounded-3xl max-h-[calc(100dvh-2.5rem)] flex flex-col my-auto"
+        onPointerDownOutside={e => e.preventDefault()}
+        onEscapeKeyDown={e => e.preventDefault()}
+        className="w-[calc(100%-2rem)] max-w-[420px] p-0 gap-0 overflow-hidden border border-amber-500/25 bg-card text-foreground shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] rounded-2xl sm:rounded-3xl max-h-[calc(100dvh-2.5rem)] flex flex-col my-auto print:hidden"
       >
-        {/* Top Decorative Ambient Header */}
+        {/* Header */}
         <div className="relative pt-5 pb-3.5 px-5 sm:pt-6 sm:pb-4 sm:px-6 bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-transparent border-b border-amber-500/10 text-center flex-shrink-0">
-          {/* Glowing Avatar / Sparkle Icon */}
-          <div className="relative mx-auto w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-md shadow-amber-500/20 mb-2.5 sm:mb-3 group">
+          <div
+            aria-hidden="true"
+            className="relative mx-auto w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-md shadow-amber-500/20 mb-2.5 sm:mb-3"
+          >
             <div
               className="absolute inset-0 rounded-xl sm:rounded-2xl blur-md opacity-70"
-              style={{
-                background: 'linear-gradient(135deg, #fde047 0%, #eab308 100%)',
-              }}
+              style={{ background: 'linear-gradient(135deg, #fde047 0%, #eab308 100%)' }}
             />
             <div
-              className="relative w-full h-full rounded-xl sm:rounded-2xl flex items-center justify-center border border-white/40 font-black text-slate-950 text-xl"
-              style={{
-                background: 'linear-gradient(135deg, #fde047 0%, #eab308 50%, #ca8a04 100%)',
-              }}
+              className="relative w-full h-full rounded-xl sm:rounded-2xl flex items-center justify-center border border-white/40"
+              style={{ background: 'linear-gradient(135deg, #fde047 0%, #eab308 50%, #ca8a04 100%)' }}
             >
               <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-slate-950" />
             </div>
           </div>
 
           <DialogHeader className="space-y-1 text-center sm:text-center">
-            <DialogTitle className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-              Welcome to{' '}
-              <span className="text-gold-shimmer font-black">{SITE_NAME}&apos;s</span>{' '}
-              Portfolio
+            <DialogTitle className="text-lg sm:text-xl font-black text-foreground tracking-tight">
+              {t('visitor.titleBefore')} <span className="text-gold-shimmer font-black">{SITE_NAME}</span>
+              {t('visitor.titleAfter')}
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-600 font-medium max-w-xs sm:max-w-sm mx-auto leading-relaxed">
-              Please introduce yourself below to unlock full access to projects, resume, and experience.
+            <DialogDescription className="text-xs text-muted-foreground font-medium max-w-xs sm:max-w-sm mx-auto leading-relaxed">
+              {t('visitor.description')}
             </DialogDescription>
           </DialogHeader>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit(onSubmit)} className="p-4 sm:p-6 space-y-3 sm:space-y-3.5 overflow-y-auto overscroll-contain flex-grow">
-          {/* Name Field */}
+        {/* Form */}
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          noValidate
+          className="p-4 sm:p-6 space-y-3 sm:space-y-3.5 overflow-y-auto overscroll-contain flex-grow"
+        >
           <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-              Your Full Name <span className="text-amber-500">*</span>
+            <label htmlFor="visitor-name" className="block text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+              {t('visitor.nameLabel')} {required}
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                <User className="h-4 w-4" />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+                <User className="h-4 w-4" aria-hidden="true" />
               </div>
               <input
+                id="visitor-name"
                 {...register('name')}
-                placeholder="e.g. Alex Morgan"
+                autoComplete="name"
+                placeholder={t('visitor.namePlaceholder')}
                 disabled={isSubmitting}
-                className={`w-full pl-9 pr-3.5 py-2 sm:py-2.5 rounded-xl border bg-slate-100 text-slate-900 text-xs sm:text-sm font-medium placeholder:text-slate-400 focus:bg-white focus:outline-none transition-all ${
-                  errors.name
-                    ? 'border-red-400 focus:ring-2 focus:ring-red-400/20'
-                    : 'border-slate-300/80 hover:border-slate-400 focus:border-amber-400 focus:ring-3 focus:ring-amber-400/15'
-                }`}
+                aria-required="true"
+                aria-invalid={!!errors.name}
+                aria-describedby={errors.name ? 'visitor-name-error' : undefined}
+                className={inputClass(!!errors.name)}
               />
             </div>
             {errors.name && (
-              <p className="text-[11px] font-semibold text-red-500 mt-1 pl-1">
+              <p id="visitor-name-error" className="text-[11px] font-semibold text-destructive mt-1 pl-1">
                 {errors.name.message}
               </p>
             )}
           </div>
 
-          {/* Email Field */}
           <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-              Email Address <span className="text-amber-500">*</span>
+            <label htmlFor="visitor-email" className="block text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+              {t('visitor.emailLabel')} {required}
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                <Mail className="h-4 w-4" />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+                <Mail className="h-4 w-4" aria-hidden="true" />
               </div>
               <input
+                id="visitor-email"
                 {...register('email')}
                 type="email"
-                placeholder="alex@company.com"
+                autoComplete="email"
+                placeholder={t('visitor.emailPlaceholder')}
                 disabled={isSubmitting}
-                className={`w-full pl-9 pr-3.5 py-2 sm:py-2.5 rounded-xl border bg-slate-100 text-slate-900 text-xs sm:text-sm font-medium placeholder:text-slate-400 focus:bg-white focus:outline-none transition-all ${
-                  errors.email
-                    ? 'border-red-400 focus:ring-2 focus:ring-red-400/20'
-                    : 'border-slate-300/80 hover:border-slate-400 focus:border-amber-400 focus:ring-3 focus:ring-amber-400/15'
-                }`}
+                aria-required="true"
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'visitor-email-error' : undefined}
+                className={inputClass(!!errors.email)}
               />
             </div>
             {errors.email && (
-              <p className="text-[11px] font-semibold text-red-500 mt-1 pl-1">
+              <p id="visitor-email-error" className="text-[11px] font-semibold text-destructive mt-1 pl-1">
                 {errors.email.message}
               </p>
             )}
           </div>
 
-          {/* Reason Field */}
           <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-              Reason For Visiting <span className="text-amber-500">*</span>
+            <label htmlFor="visitor-reason" className="block text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+              {t('visitor.reasonLabel')} {required}
             </label>
             <div className="relative">
-              <div className="absolute top-2.5 left-3 flex items-center pointer-events-none text-slate-400">
-                <MessageSquare className="h-4 w-4" />
+              <div className="absolute top-2.5 left-3 flex items-center pointer-events-none text-muted-foreground">
+                <MessageSquare className="h-4 w-4" aria-hidden="true" />
               </div>
               <textarea
+                id="visitor-reason"
                 {...register('reason')}
                 rows={2}
-                placeholder="e.g. Exploring potential hire, reviewing projects, collaboration..."
+                placeholder={t('visitor.reasonPlaceholder')}
                 disabled={isSubmitting}
-                className={`w-full pl-9 pr-3.5 py-2 sm:py-2.5 rounded-xl border bg-slate-100 text-slate-900 text-xs sm:text-sm font-medium placeholder:text-slate-400 focus:bg-white focus:outline-none transition-all resize-none ${
-                  errors.reason
-                    ? 'border-red-400 focus:ring-2 focus:ring-red-400/20'
-                    : 'border-slate-300/80 hover:border-slate-400 focus:border-amber-400 focus:ring-3 focus:ring-amber-400/15'
-                }`}
+                aria-required="true"
+                aria-invalid={!!errors.reason}
+                aria-describedby={errors.reason ? 'visitor-reason-error' : undefined}
+                className={`${inputClass(!!errors.reason)} resize-none`}
               />
             </div>
             {errors.reason && (
-              <p className="text-[11px] font-semibold text-red-500 mt-1 pl-1">
+              <p id="visitor-reason-error" className="text-[11px] font-semibold text-destructive mt-1 pl-1">
                 {errors.reason.message}
               </p>
             )}
           </div>
 
-          {/* Submit Action Button (Required, No Skip) */}
           <div className="pt-1">
             <button
               type="submit"
               disabled={isSubmitting}
               className="w-full py-2.5 sm:py-3 px-5 rounded-xl font-extrabold text-xs sm:text-sm tracking-wide text-slate-950 flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:hover:scale-100 shadow-md shadow-amber-500/25"
-              style={{
-                background: 'linear-gradient(135deg, #fde047 0%, #f59e0b 60%, #d97706 100%)',
-              }}
+              style={{ background: 'linear-gradient(135deg, #fde047 0%, #f59e0b 60%, #d97706 100%)' }}
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
-                  <span>Verifying & Entering...</span>
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                  <span>{t('visitor.submitting')}</span>
                 </>
               ) : (
                 <>
-                  <span>Enter Portfolio</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>{t('visitor.submit')}</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </>
               )}
             </button>
           </div>
 
-          {/* Trust / Privacy Badge */}
-          <div className="flex items-center justify-center gap-1.5 pt-0.5 text-[10px] sm:text-[11px] font-semibold text-slate-400">
-            <Lock className="w-3 h-3 text-slate-400" />
-            <span>Information is private & only used to greet you</span>
-          </div>
+          <p className="flex items-center justify-center gap-1.5 pt-0.5 text-[10px] sm:text-[11px] font-semibold text-muted-foreground">
+            <Lock className="w-3 h-3" aria-hidden="true" />
+            <span>{t('visitor.privacy')}</span>
+          </p>
         </form>
       </DialogContent>
     </Dialog>

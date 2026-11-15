@@ -26,13 +26,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: project.title,
     description: project.description ?? undefined,
+    alternates: { canonical: `/project/${slug}` },
     openGraph: buildOpenGraph({
       title: project.title,
       description: project.description ?? undefined,
       path: `/project/${slug}`,
       locale,
       type: 'article',
+      // No thumbnail -> buildOpenGraph falls back to the site-wide og-image
       images: project.thumbnailUrl ? [project.thumbnailUrl] : undefined,
+      publishedTime: project.publishedAt,
+      modifiedTime: project.updatedAt,
     }),
   };
 }

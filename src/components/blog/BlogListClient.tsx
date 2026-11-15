@@ -153,9 +153,10 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
       <div className="space-y-4 p-4 sm:p-5 rounded-2xl border border-border bg-card shadow-xs min-w-0">
         {/* Search Input */}
         <div className="relative w-full">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
           <input
-            type="text"
+            type="search"
+            aria-label={t('common.search')}
             placeholder={t('blog.searchPlaceholder')}
             value={search}
             onChange={e => handleSearchChange(e.target.value)}
@@ -167,10 +168,11 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
         {seriesList.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-border/60">
             <span className="text-xs font-bold text-primary flex items-center gap-1 mr-1 shrink-0">
-              <Layers className="w-3.5 h-3.5" /> {t('blog.series')}:
+              <Layers className="w-3.5 h-3.5" aria-hidden="true" /> {t('blog.series')}:
             </span>
             <button
               type="button"
+              aria-pressed={selectedSeriesSlug === null}
               onClick={() => handleSeriesClick(null)}
               className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer shrink-0 ${
                 selectedSeriesSlug === null
@@ -189,6 +191,7 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
                 <button
                   key={s.id}
                   type="button"
+                  aria-pressed={isSelected}
                   onClick={() => handleSeriesClick(s.slug || s.id)}
                   className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer shrink-0 ${
                     isSelected
@@ -207,7 +210,7 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
               className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline transition-colors pl-2 shrink-0"
             >
               <span>{t('seriesPage.viewAll')}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
             </Link>
           </div>
         )}
@@ -218,6 +221,7 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
             <span className="text-xs font-medium text-muted-foreground mr-1 shrink-0">{t('blog.tags')}:</span>
             <button
               type="button"
+              aria-pressed={selectedTag === 'ALL'}
               onClick={() => handleTagClick('ALL')}
               className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer shrink-0 ${
                 selectedTag === 'ALL'
@@ -233,6 +237,7 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
                 <button
                   key={tag}
                   type="button"
+                  aria-pressed={selectedTag === tag}
                   onClick={() => handleTagClick(tag)}
                   className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer shrink-0 ${
                     selectedTag === tag
@@ -251,17 +256,17 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
       {/* Filter status header */}
       {isFiltering && (
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground px-1">
-          <p>
-            Found <span className="font-semibold text-foreground">{filteredPosts.length}</span> matching{' '}
-            {filteredPosts.length === 1 ? 'article' : 'articles'}
+          <p aria-live="polite">
+            {t('blog.foundArticles')} <span className="font-semibold text-foreground">{filteredPosts.length}</span>{' '}
+            {filteredPosts.length === 1 ? t('blog.matchingArticle') : t('blog.matchingArticles')}
             {selectedSeriesObject && (
               <span className="ml-1 text-primary font-medium">
-                in series <span className="font-bold">"{selectedSeriesObject.title}"</span>
+                {t('blog.inSeries')} <span className="font-bold">&ldquo;{selectedSeriesObject.title}&rdquo;</span>
               </span>
             )}
             {selectedTag !== 'ALL' && (
               <span className="ml-1 text-primary">
-                with tag <span className="font-bold">#{selectedTag}</span>
+                {t('blog.withTag')} <span className="font-bold">#{selectedTag}</span>
               </span>
             )}
           </p>
@@ -270,7 +275,7 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
             onClick={handleClearFilters}
             className="text-primary hover:underline font-medium cursor-pointer"
           >
-            Clear all filters
+            {t('common.clearFilters')}
           </button>
         </div>
       )}
@@ -281,24 +286,25 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
           <div className="text-xs font-semibold uppercase tracking-widest text-primary mb-4 flex items-center gap-1.5">
             <span>{t('blog.featuredArticle')}</span>
           </div>
-          <Link href={`/blog/${featured.slug}`} className="group block">
-            <article className="p-8 rounded-2xl border border-border bg-card hover:border-foreground/20 hover:shadow-md transition-all duration-200">
-              <div className="flex flex-wrap gap-2 mb-3">
+          {/* Stretched title link covers the card; tag chips sit above it as real buttons */}
+          <article className="group relative p-6 md:p-8 rounded-2xl border border-border/70 bg-card hover:border-foreground/20 hover:shadow-md transition-all duration-200 focus-within:ring-2 focus-within:ring-ring">
+              <div className="relative z-10 flex flex-wrap gap-2 mb-3">
                 {featured.tags.map(tag => (
-                  <span
+                  <button
+                    type="button"
                     key={tag}
-                    onClick={e => {
-                      e.preventDefault();
-                      handleTagClick(tag);
-                    }}
-                    className="px-2.5 py-0.5 text-xs bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-colors"
+                    onClick={() => handleTagClick(tag)}
+                    aria-label={`${t('blog.withTag')} #${tag}`}
+                    className="px-2.5 py-0.5 text-xs bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-colors cursor-pointer"
                   >
                     {tag}
-                  </span>
+                  </button>
                 ))}
               </div>
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors">
-                {featured.title}
+                <Link href={`/blog/${featured.slug}`} className="after:absolute after:inset-0 after:rounded-2xl focus:outline-none">
+                  {featured.title}
+                </Link>
               </h2>
               {featured.excerpt && (
                 <p className="text-muted-foreground mb-6 leading-relaxed text-sm line-clamp-2">
@@ -311,62 +317,61 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
                     {formatDate(featured.publishedAt, locale, 'long')}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />
+                    <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                     {featured.readTime} {t('common.readingTime')}
                   </span>
                 </div>
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-foreground group-hover:gap-2 transition-all">
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-foreground group-hover:gap-2 transition-all" aria-hidden="true">
                   {t('common.readMore')} <ArrowRight className="h-4 w-4" />
                 </span>
               </div>
-            </article>
-          </Link>
+          </article>
         </div>
       )}
 
       {/* All Posts Section */}
       <div>
         <h2 className="text-sm font-semibold uppercase tracking-widest text-primary mb-6">
-          {isFiltering ? 'Search Results' : 'Recent Articles'}
+          {isFiltering ? t('blog.searchResults') : t('blog.recentArticles')}
         </h2>
 
         {paginatedPosts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center rounded-2xl border border-border bg-card p-8 shadow-xs">
-            <FileText className="h-12 w-12 mb-3 text-muted-foreground/40" />
-            <h3 className="text-lg font-semibold text-foreground mb-1">No articles found</h3>
-            <p className="text-sm text-muted-foreground max-w-sm">
-              We couldn&apos;t find any articles matching your search or tag selection.
-            </p>
-            <button
-              type="button"
-              onClick={handleClearFilters}
-              className="mt-5 px-4 py-2 text-xs font-medium rounded-xl border border-border bg-muted/60 hover:bg-muted text-foreground transition-colors"
-            >
-              Reset filters
-            </button>
+            <FileText className="h-12 w-12 mb-3 text-muted-foreground/40" aria-hidden="true" />
+            <h3 className="text-lg font-semibold text-foreground mb-1">{t('blog.noArticlesTitle')}</h3>
+            <p className="text-sm text-muted-foreground max-w-sm">{t('blog.noArticlesFound')}</p>
+            {isFiltering && (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="mt-5 px-4 py-2 text-xs font-medium rounded-xl border border-border bg-muted/60 hover:bg-muted text-foreground transition-colors"
+              >
+                {t('common.clearFilters')}
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
             {paginatedPosts.map(post => (
-              <Link key={post.id} href={`/blog/${post.slug}`} className="group block">
-                <article className="h-full flex flex-col justify-between p-6 rounded-xl border border-border bg-card hover:border-foreground/20 hover:shadow-md transition-all duration-200">
+                <article key={post.id} className="group relative h-full flex flex-col justify-between p-6 rounded-2xl border border-border/70 bg-card hover:border-foreground/20 hover:shadow-md transition-all duration-200 focus-within:ring-2 focus-within:ring-ring">
                   <div>
-                    <div className="flex flex-wrap gap-1.5 mb-2.5">
+                    <div className="relative z-10 flex flex-wrap gap-1.5 mb-2.5">
                       {post.tags.slice(0, 3).map(tag => (
-                        <span
+                        <button
+                          type="button"
                           key={tag}
-                          onClick={e => {
-                            e.preventDefault();
-                            handleTagClick(tag);
-                          }}
-                          className="px-2 py-0.5 text-xs bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors"
+                          onClick={() => handleTagClick(tag)}
+                          aria-label={`${t('blog.withTag')} #${tag}`}
+                          className="px-2 py-0.5 text-xs bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                         >
                           {tag}
-                        </span>
+                        </button>
                       ))}
                     </div>
                     <h3 className="font-semibold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                      {post.title}
+                      <Link href={`/blog/${post.slug}`} className="after:absolute after:inset-0 after:rounded-2xl focus:outline-none">
+                        {post.title}
+                      </Link>
                     </h3>
                     {post.excerpt && (
                       <p className="text-xs text-muted-foreground mb-4 line-clamp-2 leading-relaxed">
@@ -380,12 +385,11 @@ export function BlogListClient({ posts, seriesList }: BlogListClientProps) {
                       {formatDate(post.publishedAt, locale)}
                     </span>
                     <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
+                      <Clock className="h-3 w-3" aria-hidden="true" />
                       {post.readTime} {t('common.readingTime')}
                     </span>
                   </div>
                 </article>
-              </Link>
             ))}
           </div>
         )}

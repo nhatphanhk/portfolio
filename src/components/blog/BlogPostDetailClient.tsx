@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/context';
 import { BlogContent } from '@/components/blog/BlogContent';
 import { BlogOutline } from '@/components/blog/BlogOutline';
@@ -128,12 +129,13 @@ export function BlogPostDetailClient({ post, seriesData, initialTranslations, is
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div className="flex flex-wrap gap-2">
               {post.tags.map(tag => (
-                <span
+                <Link
                   key={tag}
-                  className="px-2.5 py-0.5 text-xs bg-primary/10 text-primary rounded-full font-medium"
+                  href={`/blog?tag=${encodeURIComponent(tag)}`}
+                  className="px-2.5 py-0.5 text-xs bg-primary/10 text-primary rounded-full font-medium hover:bg-primary/20 transition-colors"
                 >
                   {tag}
-                </span>
+                </Link>
               ))}
             </div>
 

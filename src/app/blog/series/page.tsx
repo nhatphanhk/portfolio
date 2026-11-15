@@ -3,6 +3,7 @@ import { MainLayout } from '@/components';
 import { getPublicSeries } from '@/lib/actions/series';
 import { SeriesListClient } from '@/components/blog/SeriesListClient';
 import { UserBreadcrumb } from '@/components/UserBreadcrumb';
+import { CardGridSkeleton } from '@/components/ui/CardGridSkeleton';
 import type { Metadata } from 'next';
 import { buildOpenGraph } from '@/lib/constants';
 
@@ -40,13 +41,7 @@ export default async function SeriesDirectoryPage() {
         <SeriesHeaderClient />
 
         {/* Interactive Series List & Search */}
-        <Suspense
-          fallback={
-            <div className="py-16 text-center text-muted-foreground">
-              Loading series directory...
-            </div>
-          }
-        >
+        <Suspense fallback={<CardGridSkeleton />}>
           <SeriesListClient seriesList={seriesList} />
         </Suspense>
       </div>

@@ -255,6 +255,7 @@ export function AdminProjectsClient({ projects }: { projects: Project[] }) {
         {filtered.length > 0 && (
           <div className="p-4 bg-card border-t border-border">
             <PaginationControl
+              locale="vi"
               currentPage={currentPage}
               totalPages={totalPages}
               totalItems={filtered.length}

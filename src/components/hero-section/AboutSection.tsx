@@ -206,7 +206,7 @@ export function AboutSection({ profile, content }: AboutSectionProps) {
 
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-400 text-xs sm:text-sm font-semibold self-start md:self-auto max-w-full">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-            <span className="truncate">{isEn ? 'Open for new challenges & projects' : 'Sẵn sàng cho dự án & thử thách mới'}</span>
+            <span className="truncate">{t('landing.aboutOpenToWork')}</span>
           </div>
         </div>
 
@@ -228,7 +228,7 @@ export function AboutSection({ profile, content }: AboutSectionProps) {
             <div className="absolute bottom-6 left-6 right-6 text-white">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900/60 backdrop-blur-md border border-amber-400/30 text-xs font-bold mb-2.5 shadow-sm">
                 <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span className="text-amber-200">{getC('about_author_role', isEn ? 'Lead Engineer' : 'Kỹ Sư Phần Mềm')}</span>
+                <span className="text-amber-200">{getC('about_author_role', t('landing.aboutAuthorRole'))}</span>
               </div>
               <h3 className="text-2xl sm:text-3xl font-black tracking-tight">{profile.name}</h3>
               <p className="text-xs sm:text-sm text-slate-300 line-clamp-1 mt-1">{profile.title}</p>
@@ -241,7 +241,7 @@ export function AboutSection({ profile, content }: AboutSectionProps) {
             <div data-about="bio-card" className="p-5 sm:p-6 rounded-2xl bg-card border border-border/80 shadow-sm hover:border-border transition-colors">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider text-blue-600 bg-blue-500/10 border border-blue-500/20 mb-3 w-fit">
                 <Code2 className="w-3.5 h-3.5" />
-                <span>{isEn ? 'Engineering Story' : 'Câu Chuyện Nghề Nghiệp'}</span>
+                <span>{t('landing.aboutStoryBadge')}</span>
               </div>
               <p className="text-sm sm:text-base text-foreground/85 leading-relaxed">
                 {(isEn && (profile as any)?.translations?.en?.bio) || profile.bio}
@@ -279,14 +279,14 @@ export function AboutSection({ profile, content }: AboutSectionProps) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={authorImg2}
-                  alt="Workspace Setup"
+                  alt={t('landing.aboutWorkspaceLabel')}
                   className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
                 <div className="absolute bottom-2.5 left-3 right-3 text-white">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300">{isEn ? 'Workspace' : 'Làm việc'}</p>
-                  <p className="text-[11px] font-semibold text-slate-100 leading-tight">{isEn ? 'Clean Setup' : 'Tối giản'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300">{t('landing.aboutWorkspaceLabel')}</p>
+                  <p className="text-[11px] font-semibold text-slate-100 leading-tight">{t('landing.aboutWorkspaceCaption')}</p>
                 </div>
               </div>
 
@@ -294,14 +294,14 @@ export function AboutSection({ profile, content }: AboutSectionProps) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={authorImg3}
-                  alt="Coding & Architecture"
+                  alt={t('landing.aboutActionCaption')}
                   className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
                 <div className="absolute bottom-2.5 left-3 right-3 text-white">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-blue-300">{isEn ? 'In Action' : 'Thực chiến'}</p>
-                  <p className="text-[11px] font-semibold text-slate-100 leading-tight">{isEn ? 'Architecture & AI' : 'Kiến trúc & AI'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-blue-300">{t('landing.aboutActionLabel')}</p>
+                  <p className="text-[11px] font-semibold text-slate-100 leading-tight">{t('landing.aboutActionCaption')}</p>
                 </div>
               </div>
             </div>

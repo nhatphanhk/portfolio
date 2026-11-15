@@ -243,6 +243,7 @@ export function MediaLibraryClient({ media: initialMedia }: MediaLibraryClientPr
         {filteredItems.length > 0 && (
           <div className="p-4 bg-card border-t border-border shrink-0">
             <PaginationControl
+              locale="vi"
               currentPage={currentPage}
               totalPages={totalPages}
               totalItems={filteredItems.length}

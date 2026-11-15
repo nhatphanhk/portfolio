@@ -30,9 +30,13 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
     }
     return (content as any)?.vi?.[key] || fallback;
   };
-  const featuredProjects = projects.filter(p => p.featured);
+  const featuredProjects = projects.filter(p => p.featured).slice(0, 3);
   const recentPosts = blogs.slice(0, 3);
-  const certifications = certs.filter(c => c.status === 'ACTIVE').slice(0, 3);
+  // Same rule as /certifications: a passed expiry date means expired even if the status was never flipped
+  const now = Date.now();
+  const certifications = certs
+    .filter(c => c.status === 'ACTIVE' && !(c.expiryDate && new Date(c.expiryDate).getTime() < now))
+    .slice(0, 3);
 
   const sectionRef = useRef<HTMLElement>(null);
   const orb1Ref = useRef<HTMLDivElement>(null);
@@ -145,7 +149,12 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
   }, []);
 
   return (
-    <section ref={sectionRef} id="highlights" className="relative py-20 overflow-hidden bg-background">
+    <section
+      ref={sectionRef}
+      id="highlights"
+      hidden={featuredProjects.length === 0 && recentPosts.length === 0 && certifications.length === 0}
+      className="relative py-20 overflow-hidden bg-background"
+    >
       {/* Parallax ambient background glows */}
       <div
         ref={orb1Ref}
@@ -165,7 +174,8 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20 relative z-10">
-        {/* ══ FEATURED PROJECTS ══ */}
+        {/* ══ FEATURED PROJECTS ══ (each block hides itself when empty) */}
+        {featuredProjects.length > 0 && (
         <div>
           <div
             data-bpsc="section-header"
@@ -174,7 +184,7 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600">
-                  <Briefcase className="w-4 h-4" />
+                  <Briefcase className="w-4 h-4" aria-hidden="true" />
                 </span>
                 <p className="text-xs font-black uppercase tracking-widest text-amber-600">
                   {getC('bpsc_projects_badge', t.landing.bpscProjectsBadge)}
@@ -189,11 +199,11 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
               className="group inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-muted-foreground hover:text-primary transition-colors shrink-0"
             >
               <span>{t.landing.viewAllProjects}</span>
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
             </Link>
           </div>
 
-          <div data-bpsc="projects-grid" className="grid md:grid-cols-2 gap-5">
+          <div data-bpsc="projects-grid" className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {featuredProjects.map(project => {
               const projectTitle = (isEn && (project as any).translations?.en?.title) || project.title;
               const projectDesc = (isEn && (project as any).translations?.en?.description) || project.description;
@@ -209,7 +219,7 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
                     <h3 className="font-extrabold text-base sm:text-lg text-foreground group-hover:text-primary transition-colors leading-snug">
                       {projectTitle}
                     </h3>
-                    <div className="p-2 rounded-full bg-muted/80 text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 transition-all duration-300 shrink-0 ml-2">
+                    <div aria-hidden="true" className="p-2 rounded-full bg-muted/80 text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 transition-all duration-300 shrink-0 ml-2">
                       <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                     </div>
                   </div>
@@ -241,8 +251,10 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
             })}
           </div>
         </div>
+        )}
 
         {/* ══ RECENT BLOG POSTS ══ */}
+        {recentPosts.length > 0 && (
         <div>
           <div
             data-bpsc="section-header"
@@ -251,7 +263,7 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600">
-                  <BookOpen className="w-4 h-4" />
+                  <BookOpen className="w-4 h-4" aria-hidden="true" />
                 </span>
                 <p className="text-xs font-black uppercase tracking-widest text-blue-600">
                   {getC('bpsc_blogs_badge', t.landing.bpscBlogsBadge)}
@@ -266,7 +278,7 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
               className="group inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-muted-foreground hover:text-blue-600 transition-colors shrink-0"
             >
               <span>{t.landing.viewAllBlogs}</span>
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
             </Link>
           </div>
 
@@ -279,7 +291,7 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
                 className="group flex items-center gap-3.5 sm:gap-5 p-3.5 sm:p-5 rounded-2xl bg-card border border-border/80 shadow-sm hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/8 hover:-translate-y-0.5 transition-all duration-300 min-w-0"
               >
                 {/* Number badge */}
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500/15 to-blue-600/5 text-blue-600 border border-blue-500/20 flex items-center justify-center text-xs font-black shrink-0">
+                <div aria-hidden="true" className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500/15 to-blue-600/5 text-blue-600 border border-blue-500/20 flex items-center justify-center text-xs font-black shrink-0">
                   {String(idx + 1).padStart(2, '0')}
                 </div>
 
@@ -289,26 +301,28 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
                   </h3>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium">
                     <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-muted-foreground/60" />
+                      <Calendar className="w-3 h-3 text-muted-foreground/60" aria-hidden="true" />
                       {formatDate(post.publishedAt, isEn ? 'en' : 'vi')}
                     </span>
-                    <span className="text-border">·</span>
+                    <span className="text-border" aria-hidden="true">·</span>
                     <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-muted-foreground/60" />
+                      <Clock className="w-3 h-3 text-muted-foreground/60" aria-hidden="true" />
                       {post.readTime} {t('common.readingTime')}
                     </span>
                   </div>
                 </div>
 
-                <div className="p-2 rounded-xl bg-muted/60 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shrink-0">
+                <div aria-hidden="true" className="p-2 rounded-xl bg-muted/60 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shrink-0">
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                 </div>
               </Link>
             ))}
           </div>
         </div>
+        )}
 
         {/* ══ CERTIFICATIONS ══ */}
+        {certifications.length > 0 && (
         <div>
           <div
             data-bpsc="section-header"
@@ -317,7 +331,7 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="p-1.5 rounded-lg bg-teal-500/10 text-teal-600">
-                  <Award className="w-4 h-4" />
+                  <Award className="w-4 h-4" aria-hidden="true" />
                 </span>
                 <p className="text-xs font-black uppercase tracking-widest text-teal-600">
                   {getC('bpsc_certs_badge', t.landing.bpscCertsBadge)}
@@ -332,20 +346,21 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
               className="group inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-muted-foreground hover:text-teal-600 transition-colors shrink-0"
             >
               <span>{t.landing.viewAllCerts}</span>
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
             </Link>
           </div>
 
           <div data-bpsc="certs-grid" className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {certifications.map(cert => (
-              <div
+              // With a credential URL the "verify" link is stretched over the whole card
+              <article
                 data-bpsc="cert-card"
                 key={cert.id}
-                className="group p-5 rounded-2xl bg-card border border-border/80 shadow-sm hover:border-teal-500/40 hover:shadow-lg hover:shadow-teal-500/8 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between gap-4"
+                className="group relative p-6 rounded-2xl bg-card border border-border/70 shadow-sm focus-within:ring-2 focus-within:ring-ring hover:border-teal-500/40 hover:shadow-lg hover:shadow-teal-500/8 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between gap-4"
               >
                 <div>
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-600 border border-teal-500/20 flex items-center justify-center shrink-0">
+                    <div aria-hidden="true" className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-600 border border-teal-500/20 flex items-center justify-center shrink-0">
                       <Award className="w-4 h-4" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -364,17 +379,18 @@ export function BPSCSection({ projects, blogs, certs, content }: BPSCSectionProp
                     href={cert.credentialUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-600 hover:text-teal-700 transition-colors group-hover:translate-x-0.5"
-                    onClick={e => e.stopPropagation()}
+                    aria-label={`${t.landing.verifyCredential}: ${cert.name}`}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 hover:text-teal-800 transition-colors group-hover:translate-x-0.5 after:absolute after:inset-0 after:rounded-2xl focus:outline-none"
                   >
                     <span>{t.landing.verifyCredential}</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
                   </a>
                 )}
-              </div>
+              </article>
             ))}
           </div>
         </div>
+        )}
       </div>
     </section>
   );

@@ -27,6 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: post.title,
     description: post.excerpt,
+    alternates: { canonical: `/blog/${slug}` },
     openGraph: buildOpenGraph({
       title: post.title,
       description: post.excerpt,
@@ -35,6 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: 'article',
       images: post.thumbnailUrl ? [post.thumbnailUrl] : undefined,
       publishedTime: post.publishedAt,
+      modifiedTime: post.updatedAt,
       authors: ['Phan Hoàng Nhật'],
     }),
   };

@@ -36,6 +36,15 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const [webglFailed, setWebglFailed] = useState(false);
+  // The sun column is `hidden xl:flex`; don't download/boot its WebGL scene where it can't be seen
+  const [canShowSun, setCanShowSun] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 1280px)');
+    const update = () => setCanShowSun(mql.matches);
+    update();
+    mql.addEventListener('change', update);
+    return () => mql.removeEventListener('change', update);
+  }, []);
 
   const defaultTitle = isEn && profile.translations?.en?.title ? profile.translations.en.title : profile.title;
   const defaultTagline = (isEn && (profile as any).translations?.en?.tagline) || profile.tagline;
@@ -148,7 +157,29 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
           mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;
           mouse.y = -(e.clientY / window.innerHeight - 0.5) * 2;
         };
-        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mousemove', onMouseMove, { passive: true });
+
+        // Pause rendering when scrolled away or the tab is hidden (same approach as RealisticSun).
+        // Two independent flags so one signal can't override the other.
+        let inView = true;
+        let pageVisible = document.visibilityState === 'visible';
+        const observer = new IntersectionObserver(
+          entries => {
+            entries.forEach(entry => {
+              inView = entry.isIntersecting;
+            });
+          },
+          { threshold: 0.01 }
+        );
+        observer.observe(canvas);
+        const onVisibilityChange = () => {
+          pageVisible = document.visibilityState === 'visible';
+        };
+        document.addEventListener('visibilitychange', onVisibilityChange);
+
+        // Reduced motion: slow drift, no pointer parallax
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const timeScale = reducedMotion ? 0.25 : 1;
 
         const onResize = () => {
           camera.aspect = window.innerWidth / window.innerHeight;
@@ -160,7 +191,8 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
         const clock = new THREE.Clock();
         const animate = () => {
           frameId = requestAnimationFrame(animate);
-          const t = clock.getElapsedTime();
+          if (!inView || !pageVisible) return;
+          const t = clock.getElapsedTime() * timeScale;
 
           distantStars.points.rotation.y = t * 0.008;
           distantStars.points.rotation.x = t * 0.004;
@@ -171,8 +203,10 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
           brightStars.points.rotation.x = t * 0.015;
           brightStars.points.rotation.y = t * 0.006;
 
-          camera.position.x += (mouse.x * 1.5 - camera.position.x) * 0.02;
-          camera.position.y += (mouse.y * 1.5 - camera.position.y) * 0.02;
+          if (!reducedMotion) {
+            camera.position.x += (mouse.x * 1.5 - camera.position.x) * 0.02;
+            camera.position.y += (mouse.y * 1.5 - camera.position.y) * 0.02;
+          }
           renderer.render(scene, camera);
         };
         animate();
@@ -180,6 +214,8 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
         // Store cleanup references on the canvas element
         (canvas as unknown as Record<string, () => void>).__threeCleanup = () => {
           cancelAnimationFrame(frameId);
+          observer.disconnect();
+          document.removeEventListener('visibilitychange', onVisibilityChange);
           window.removeEventListener('mousemove', onMouseMove);
           window.removeEventListener('resize', onResize);
           starTexture.dispose();
@@ -447,7 +483,7 @@ export function HeroSection({ profile, socialLinks, content }: HeroSectionProps)
           />
 
           {!webglFailed ? (
-            <RealisticSun onFallback={() => setWebglFailed(true)} />
+            canShowSun && <RealisticSun onFallback={() => setWebglFailed(true)} />
           ) : (
             /* Fallback CSS Sun Orb */
             <div className="realistic-sun-orb" aria-hidden="true">

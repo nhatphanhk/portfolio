@@ -348,7 +348,9 @@ export function RealisticSun({ className = '', onFallback }: RealisticSunProps) 
 
     let frameId = 0;
     let disposed = false;
-    let isVisible = true;
+    // Two independent flags: scrolling back into view must not resume a hidden tab, and vice versa
+    let inView = true;
+    let pageVisible = document.visibilityState === 'visible';
     let cleanup: (() => void) | null = null;
 
     const initSun = async () => {
@@ -471,7 +473,7 @@ export function RealisticSun({ className = '', onFallback }: RealisticSunProps) 
         const observer = new IntersectionObserver(
           entries => {
             entries.forEach(entry => {
-              isVisible = entry.isIntersecting;
+              inView = entry.isIntersecting;
             });
           },
           { threshold: 0.05 }
@@ -479,7 +481,7 @@ export function RealisticSun({ className = '', onFallback }: RealisticSunProps) 
         observer.observe(container);
 
         const onVisibilityChange = () => {
-          isVisible = document.visibilityState === 'visible';
+          pageVisible = document.visibilityState === 'visible';
         };
         document.addEventListener('visibilitychange', onVisibilityChange);
 
@@ -491,7 +493,7 @@ export function RealisticSun({ className = '', onFallback }: RealisticSunProps) 
         const clock = new THREE.Clock();
         const animate = () => {
           frameId = requestAnimationFrame(animate);
-          if (!isVisible) return;
+          if (!inView || !pageVisible) return;
 
           const t = clock.getElapsedTime() * timeScale;
           photosphereMat.uniforms.uTime.value = t;

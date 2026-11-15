@@ -236,13 +236,14 @@ const Header = () => {
                 ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
                 : 'bg-black/5 border-black/10 text-gray-900 hover:bg-black/10'
                 }`}
-              aria-label="Toggle navigation menu"
+              aria-label={isMobileMenuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
               aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-nav-drawer"
             >
               {isMobileMenuOpen ? (
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5" aria-hidden="true" />
               ) : (
-                <Menu className="h-5 w-5" />
+                <Menu className="h-5 w-5" aria-hidden="true" />
               )}
             </button>
           </div>
@@ -250,9 +251,10 @@ const Header = () => {
 
         {/* ── Mobile Navigation Drawer ── */}
         <div
+          id="mobile-nav-drawer"
           className={`xl:hidden transition-all duration-300 ease-in-out overflow-hidden ${isMobileMenuOpen
             ? 'max-h-[calc(100dvh-5rem)] opacity-100 pb-4 overflow-y-auto'
-            : 'max-h-0 opacity-0 pointer-events-none'
+            : 'max-h-0 opacity-0 pointer-events-none invisible'
             }`}
         >
           <div

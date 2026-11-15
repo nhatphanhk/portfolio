@@ -8,31 +8,8 @@ import { SectionId, parseSectionLayout, DEFAULT_HARVARD_ORDER } from '@/lib/resu
 import { useLanguage } from '@/lib/i18n/context';
 import { formatDate } from '@/lib/utils';
 
-const CATEGORY_LABELS: Record<string, string> = {
-  LANGUAGE: 'Programming Languages',
-  FRAMEWORK: 'Frameworks / Libraries',
-  FRONTEND: 'Frontend',
-  BACKEND: 'Backend',
-  DATABASE: 'Databases',
-  CLOUD: 'Cloud Platforms',
-  DEVOPS: 'DevOps & CI/CD',
-  IAC: 'Infrastructure as Code',
-  MONITORING: 'Monitoring & Logging',
-  VERSION_CONTROL: 'Version Control',
-  TOOLS: 'Tools & Technologies',
-  OTHER: 'Other',
-};
-
-const HARVARD_SECTION_TITLES: Record<SectionId, string> = {
-  education: 'EDUCATION',
-  experience: 'PROFESSIONAL EXPERIENCE',
-  skills: 'TECHNICAL SKILLS',
-  softSkills: 'CORE COMPETENCIES & LEADERSHIP',
-  achievements: 'HONORS & AWARDS',
-  activities: 'ACTIVITIES & LEADERSHIP',
-  languages: 'LANGUAGES',
-  bio: 'PROFESSIONAL SUMMARY',
-};
+// Section titles and skill-category labels come from the locale files
+// (resumeSections.* and the shared skills.categories.*).
 
 export interface ProfileData {
   name: string;
@@ -216,7 +193,12 @@ export function ResumeMultiPage({
   spokenLanguages = [],
   activities = [],
 }: ResumeMultiPageProps) {
-  const { isEn } = useLanguage();
+  const { isEn, t, locale } = useLanguage();
+  const label = (key: string) => t(`resumeLabels.${key}`);
+  const categoryLabel = (cat: string) => {
+    const translated = t(`skills.categories.${cat}`);
+    return translated.startsWith('skills.categories.') ? cat : translated;
+  };
 
   const profile = useMemo(() => {
     if (!isEn || !rawProfile.translations?.en) return rawProfile;
@@ -581,8 +563,9 @@ export function ResumeMultiPage({
   // ── HARVARD SECTION RENDERER ──────────────────────────────────
   // ══════════════════════════════════════════════════════════════
   const renderHarvardSection = (sec: HarvardSectionSlice) => {
-    const rawTitle = HARVARD_SECTION_TITLES[sec.id] || sec.id.toUpperCase();
-    const title = sec.isContinued ? `${rawTitle} (CONTINUED)` : rawTitle;
+    const sectionTitle = t(`resumeSections.${sec.id}`);
+    const rawTitle = (sectionTitle.startsWith('resumeSections.') ? sec.id : sectionTitle).toLocaleUpperCase(locale);
+    const title = sec.isContinued ? `${rawTitle} (${label('continued').toLocaleUpperCase(locale)})` : rawTitle;
 
     let bodyContent: React.ReactNode = null;
 
@@ -593,7 +576,7 @@ export function ResumeMultiPage({
             {profile.bio && <p>{profile.bio}</p>}
             {profile.careerObjective && (
               <p className="italic text-gray-700">
-                <span className="font-semibold not-italic text-gray-950">Career Objective: </span>
+                <span className="font-semibold not-italic text-gray-950">{label('careerObjective')}: </span>
                 {profile.careerObjective}
               </p>
             )}
@@ -615,7 +598,7 @@ export function ResumeMultiPage({
                   </span>
                   <span className="text-xs sm:text-[13px] md:text-[13.5px] font-serif font-medium text-gray-700 shrink-0">
                     {new Date(edu.startDate).getFullYear()} –{' '}
-                    {edu.isCurrent ? 'Present' : edu.endDate ? new Date(edu.endDate).getFullYear() : ''}
+                    {edu.isCurrent ? label('present') : edu.endDate ? new Date(edu.endDate).getFullYear() : ''}
                   </span>
                 </div>
                 <div className="flex justify-between items-baseline gap-2 mt-0.5">
@@ -659,11 +642,11 @@ export function ResumeMultiPage({
                       {exp.company}
                     </span>
                     <span className="text-xs sm:text-[13px] md:text-[13.5px] font-serif font-medium text-gray-700 shrink-0">
-                      {formatDate(exp.startDate, 'en', 'monthYear')} –{' '}
+                      {formatDate(exp.startDate, locale, 'monthYear')} –{' '}
                       {exp.isCurrent
-                        ? 'Present'
+                        ? label('present')
                         : exp.endDate
-                        ? formatDate(exp.endDate, 'en', 'monthYear')
+                        ? formatDate(exp.endDate, locale, 'monthYear')
                         : ''}
                     </span>
                   </div>
@@ -671,11 +654,6 @@ export function ResumeMultiPage({
                     <span className="font-serif italic text-xs sm:text-sm md:text-[14px] text-gray-800 font-medium">
                       {exp.position}
                     </span>
-                    {profile.location && (
-                      <span className="font-serif italic text-xs sm:text-[13px] text-gray-600 shrink-0">
-                        {profile.location}
-                      </span>
-                    )}
                   </div>
 
                   {exp.description && (
@@ -694,7 +672,7 @@ export function ResumeMultiPage({
 
                   {exp.techStack && (
                     <p className="mt-2 text-xs sm:text-sm md:text-[13.5px] font-serif text-gray-700">
-                      <span className="font-semibold text-gray-950">Technologies: </span>
+                      <span className="font-semibold text-gray-950">{label('technologies')}: </span>
                       <span>{exp.techStack}</span>
                     </p>
                   )}
@@ -717,7 +695,7 @@ export function ResumeMultiPage({
               return (
                 <div key={cat} className="flex flex-wrap items-baseline gap-1">
                   <span className="font-bold text-gray-950">
-                    {CATEGORY_LABELS[cat] ?? cat}:{' '}
+                    {categoryLabel(cat)}:{' '}
                   </span>
                   <span>{skills.map(s => s.name).join(', ')}</span>
                 </div>
@@ -732,7 +710,7 @@ export function ResumeMultiPage({
         if (!profile.softSkills) return null;
         bodyContent = (
           <div className="text-xs sm:text-sm md:text-[14px] font-serif text-gray-800 leading-relaxed">
-            <span className="font-bold text-gray-950">Core Competencies: </span>
+            <span className="font-bold text-gray-950">{label('coreCompetencies')}: </span>
             <span>{profile.softSkills}</span>
           </div>
         );
@@ -792,7 +770,7 @@ export function ResumeMultiPage({
         if (langs.length === 0) return null;
         bodyContent = (
           <div className="text-xs sm:text-sm md:text-[14px] font-serif text-gray-800 leading-relaxed">
-            <span className="font-bold text-gray-950">Languages: </span>
+            <span className="font-bold text-gray-950">{label('languages')}: </span>
             {langs.map((l, i) => (
               <span key={l.id}>
                 {i > 0 && '; '}
@@ -832,7 +810,7 @@ export function ResumeMultiPage({
         if (!pageColData.showBio || (!profile.bio && !profile.careerObjective)) return null;
         return (
           <section key="bio">
-            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3">Profile</h3>
+            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3">{label('profile')}</h3>
             {profile.bio && <p className="text-xs sm:text-sm md:text-[14px] text-gray-700 leading-relaxed text-justify">{profile.bio}</p>}
             {profile.careerObjective && (
               <p className="text-xs sm:text-sm md:text-[14px] text-gray-700 leading-relaxed mt-2.5 italic text-justify">{profile.careerObjective}</p>
@@ -846,7 +824,10 @@ export function ResumeMultiPage({
         return (
           <section key="experience">
             <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-4">
-              {pageNumber === 1 ? 'Experience' : 'Experience (Continued)'}
+              {/* Continued only when earlier pages already listed some of the experience entries */}
+              {pageColData.experiences[0]?.id !== experiences[0]?.id
+                ? `${label('experience')} (${label('continued')})`
+                : label('experience')}
             </h3>
             <div className="space-y-5">
               {pageColData.experiences.map(exp => (
@@ -858,7 +839,7 @@ export function ResumeMultiPage({
                     <h4 className="font-bold text-gray-900 text-sm sm:text-base">{exp.position}</h4>
                     <span className="text-xs sm:text-[13px] text-gray-500 font-mono">
                       {new Date(exp.startDate).getFullYear()} –{' '}
-                      {exp.isCurrent ? 'Present' : exp.endDate ? new Date(exp.endDate).getFullYear() : ''}
+                      {exp.isCurrent ? label('present') : exp.endDate ? new Date(exp.endDate).getFullYear() : ''}
                     </span>
                   </div>
                   <p className="text-xs sm:text-sm font-semibold text-blue-600 mb-1.5">{exp.company}</p>
@@ -905,7 +886,7 @@ export function ResumeMultiPage({
         if (pageColData.education.length === 0) return null;
         return (
           <section key="education">
-            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-4">Education</h3>
+            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-4">{label('education')}</h3>
             <div className="space-y-4">
               {pageColData.education.map(edu => (
                 <div
@@ -916,7 +897,7 @@ export function ResumeMultiPage({
                     <h4 className="font-bold text-gray-900 text-sm sm:text-base">{edu.degree}</h4>
                     <span className="text-xs sm:text-[13px] text-gray-500 font-mono">
                       {new Date(edu.startDate).getFullYear()} –{' '}
-                      {edu.isCurrent ? 'Present' : edu.endDate ? new Date(edu.endDate).getFullYear() : ''}
+                      {edu.isCurrent ? label('present') : edu.endDate ? new Date(edu.endDate).getFullYear() : ''}
                     </span>
                   </div>
                   <p className="text-xs sm:text-sm text-blue-600 font-semibold">{edu.institution}</p>
@@ -936,13 +917,13 @@ export function ResumeMultiPage({
         return (
           <section key="skills">
             <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3.5">
-              {pageNumber === 1 ? 'Technical Skills' : 'Additional Skills'}
+              {pageNumber === 1 ? label('technicalSkills') : label('additionalSkills')}
             </h3>
             <div className="space-y-4">
               {pageColData.skillCats.map(cat => (
                 <div key={cat}>
                   <h4 className="text-xs font-bold text-gray-750 uppercase tracking-wider mb-2">
-                    {CATEGORY_LABELS[cat] ?? cat}
+                    {categoryLabel(cat)}
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
                     {(skillsByCategory[cat] ?? []).map(skill => (
@@ -965,7 +946,7 @@ export function ResumeMultiPage({
         if (!pageColData.showSoftSkills || !profile.softSkills) return null;
         return (
           <section key="softSkills">
-            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3">Soft Skills</h3>
+            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3">{label('softSkills')}</h3>
             <div className="flex flex-wrap gap-1.5">
               {profile.softSkills
                 .split(',')
@@ -988,7 +969,7 @@ export function ResumeMultiPage({
         if (pageColData.spokenLanguages.length === 0) return null;
         return (
           <section key="languages">
-            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3">Languages</h3>
+            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3">{label('languages')}</h3>
             <div className="space-y-2.5">
               {pageColData.spokenLanguages.map(lang => (
                 <div key={lang.id} className="flex justify-between items-center">
@@ -1007,7 +988,7 @@ export function ResumeMultiPage({
         if (pageColData.achievements.length === 0) return null;
         return (
           <section key="achievements">
-            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3">Achievements</h3>
+            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3">{label('achievements')}</h3>
             <div className="space-y-2.5">
               {pageColData.achievements.map(ach => (
                 <div key={ach.id} className="text-xs sm:text-sm">
@@ -1026,7 +1007,7 @@ export function ResumeMultiPage({
         if (pageColData.activities.length === 0) return null;
         return (
           <section key="activities">
-            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3">Activities</h3>
+            <h3 className="text-xs sm:text-[13px] font-bold uppercase tracking-widest text-gray-500 mb-3">{label('activities')}</h3>
             <div className="space-y-2.5">
               {pageColData.activities.map(act => (
                 <div key={act.id} className="text-xs sm:text-sm">
@@ -1067,22 +1048,24 @@ export function ResumeMultiPage({
               <button
                 type="button"
                 onClick={() => setViewMode('stack')}
+                aria-pressed={viewMode === 'stack'}
                 className={`px-2.5 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
                   viewMode === 'stack' ? 'bg-card text-foreground font-medium shadow-xs' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <Layers className="w-3.5 h-3.5" />
-                <span>Continuous</span>
+                <Layers className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>{label('continuous')}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('paged')}
+                aria-pressed={viewMode === 'paged'}
                 className={`px-2.5 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
                   viewMode === 'paged' ? 'bg-card text-foreground font-medium shadow-xs' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <FileText className="w-3.5 h-3.5" />
-                <span>Page Tabs</span>
+                <FileText className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>{label('pageTabs')}</span>
               </button>
             </div>
 
@@ -1090,35 +1073,36 @@ export function ResumeMultiPage({
               <div className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-lg border border-border/50">
                 <button
                   type="button"
-                  disabled={activePageTab === 1}
+                  disabled={clampedPageTab === 1}
                   onClick={() => setActivePageTab(p => Math.max(p - 1, 1))}
                   className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
-                  aria-label="Previous Page"
+                  aria-label={t('pagination.previous')}
                 >
-                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
                 {Array.from({ length: totalPages }).map((_, i) => (
                   <button
                     key={i + 1}
                     type="button"
                     onClick={() => setActivePageTab(i + 1)}
+                    aria-current={clampedPageTab === i + 1 ? 'page' : undefined}
                     className={`px-2 py-0.5 rounded text-xs transition-colors ${
-                      activePageTab === i + 1
+                      clampedPageTab === i + 1
                         ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
                         : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    Page {i + 1}
+                    {t('pagination.page')} {i + 1}
                   </button>
                 ))}
                 <button
                   type="button"
-                  disabled={activePageTab === totalPages}
+                  disabled={clampedPageTab === totalPages}
                   onClick={() => setActivePageTab(p => Math.min(p + 1, totalPages))}
                   className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
-                  aria-label="Next Page"
+                  aria-label={t('pagination.next')}
                 >
-                  <ChevronRight className="w-3.5 h-3.5" />
+                  <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
               </div>
             )}
@@ -1142,11 +1126,11 @@ export function ResumeMultiPage({
               >
                 {totalPages > 1 && (
                   <div className="max-w-4xl mx-auto flex items-center justify-between mb-2 px-1 text-xs text-muted-foreground print:hidden">
-                    <span className="font-semibold uppercase tracking-wider text-[11px] text-amber-800 dark:text-amber-500">
-                      Harvard Format · Sheet {page.pageNumber} of {totalPages}
+                    <span className="font-semibold uppercase tracking-wider text-[11px] text-amber-800">
+                      {label('harvardFormat')} · {label('sheet')} {page.pageNumber} / {totalPages}
                     </span>
                     <span className="text-[11px] italic font-serif opacity-70">
-                      {page.pageNumber === 1 ? 'Primary Overview' : 'Continued Credentials'}
+                      {page.pageNumber === 1 ? label('primaryOverview') : label('continuedCredentials')}
                     </span>
                   </div>
                 )}
@@ -1157,9 +1141,9 @@ export function ResumeMultiPage({
                       {/* Page 1 Header */}
                       {page.pageNumber === 1 ? (
                         <header className="text-center pb-3.5 border-b-2 border-gray-950 mb-5 sm:mb-6">
-                          <h1 className="text-2xl sm:text-3xl md:text-[34px] font-bold font-serif uppercase tracking-widest text-gray-950 mb-1.5">
+                          <h2 className="text-2xl sm:text-3xl md:text-[34px] font-bold font-serif uppercase tracking-widest text-gray-950 mb-1.5">
                             {profile.name}
-                          </h1>
+                          </h2>
                           {profile.title && (
                             <p className="text-xs sm:text-sm md:text-base font-serif italic text-gray-700 mb-2.5">
                               {profile.title}
@@ -1207,7 +1191,7 @@ export function ResumeMultiPage({
                             {profile.name}
                           </span>
                           <span className="italic">
-                            Curriculum Vitae — Page {page.pageNumber} of {totalPages}
+                            Curriculum Vitae — {t('pagination.page')} {page.pageNumber} / {totalPages}
                           </span>
                         </header>
                       )}
@@ -1221,7 +1205,7 @@ export function ResumeMultiPage({
                     {/* Subtle Harvard Footer */}
                     <footer className="mt-8 pt-3 border-t border-gray-200 flex items-center justify-between text-xs font-serif text-gray-500">
                       <span>{profile.name} — Curriculum Vitae</span>
-                      <span>Page {page.pageNumber} of {totalPages}</span>
+                      <span>{t('pagination.page')} {page.pageNumber} / {totalPages}</span>
                     </footer>
                   </div>
                 </ResumeCard3D>
@@ -1243,10 +1227,10 @@ export function ResumeMultiPage({
                 {totalPages > 1 && (
                   <div className="max-w-4xl mx-auto flex items-center justify-between mb-2 px-1 text-xs text-muted-foreground print:hidden">
                     <span className="font-semibold uppercase tracking-wider text-[11px] text-primary/80">
-                      Sheet {page.pageNumber} of {totalPages}
+                      {label('sheet')} {page.pageNumber} / {totalPages}
                     </span>
                     <span className="text-[11px] opacity-70">
-                      {page.pageNumber === 1 ? 'Primary Overview' : 'Experience & Additional Credentials'}
+                      {page.pageNumber === 1 ? label('primaryOverview') : label('experienceAndCredentials')}
                     </span>
                   </div>
                 )}
@@ -1301,7 +1285,7 @@ export function ResumeMultiPage({
                             <span className="text-blue-600 font-medium">{profile.title}</span>
                           </div>
                           <div className="font-medium text-gray-400">
-                            Curriculum Vitae · Page {page.pageNumber} of {totalPages}
+                            Curriculum Vitae · {t('pagination.page')} {page.pageNumber} / {totalPages}
                           </div>
                         </header>
                       )}
@@ -1323,7 +1307,7 @@ export function ResumeMultiPage({
 
                     <footer className="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-400">
                       <span>{profile.name} — Curriculum Vitae</span>
-                      <span className="font-medium">Page {page.pageNumber} of {totalPages}</span>
+                      <span className="font-medium">{t('pagination.page')} {page.pageNumber} / {totalPages}</span>
                     </footer>
                   </div>
                 </ResumeCard3D>

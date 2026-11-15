@@ -32,6 +32,7 @@ interface BuildOpenGraphOptions {
   images?: string[];
   /** Article-only fields (ignored for type 'website'). */
   publishedTime?: string;
+  modifiedTime?: string;
   authors?: string[];
 }
 
@@ -50,6 +51,7 @@ export function buildOpenGraph({
   type = 'website',
   images,
   publishedTime,
+  modifiedTime,
   authors,
 }: BuildOpenGraphOptions): NonNullable<Metadata['openGraph']> {
   return {
@@ -60,7 +62,7 @@ export function buildOpenGraph({
     locale: locale === 'vi' ? 'vi_VN' : 'en_US',
     type,
     images: (images && images.length > 0 ? images : [OG_IMAGE]).map(url => ({ url })),
-    ...(type === 'article' ? { publishedTime, authors } : {}),
+    ...(type === 'article' ? { publishedTime, modifiedTime, authors } : {}),
   };
 }
 
