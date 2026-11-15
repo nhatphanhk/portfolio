@@ -195,6 +195,11 @@ export const en = {
     title: 'Resume',
     subtitle: 'Professional profile, experience, and technical competencies',
     downloadPdf: 'Download PDF',
+    shareTitle: 'Share this resume',
+    shareVia: 'Share via app…',
+    copyLink: 'Copy link',
+    shareEmail: 'Send by email',
+    shareText: "{name}'s resume",
   },
 
   // Landing Page

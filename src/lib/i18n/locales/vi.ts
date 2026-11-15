@@ -197,6 +197,11 @@ export const vi: TranslationDict = {
     title: 'Hồ sơ năng lực & CV',
     subtitle: 'Hồ sơ cá nhân, kinh nghiệm làm việc và các năng lực chuyên môn',
     downloadPdf: 'Tải xuống PDF',
+    shareTitle: 'Chia sẻ hồ sơ này',
+    shareVia: 'Chia sẻ qua ứng dụng…',
+    copyLink: 'Sao chép liên kết',
+    shareEmail: 'Gửi qua email',
+    shareText: 'Hồ sơ năng lực của {name}',
   },
 
   // Landing Page

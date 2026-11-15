@@ -65,7 +65,7 @@ export default async function ResumePage() {
           <UserBreadcrumb items={[{ label: 'Resume' }]} className="mb-6" />
 
           {/* Page header aligned with Header logo */}
-          <ResumeHeaderClient resumeUrl={profile.resumeUrl} />
+          <ResumeHeaderClient resumeUrl={profile.resumeUrl} name={profile.name} />
 
           {/* Dynamic Multi-Page Resume Presentation */}
           <div className="flex justify-center">

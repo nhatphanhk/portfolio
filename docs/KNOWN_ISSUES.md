@@ -33,8 +33,10 @@ at the same level as the page is fine.
   `NotFoundView` (a route-scoped 404 UI, not a `loading.tsx`).
 - Public list pages show loading state with `<Suspense fallback={<CardGridSkeleton />}>`
   inside the page, not with a route `loading.tsx`.
-- **Accepted exception:** `src/app/nhatphanhk102/(dashboard)/loading.tsx` exists. The only
-  `notFound()` beneath it is the blog editor (`blogs/editor/[id]`); a missing id there
+- **Accepted exception:** the admin area has route `loading.tsx` files —
+  `src/app/nhatphanhk102/(dashboard)/loading.tsx` plus one per admin route, built from the
+  primitives in `src/components/admin/AdminSkeletons.tsx`. The only
+  `notFound()` beneath them is the blog editor (`blogs/editor/[id]`); a missing id there
   streams the 404 UI with HTTP `200` + `noindex`. That route is behind auth and never
   crawled, so the status code doesn't matter.
 
