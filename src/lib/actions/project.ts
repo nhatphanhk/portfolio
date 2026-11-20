@@ -73,7 +73,7 @@ export async function createProject(formData: ProjectFormData) {
 
   try {
     const { tags, thumbnailUrl, demoUrl, repoUrl, ...rest } = parsed.data;
-    rest.content = sanitizeRichHtml(rest.content);
+    rest.content = await sanitizeRichHtml(rest.content);
     const authorId = await ensureAdminUser();
     const tagIds = await syncTags(tags ? tags.split(',') : []);
 
@@ -108,7 +108,7 @@ export async function updateProject(id: string, formData: ProjectFormData) {
 
   try {
     const { tags, thumbnailUrl, demoUrl, repoUrl, ...rest } = parsed.data;
-    rest.content = sanitizeRichHtml(rest.content);
+    rest.content = await sanitizeRichHtml(rest.content);
     const tagIds = await syncTags(tags ? tags.split(',') : []);
 
     const previous = await prisma.project.findUnique({ where: { id }, select: { slug: true, publishedAt: true } });

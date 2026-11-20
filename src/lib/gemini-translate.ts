@@ -201,7 +201,7 @@ export async function saveBlogTranslationToDb(
   targetLocale: 'vi' | 'en' = 'vi'
 ): Promise<boolean> {
   try {
-    data = { ...data, content: sanitizeRichHtml(data.content) };
+    data = { ...data, content: await sanitizeRichHtml(data.content) };
     await prisma.contentTranslation.upsert({
       where: {
         entityType_entityId_locale: {
@@ -299,7 +299,7 @@ export async function saveEntityTranslationToDb(
   locale: string = 'en'
 ): Promise<boolean> {
   try {
-    if (data.content) data = { ...data, content: sanitizeRichHtml(data.content) };
+    if (data.content) data = { ...data, content: await sanitizeRichHtml(data.content) };
     await prisma.contentTranslation.upsert({
       where: {
         entityType_entityId_locale: {

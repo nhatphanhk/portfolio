@@ -71,7 +71,7 @@
     "framer-motion": "^12.42.2",
     "gsap": "^3.13.0",
     "highlight.js": "^11.12.0",
-    "isomorphic-dompurify": "^4.7.0",
+    "jsdom": "^26.1.0",
     "katex": "^0.16.47",
     "lowlight": "^3.3.0",
     "lucide-react": "^0.544.0",
@@ -95,6 +95,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/jsdom": "^21.1.7",
     "@types/katex": "^0.16.8",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",

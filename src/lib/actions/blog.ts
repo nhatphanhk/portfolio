@@ -80,7 +80,7 @@ export async function createBlog(formData: BlogFormData) {
 
   try {
     const { tags, thumbnailUrl, seriesId, seriesOrder, ...rest } = parsed.data;
-    rest.content = sanitizeRichHtml(rest.content);
+    rest.content = await sanitizeRichHtml(rest.content);
     const authorId = await ensureAdminUser();
     const tagNames = tags
       ? tags
@@ -138,7 +138,7 @@ export async function updateBlog(id: string, formData: BlogFormData) {
 
   try {
     const { tags, thumbnailUrl, seriesId, seriesOrder, ...rest } = parsed.data;
-    rest.content = sanitizeRichHtml(rest.content);
+    rest.content = await sanitizeRichHtml(rest.content);
     const tagNames = tags
       ? tags
           .split(',')
