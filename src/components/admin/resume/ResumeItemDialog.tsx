@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { SKILL_CATEGORY_VALUES, SKILL_CATEGORY_ADMIN_LABELS } from '@/lib/skill-constants';
 import {
   Dialog,
   DialogContent,
@@ -31,20 +32,7 @@ interface ResumeItemDialogProps {
   onSave: (type: ItemType, data: any) => Promise<void>;
 }
 
-const SKILL_CATEGORIES = [
-  'LANGUAGE',
-  'FRAMEWORK',
-  'FRONTEND',
-  'BACKEND',
-  'DATABASE',
-  'CLOUD',
-  'DEVOPS',
-  'IAC',
-  'MONITORING',
-  'VERSION_CONTROL',
-  'TOOLS',
-  'OTHER',
-];
+const SKILL_CATEGORIES = SKILL_CATEGORY_VALUES;
 
 export function ResumeItemDialog({
   open,
@@ -134,7 +122,6 @@ export function ResumeItemDialog({
           setFormData({
             name: '',
             category: 'FRAMEWORK',
-            level: 80,
           });
           break;
         case 'social':
@@ -512,26 +499,11 @@ export function ResumeItemDialog({
                   >
                     {SKILL_CATEGORIES.map(cat => (
                       <option key={cat} value={cat}>
-                        {cat}
+                        {SKILL_CATEGORY_ADMIN_LABELS[cat]}
                       </option>
                     ))}
                   </select>
                 </div>
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span className="font-semibold uppercase">Mức độ thành thạo</span>
-                  <span>{formData.level || 3}/5</span>
-                </div>
-                <input
-                  type="range"
-                  min="1"
-                  max="5"
-                  step="1"
-                  value={formData.level || 3}
-                  onChange={e => setFormData({ ...formData, level: parseInt(e.target.value, 10) })}
-                  className="w-full accent-primary cursor-pointer"
-                />
               </div>
             </>
           )}

@@ -144,16 +144,88 @@ model ProjectImage {
 }
 
 model Skill {
-  id        String        @id @default(uuid())
-  name      String
-  iconUrl   String?
-  level     Int? // 1-5
-  category  SkillCategory
-  order     Int           @default(0)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id         String        @id @default(uuid())
+  name       String
+  slug       String?       @unique
+  /** Short "what I can do with it" summary shown on cards. */
+  summary    String?
+  iconUrl    String?
+  /** Deprecated: skills are no longer ranked 1-5. Kept so existing rows stay valid; never written. */
+  level      Int?
+  category   SkillCategory
+  status     SkillStatus   @default(ACHIEVED)
+  startedAt  DateTime?
+  achievedAt DateTime?
+  featured   Boolean       @default(false)
+  order      Int           @default(0)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
 
+  capabilities SkillCapability[]
+  evidences    SkillEvidence[]
+  logs         SkillLog[]
+
+  @@index([status])
   @@map("skills")
+}
+
+/** One concrete "I can do X" statement for a skill; evidence can be attached to it. */
+model SkillCapability {
+  id          String    @id @default(uuid())
+  skillId     String
+  skill       Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  statement   String
+  description String?
+  achievedAt  DateTime?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  evidences SkillEvidence[]
+
+  @@index([skillId])
+  @@map("skill_capabilities")
+}
+
+/** Proof for a skill (or one of its capabilities): a course, certificate, photo, link, PDF or project. */
+model SkillEvidence {
+  id              String           @id @default(uuid())
+  skillId         String
+  skill           Skill            @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  capabilityId    String?
+  capability      SkillCapability? @relation(fields: [capabilityId], references: [id], onDelete: SetNull)
+  type            EvidenceType
+  title           String
+  url             String?
+  fileUrl         String?
+  provider        String?
+  issuedAt        DateTime?
+  description     String?
+  certificationId String?
+  certification   Certification?   @relation(fields: [certificationId], references: [id], onDelete: SetNull)
+  order           Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([skillId])
+  @@index([capabilityId])
+  @@index([certificationId])
+  @@map("skill_evidences")
+}
+
+/** Learning journal entry for a skill. */
+model SkillLog {
+  id        String   @id @default(uuid())
+  skillId   String
+  skill     Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  date      DateTime
+  title     String
+  note      String?
+  hours     Float?
+  createdAt DateTime @default(now())
+
+  @@index([skillId, date])
+  @@map("skill_logs")
 }
 
 model Certification {
@@ -169,6 +241,8 @@ model Certification {
   status        CertStatus @default(ACTIVE)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  evidences SkillEvidence[]
 
   @@map("certifications")
 }
@@ -387,6 +461,29 @@ enum SkillCategory {
   IAC             // Infrastructure as Code
   MONITORING      // Monitoring & Logging
   VERSION_CONTROL // Version Control
+  // Non-work skills
+  SOFT_SKILL       // Communication, leadership...
+  FOREIGN_LANGUAGE // Foreign languages
+  DESIGN_ART       // Design, drawing, photography
+  MUSIC            // Instruments, singing
+  SPORTS_HEALTH    // Sports, fitness
+  LIFE_SKILL       // Cooking, driving, first aid...
+  BUSINESS         // Finance, marketing, management
+}
+
+enum SkillStatus {
+  LEARNING
+  ACHIEVED
+  PAUSED
+}
+
+enum EvidenceType {
+  COURSE
+  CERTIFICATE
+  IMAGE
+  LINK
+  DOCUMENT
+  PROJECT
 }
 
 enum CertStatus {

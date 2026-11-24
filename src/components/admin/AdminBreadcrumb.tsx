@@ -60,11 +60,11 @@ export function AdminBreadcrumb() {
     accumulatedPath += `/${seg}`;
     const isCurrent = idx === segments.length - 1;
 
-    // Don't show raw ids; the only id segment in the admin is a blog post id
+    // Don't show raw ids: name them after the section they belong to
     let label = SEGMENT_NAMES[seg];
     if (!label) {
       if (seg.length > 20 || /^[0-9a-fA-F-]+$/.test(seg)) {
-        label = 'Sửa bài viết';
+        label = segments[idx - 1] === 'skills' ? 'Chi tiết kỹ năng' : 'Sửa bài viết';
       } else {
         label = seg.charAt(0).toUpperCase() + seg.slice(1);
       }

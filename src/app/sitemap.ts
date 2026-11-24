@@ -3,12 +3,14 @@ import { SITE_URL } from '@/lib/constants';
 import { getPublicBlogs } from '@/lib/actions/blog';
 import { getPublicProjects } from '@/lib/actions/project';
 import { getPublicSeries } from '@/lib/actions/series';
+import { getPublicSkillSlugs } from '@/lib/actions/skill';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [blogs, projects, seriesList] = await Promise.all([
+  const [blogs, projects, seriesList, skills] = await Promise.all([
     getPublicBlogs(),
     getPublicProjects(),
     getPublicSeries(),
+    getPublicSkillSlugs(),
   ]);
 
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -48,5 +50,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...blogRoutes, ...projectRoutes, ...seriesRoutes];
+  const skillRoutes: MetadataRoute.Sitemap = skills.map(s => ({
+    url: `${SITE_URL}/skills/${s.slug}`,
+    lastModified: new Date(s.updatedAt),
+    changeFrequency: 'monthly',
+    priority: 0.5,
+  }));
+
+  return [...staticRoutes, ...blogRoutes, ...projectRoutes, ...seriesRoutes, ...skillRoutes];
 }

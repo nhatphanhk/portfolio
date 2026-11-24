@@ -432,7 +432,6 @@ export function AdminResumeClient({
               id: `temp-skill-${Date.now()}-${idx}`,
               name: sk.name,
               category: cat,
-              level: sk.level || 3,
               order: idx,
             });
           });
@@ -451,7 +450,6 @@ export function AdminResumeClient({
                   id: `temp-skill-${Date.now()}-${idx}`,
                   name: sk.name,
                   category: cat,
-                  level: sk.level || 3,
                   order: next[cat].length,
                 });
               }
@@ -632,7 +630,6 @@ export function AdminResumeClient({
             const res = await createSkill({
               name: sk.name,
               category: cat as any,
-              level: sk.level || 3,
               order: 0,
             });
             assertOk(res, `lưu kỹ năng ${sk.name}`);
@@ -893,14 +890,13 @@ export function AdminResumeClient({
       }
 
       case 'skill': {
-        const level = data.level || 3;
-        const res = await createSkill({ name: data.name, category: data.category, level, order: 0 });
+        const res = await createSkill({ name: data.name, category: data.category, order: 0 });
         assertOk(res, `lưu kỹ năng ${data.name}`);
         commitSkills(prev => {
           const cat = data.category;
           return {
             ...prev,
-            [cat]: [...(prev[cat] || []), { id: res.id, name: data.name, category: cat, level, order: 0 }],
+            [cat]: [...(prev[cat] || []), { id: res.id, name: data.name, category: cat, order: 0 }],
           };
         });
         toast.success(`Đã thêm kỹ năng ${data.name}!`);
@@ -1011,7 +1007,7 @@ export function AdminResumeClient({
     setDialogState({
       open: true,
       type: 'skill',
-      item: { category, level: 3 },
+      item: { category },
     });
   };
 

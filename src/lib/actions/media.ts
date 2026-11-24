@@ -31,18 +31,19 @@ export async function deleteMedia(id: string) {
 
   // Refuse to delete a file that live content still points at
   const url = media.url;
-  const [blogRefs, projectRefs, profileRefs, seriesRefs, siteRefs] = await Promise.all([
+  const [blogRefs, projectRefs, profileRefs, seriesRefs, siteRefs, evidenceRefs] = await Promise.all([
     prisma.blog.count({ where: { OR: [{ thumbnailUrl: url }, { content: { contains: url } }] } }),
     prisma.project.count({ where: { OR: [{ thumbnailUrl: url }, { content: { contains: url } }] } }),
     prisma.profile.count({ where: { OR: [{ avatarUrl: url }, { resumeUrl: url }] } }),
     prisma.blogSeries.count({ where: { coverUrl: url } }),
     prisma.siteContent.count({ where: { value: url } }),
+    prisma.skillEvidence.count({ where: { OR: [{ fileUrl: url }, { url }] } }),
   ]);
-  const refs = blogRefs + projectRefs + profileRefs + seriesRefs + siteRefs;
+  const refs = blogRefs + projectRefs + profileRefs + seriesRefs + siteRefs + evidenceRefs;
   if (refs > 0) {
     return {
       ok: false,
-      error: `Tệp đang được dùng ở ${refs} nơi (bài viết, dự án, hồ sơ hoặc trang chủ). Hãy gỡ liên kết trước khi xóa.`,
+      error: `Tệp đang được dùng ở ${refs} nơi (bài viết, dự án, hồ sơ, trang chủ hoặc bằng chứng kỹ năng). Hãy gỡ liên kết trước khi xóa.`,
     };
   }
 

@@ -14,7 +14,7 @@ app/
 ├── error.tsx, not-found.tsx                   # Global error boundary / 404
 ├── robots.ts, sitemap.ts                      # Generated from live DB content
 ├── page.tsx                                   # Home
-├── blog/, project/, skills/, certifications/, resume/, contact/   # Public content pages
+├── blog/, project/, skills/, certifications/, resume/, contact/   # Public content pages (skills/[slug] = skill detail)
 ├── api-doc/page.tsx                           # Swagger UI page (auth-gated, NOT under api/)
 ├── api/
 │   ├── auth/[...nextauth]/route.ts            # NextAuth handler
@@ -106,8 +106,26 @@ data/
                   # Profile/Experience tables are empty (fresh install, no admin data yet)
 ```
 
-Skill-category display labels live in the locale files (`skills.categories.*`), shared by
-`/skills` and the public résumé — there is no separate label map.
+Public skill-category labels live in the locale files (`skills.categories.*`), shared by
+`/skills` and the public résumé. The admin's Vietnamese labels and the enum value lists
+(work vs. non-work categories, `SkillStatus`, `EvidenceType`) live in `src/lib/skill-constants.ts`.
+
+### Skills: capabilities, evidence, learning journal
+
+Skills are **not ranked** (the old `Skill.level` 1–5 column is kept only for old rows and
+is never written). Instead each skill records what it lets you do:
+
+- `SkillCapability` — one "I can do X" statement per row, ordered.
+- `SkillEvidence` — proof (course, certificate, image, link, PDF, project), attached to the
+  whole skill or to one capability. A `CERTIFICATE` can link an existing `Certification`.
+  Uploaded files go through `/api/upload` with `fileType: 'skill'`; `deleteMedia` refuses to
+  delete a file still used as evidence.
+- `SkillLog` — dated learning-journal entries with optional hours.
+- `Skill.status` (`LEARNING` / `ACHIEVED` / `PAUSED`) + `startedAt` / `achievedAt`.
+
+Admin: `/nhatphanhk102/skills` (list) → `/nhatphanhk102/skills/[id]` (tabs for the three
+lists). Public: `/skills` (filter chips: work / beyond work / learning) → `/skills/[slug]`
+(calls `notFound()` before any Suspense boundary, see KNOWN_ISSUES #1).
 
 **Nothing in this folder is the source of truth.** Once the admin has saved real content
 via the database, these files stop being read. Don't add new "static content" files here

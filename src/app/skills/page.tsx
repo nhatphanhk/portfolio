@@ -10,10 +10,10 @@ import { getServerLocale } from '@/lib/i18n/server';
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getServerLocale();
   const isVi = locale === 'vi';
-  const title = isVi ? 'Kỹ năng chuyên môn' : 'Skills';
+  const title = isVi ? 'Kỹ năng' : 'Skills';
   const description = isVi
-    ? 'Tổng quan toàn diện về kỹ năng kỹ thuật, framework, ngôn ngữ và công cụ trong phát triển phần mềm full-stack.'
-    : 'Comprehensive overview of technical skills, frameworks, languages, and tools I use in full-stack engineering.';
+    ? 'Kỹ năng trong và ngoài công việc — mỗi kỹ năng ghi nhận những gì làm được, kèm khóa học, chứng chỉ và bằng chứng.'
+    : 'Skills at work and beyond — each with what I can actually do, backed by courses, certificates and other proof.';
   return {
     title,
     description,
