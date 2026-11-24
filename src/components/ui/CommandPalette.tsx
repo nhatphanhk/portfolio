@@ -10,7 +10,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { Home, User, Mail, FileText, Briefcase, Layers, Cpu, Award } from 'lucide-react';
+import { Home, User, Mail, FileText, Briefcase, Layers, Cpu, Award, Route } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/context';
 
 export function CommandPalette() {
@@ -40,6 +40,7 @@ export function CommandPalette() {
     { href: '/blog/series', label: t('nav.series'), icon: Layers },
     { href: '/project', label: t('nav.projects'), icon: Briefcase },
     { href: '/skills', label: t('nav.skills'), icon: Cpu },
+    { href: '/journey', label: t('nav.journey'), icon: Route },
     { href: '/certifications', label: t('nav.certifications'), icon: Award },
     { href: '/resume', label: t('nav.resume'), icon: User },
     { href: '/contact', label: t('nav.contact'), icon: Mail },

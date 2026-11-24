@@ -33,6 +33,8 @@ export default function FooterClient({
         return t('nav.projects');
       case 'Skills':
         return t('nav.skills');
+      case 'Journey':
+        return t('nav.journey');
       case 'Certifications':
         return t('nav.certifications');
       case 'Contact':

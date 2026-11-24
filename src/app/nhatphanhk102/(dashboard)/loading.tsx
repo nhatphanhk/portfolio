@@ -16,7 +16,7 @@ export default function AdminLoading() {
   return (
     <AdminSkeletonPage>
       <PageHeaderSkeleton actions={0} titleWidth="w-32" />
-      <StatCardsSkeleton count={6} className="grid-cols-2 md:grid-cols-3" padding="p-6" />
+      <StatCardsSkeleton count={8} className="grid-cols-2 md:grid-cols-4" padding="p-6" />
       <div className="grid md:grid-cols-2 gap-6">
         <PanelSkeleton titleWidth="w-32">
           <ListRowsSkeleton />

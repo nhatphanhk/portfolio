@@ -1,11 +1,12 @@
 import React from 'react';
 import Link from 'next/link';
-import { FileText, Code, Layers, Award, BarChart3, TrendingUp, Mail } from 'lucide-react';
+import { FileText, Code, Layers, Award, BarChart3, TrendingUp, Mail, Eye, Users } from 'lucide-react';
 import { getAllBlogsFromDb } from '@/lib/actions/blog';
 import { getAllProjectsFromDb } from '@/lib/actions/project';
 import { getAllSkillsFromDb } from '@/lib/actions/skill';
 import { getAllCertificationsFromDb } from '@/lib/actions/certification';
 import { getAllContactsFromDb } from '@/lib/actions/contact';
+import { getRecentTraffic } from '@/lib/analytics';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { AdminPageHeader, ADMIN_PAGE_CLASS } from '@/components/admin/AdminPageHeader';
 import type { Metadata } from 'next';
@@ -40,15 +41,18 @@ function StatCard({ title, value, icon: Icon, description, href }: StatCardProps
 }
 
 export default async function DashboardPage() {
-  const [blogs, projects, certifications, skills, contacts] = await Promise.all([
+  const [blogs, projects, certifications, skills, contacts, traffic] = await Promise.all([
     getAllBlogsFromDb(),
     getAllProjectsFromDb(),
     getAllCertificationsFromDb(),
     getAllSkillsFromDb(),
     getAllContactsFromDb(),
+    getRecentTraffic(7),
   ]);
 
   const stats: StatCardProps[] = [
+    { title: 'Lượt xem trang', value: traffic.views, icon: Eye, description: '7 ngày gần nhất', href: '/nhatphanhk102/analytics?range=7' },
+    { title: 'Khách truy cập', value: traffic.visitors, icon: Users, description: '7 ngày gần nhất (theo ngày)', href: '/nhatphanhk102/analytics?range=7' },
     { title: 'Bài viết', value: blogs.length, icon: FileText, description: 'Tổng số bài viết', href: '/nhatphanhk102/blogs' },
     { title: 'Dự án', value: projects.length, icon: Code, description: 'Tổng số dự án', href: '/nhatphanhk102/projects' },
     { title: 'Kỹ năng', value: skills.length, icon: Layers, description: 'Công nghệ đang theo dõi', href: '/nhatphanhk102/skills' },
@@ -77,7 +81,7 @@ export default async function DashboardPage() {
       <AdminPageHeader title="Tổng quan" description="Tóm tắt nội dung portfolio" />
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {stats.map(stat => (
           <StatCard key={stat.title} {...stat} />
         ))}

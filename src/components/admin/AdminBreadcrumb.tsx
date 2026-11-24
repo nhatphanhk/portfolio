@@ -28,6 +28,7 @@ const SEGMENT_NAMES: Record<string, string> = {
   media: 'Thư viện ảnh',
   resume: 'Hồ sơ CV',
   landing: 'Trang chủ',
+  analytics: 'Thống kê truy cập',
 };
 
 /** Path segments that have no page of their own (rendered as plain text, not links). */

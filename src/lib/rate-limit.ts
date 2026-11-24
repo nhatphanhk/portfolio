@@ -89,6 +89,8 @@ export const RATE_LIMIT_PRESETS = {
   TRANSLATION: { limit: 5, windowMs: 10 * 60 * 1000 },
   /** Unique blog view tracking: 15 requests per minute */
   VIEW_TRACKING: { limit: 15, windowMs: 60 * 1000 },
+  /** Site-wide page-view beacon (/api/track): 60 requests per minute */
+  PAGE_VIEW: { limit: 60, windowMs: 60 * 1000 },
   /** File upload: 10 requests per 5 minutes */
   UPLOAD: { limit: 10, windowMs: 5 * 60 * 1000 },
   /** Credentials sign-in attempts: 10 per 15 minutes */

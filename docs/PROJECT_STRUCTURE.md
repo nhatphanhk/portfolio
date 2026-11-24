@@ -15,11 +15,13 @@ app/
 ├── robots.ts, sitemap.ts                      # Generated from live DB content
 ├── page.tsx                                   # Home
 ├── blog/, project/, skills/, certifications/, resume/, contact/   # Public content pages (skills/[slug] = skill detail)
+├── journey/page.tsx                           # Public growth timeline + activity heatmap (lib/journey.ts)
 ├── api-doc/page.tsx                           # Swagger UI page (auth-gated, NOT under api/)
 ├── api/
 │   ├── auth/[...nextauth]/route.ts            # NextAuth handler
 │   ├── admin/create/route.ts                  # One-time admin creation (ADMIN_SETUP_KEY, rate-limited)
 │   ├── contact/route.ts, visitor/route.ts     # Public POST endpoints (rate-limited)
+│   ├── track/route.ts                         # Page-view beacon from <PageViewTracker /> (rate-limited, no cookies/IP)
 │   ├── upload/route.ts                        # Authenticated upload endpoint (rate-limited)
 │   ├── resume/parse-pdf/route.ts              # Authenticated CV parsing with Gemini AI (rate-limited)
 │   └── swagger/route.ts                       # Raw OpenAPI JSON (rate-limited, what api-doc/ renders)
@@ -29,6 +31,7 @@ app/
         ├── layout.tsx                          # Sidebar (AppSidebar) + SidebarInset; ensureAdmin() role check
         ├── loading.tsx, error.tsx              # Admin-only skeleton + error boundary (see KNOWN_ISSUES #1)
         ├── page.tsx                            # Dashboard home
+        ├── analytics/page.tsx                  # Page views, referrers, countries, devices, blog views, visitor sign-ups
         └── {blogs,projects,certifications,contacts,skills,resume,visitors,media,landing}/
             ├── page.tsx                        # Server Component, fetches data
             └── client.tsx                      # Client Component, the actual form/table UI
@@ -88,6 +91,8 @@ lib/
 │   ├── about.ts         # exception: covers Profile/SocialLink/Experience/Education/
 │   │                     # Achievement/SpokenLanguage/Activity — all edited on one admin page
 │   └── auth-settings.ts # change-password action
+├── analytics.ts         # server-only: admin analytics read model (page_views, blog_views, visitor logs)
+├── journey.ts           # server-only: cached /journey feed (journal, capabilities, certs, posts, projects)
 ├── auth-utils.ts        # ensureAdmin() — the real authorization guard for every mutation
 ├── db.ts                # Prisma client singleton
 ├── rate-limit.ts         # In-memory sliding-window limiter with Auto-GC & presets (protects all API routes)

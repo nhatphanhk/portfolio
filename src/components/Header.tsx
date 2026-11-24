@@ -16,6 +16,7 @@ import {
   Mail,
   Sparkles,
   Layers,
+  Route,
 } from 'lucide-react';
 import { NAV_LINKS } from '@/lib/constants';
 import { useLanguage } from '@/lib/i18n/context';
@@ -28,6 +29,7 @@ const NAV_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Series: Layers,
   Projects: Briefcase,
   Skills: Cpu,
+  Journey: Route,
   Certifications: Award,
   Contact: Mail,
 };
@@ -55,6 +57,7 @@ const Header = () => {
       case 'Series': return t('nav.series');
       case 'Projects': return t('nav.projects');
       case 'Skills': return t('nav.skills');
+      case 'Journey': return t('nav.journey');
       case 'Certifications': return t('nav.certifications');
       case 'Contact': return t('nav.contact');
       default: return name;

@@ -106,9 +106,9 @@ rendered as JSX — if so, either hoist it out or call it as `{InnerComponent()}
   public request runs a function. Data reads are cached with `unstable_cache` / tags, which
   keeps the DB load low, but the functions themselves still run.
 - Rate-limited endpoints (per IP): mutating `/api/contact`, `/api/visitor`, `/api/upload`,
-  `/api/resume/parse-pdf`, `/api/translate`, `/api/blogs/[id]/view`, `/api/admin/create`,
-  and the read-only (but expensive to abuse) `/api/swagger`. Credentials sign-in is
-  rate-limited in `src/auth.ts`.
+  `/api/resume/parse-pdf`, `/api/translate`, `/api/blogs/[id]/view`, `/api/track` (page-view
+  beacon, 60/min), `/api/admin/create`, and the read-only (but expensive to abuse)
+  `/api/swagger`. Credentials sign-in is rate-limited in `src/auth.ts`.
 - Client IP resolution (`getClientIp` in `src/lib/rate-limit.ts`) prefers
   `x-vercel-forwarded-for`, then the first `x-forwarded-for` hop, and only then
   `cf-connecting-ip` — the site is not behind Cloudflare, so that header is client-forgeable.

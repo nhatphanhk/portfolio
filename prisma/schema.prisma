@@ -71,6 +71,28 @@ model BlogView {
   @@map("blog_views")
 }
 
+/// First-party page-view tracking for the public site (filled by /api/track).
+/// Privacy: no cookies and no raw IP. visitorHash = sha256(ip + user agent + UTC day + TRACKING_SALT),
+/// so it rotates daily and cannot be reversed; "unique visitors" are counted per day.
+model PageView {
+  id           String   @id @default(uuid())
+  /// Pathname only, without query string or hash.
+  path         String
+  /// Host of an external referrer (self-referrals dropped).
+  referrerHost String?
+  /// ISO 3166-1 alpha-2 from the x-vercel-ip-country header.
+  country      String?
+  /// desktop | mobile | tablet | other
+  device       String
+  browser      String?
+  visitorHash  String
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([path, createdAt])
+  @@map("page_views")
+}
+
 model BlogTag {
   blogId String
   tagId  String

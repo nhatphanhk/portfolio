@@ -208,6 +208,9 @@ export default function SkillDetailClient({ skill }: { skill: PublicSkillDetail 
             <BookOpen className="w-5 h-5 text-primary" aria-hidden="true" />
             {t('skills.detail.journal')}
           </h2>
+          <Link href="/journey" className="inline-flex text-xs font-semibold text-primary hover:underline">
+            {t('journey.seeJourney')} →
+          </Link>
           <ol className="relative border-l border-border ml-2 space-y-5">
             {skill.logs.map(log => (
               <li key={log.id} className="ml-5">

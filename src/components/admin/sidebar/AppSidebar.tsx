@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   LayoutTemplate,
   Images,
+  ChartLine,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -109,6 +110,11 @@ const navGroups: NavGroup[] = [
   {
     label: 'Người xem & liên hệ',
     items: [
+      {
+        title: 'Thống kê truy cập',
+        url: '/nhatphanhk102/analytics',
+        icon: ChartLine,
+      },
       {
         title: 'Hộp thư liên hệ',
         url: '/nhatphanhk102/contacts',

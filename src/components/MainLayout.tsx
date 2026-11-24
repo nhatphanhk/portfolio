@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import Header from './Header';
 import Footer from './Footer';
 import { VisitorModal } from './VisitorModal';
+import { PageViewTracker } from './PageViewTracker';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -18,6 +19,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       <main className="flex-grow w-full max-w-full min-w-0">{children}</main>
       <Footer />
       <VisitorModal />
+      <PageViewTracker />
     </div>
   );
 };
